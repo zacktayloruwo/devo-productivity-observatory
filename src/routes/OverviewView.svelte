@@ -105,6 +105,14 @@
     {#if error}<div class="err">{error}</div>{/if}
   </header>
 
+  <div class="card note">
+    <h3>Reading the Observatory</h3>
+    <div class="cols">
+      <p><a href={href(['productivity', iso3])}>Productivity</a> ranks {poss(name)} FUAs by labour productivity, compares them with every other country's, and follows the spread of productivity over time. <a href={href(['autonomy', iso3])}>Autonomy</a> traces the Local Autonomy Index and the Regional Authority Index. <a href={href(['map', iso3])}>Map</a> draws any FUA indicator on the OECD boundaries for any year.</p>
+      <p>Every chart can be shown as a table and downloaded as CSV. Dollar figures are nominal USD at purchasing power parity, comparable across countries within a year. Dollar values are not adjusted for inflation across time.</p>
+    </div>
+  </div>
+
   <div class="strip">
     <div class="card kpi"><div class="lab">FUAs with productivity, {refYear}</div><div class="big num">{fmtInt(ref.n)}</div><div class="sub">of {nFuaAll} FUAs in {name}</div></div>
     <div class="card kpi"><div class="lab">Median FUA population, {refYear}</div><div class="big num">{fmtInt(ref.med)}</div></div>
@@ -143,12 +151,12 @@
     <CountryLegend countries={manifest.countries} {colours} focus={iso3} {present} />
   </ChartCard>
 
-  <div class="card prose">
-    <h3>Reading the Observatory</h3>
-    <p><a href={href(['productivity', iso3])}>Productivity</a> ranks {poss(name)} FUAs by labour productivity, compares them with every other country's, and follows the spread of productivity over time. <a href={href(['autonomy', iso3])}>Autonomy</a> traces the Local Autonomy Index and the Regional Authority Index. <a href={href(['map', iso3])}>Map</a> draws any FUA indicator on the OECD boundaries for any year. Every chart can be shown as a table and downloaded as CSV.</p>
-  </div>
 </div>
 
 <style>
   .wrap { overflow: auto; }
+  /* the note spans the card; its paragraphs flow into columns where the card is wide enough */
+  .note h3 { margin-bottom: 6px; }
+  .note .cols { column-width: 34ch; column-gap: 32px; line-height: 1.55; }
+  .note .cols p { break-inside: avoid; margin: 0 0 10px; }
 </style>

@@ -75,7 +75,7 @@
     const r = m.get(id); const f = features.find((x) => x.properties.fua_id === id);
     const nm = r?.fua_name ?? f?.properties.fua_name ?? id;
     const cty = countryName(r?.cntry_iso3 ?? f?.properties.cntry_iso3 ?? '');
-    if (!r || r.value == null) return { html: `<b>${esc(nm)}</b> · ${esc(cty)}<br><span class="tipdef">No ${esc(v?.short.toLowerCase() ?? 'data')} in ${y}</span>` };
+    if (!r || r.value == null) return { html: `<b>${esc(nm)}</b> · ${esc(cty)}<br><span class="tipdef">No data in ${y}</span>` };
     return { html: `<b>${esc(nm)}</b> · ${esc(cty)}<br>${esc(v?.short ?? '')} ${y}: <b>${esc(fmtBy(fmt, r.value))}</b><br><span class="tipdef">Rank ${rk.get(id)} of ${rk.size}${r.pop != null ? ` · population ${esc(fmtInt(r.pop))}` : ''}</span>` };
   }; });
 

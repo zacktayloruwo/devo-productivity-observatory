@@ -171,7 +171,7 @@ for (iso in countries$iso3) {
 # OECD TL2 regions are the first-tier subnational governments: provinces and
 # territories, states, Länder. Written for the federal countries, drawn on the
 # map as outlines over the FUAs. Add a country here to overlay its regions.
-admin_countries <- c("CAN", "USA", "DEU")
+admin_countries <- c("CAN", "USA", "DEU", "ESP", "ITA")
 dir.create(file.path(out, "geo", "admin"), showWarnings = FALSE)
 tl2 <- st_read(file.path(datapack, "_data/oecd_boundaries/OECD_TL2_shapefile"),
                quiet = TRUE, options = "ENCODING=LATIN1") |>

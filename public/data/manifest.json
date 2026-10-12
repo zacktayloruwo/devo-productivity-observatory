@@ -178,7 +178,9 @@
     "admin": {
       "CAN": "geo/admin/CAN.geojson",
       "USA": "geo/admin/USA.geojson",
-      "DEU": "geo/admin/DEU.geojson"
+      "DEU": "geo/admin/DEU.geojson",
+      "ESP": "geo/admin/ESP.geojson",
+      "ITA": "geo/admin/ITA.geojson"
     },
     "nat": "nat.parquet",
     "lai": "lai.parquet",
