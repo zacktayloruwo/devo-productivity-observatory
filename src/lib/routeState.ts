@@ -3,12 +3,14 @@
 import { route } from './router.svelte';
 import { manifest } from './db/manifest.svelte';
 
-export const DEFAULT_COUNTRY = 'USA';
+export const DEFAULT_COUNTRY = 'GBR';
+// a bare visit opens the map of the United Kingdom in the reference year
+export const HOME: string[] = ['map', 'GBR', '2019'];
 export const VIEWS = ['overview', 'productivity', 'autonomy', 'map', 'sources', 'about'] as const;
 export type View = (typeof VIEWS)[number];
 
 export function routeView(): View {
-  const v = route.path[0] ?? 'overview';
+  const v = route.path[0] ?? HOME[0];
   return (VIEWS as readonly string[]).includes(v) ? (v as View) : 'overview';
 }
 
