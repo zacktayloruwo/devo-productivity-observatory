@@ -209,82 +209,85 @@
   const meanMake = $derived((o: { width: number; tokens: any }) => countryLines<CountryYear>({ rows: byCY, x: (d) => d.year, y: (d) => d.mean_lp, iso: (d) => d.cntry_iso3, countries, colours, focus: iso3, tokens: o.tokens, width: o.width, height: 320, yLabel: 'Mean labour productivity (USD PPP per worker)', yFormat: (v) => '$' + fmtShort(v), covid: true, title: (d) => `${countryName(d.cntry_iso3)} ${d.year}\nMean ${fmtUsd(d.mean_lp)} over ${d.n} FUAs` }));
   const cyCols = [{ key: 'cntry', label: 'Country', value: (r: CountryYear) => countryName(r.cntry_iso3) }, { key: 'year', label: 'Year', num: true }, { key: 'n', label: 'N', num: true }, { key: 'mean_lp', label: 'Mean productivity', num: true, render: (r: CountryYear) => fmtUsd(r.mean_lp) }, { key: 'cov', label: 'Coefficient of variation (%)', num: true, render: (r: CountryYear) => fmtNum(r.cov, 1) }];
   const present = $derived(new Set(byCY.map((r) => r.cntry_iso3)));
+  import { t } from '../lib/text/t';
+  import Text from '../lib/components/Text.svelte';
 </script>
 
 <div class="view">
   <header class="hd">
     <div>
-      <h1>Labour productivity · {name}</h1>
-      <div class="sub">Functional urban areas, USD at purchasing power parity per worker{#if loading} · <Spinner size={12} />{/if}</div>
+      <h1>{t('productivity.title', { country: name })}</h1>
+      <div class="sub">{t('productivity.sub')}{#if loading} · <Spinner size={12} />{/if}</div>
       {#if error}<div class="err">{error}</div>{/if}
     </div>
     <label class="yr">
-      <span class="muted">Snapshot year</span>
+      <span class="muted">{t('productivity.year.label')}</span>
       <select value={year} onchange={(e) => setQuery({ year: Number((e.target as HTMLSelectElement).value) === refYear ? undefined : (e.target as HTMLSelectElement).value })}>
-        {#each years as y (y.year)}<option value={y.year}>{y.year}{y.year === refYear ? ' (pre-pandemic reference)' : ''} · {y.n_countries} countries</option>{/each}
+        {#each years as y (y.year)}<option value={y.year}>{y.year}{y.year === refYear ? ' ' + t('productivity.year.ref') : ''} · {t('productivity.year.countries', { n: y.n_countries })}</option>{/each}
       </select>
     </label>
   </header>
 
-  <ChartCard title={`Functional urban areas by labour productivity, ${year}`}>
+  <ChartCard title={t('productivity.ranks.title', { year })}>
     {#snippet intro()}
-      <p>The top ten, middle ten and bottom ten FUAs in {name} by labour productivity in {year}{#if year === refYear}, the last full year before the Covid-19 pandemic{/if}. Separator rows are omitted where the groups are contiguous.</p>
+      <p><Text k="productivity.ranks.intro" vars={{ country: name, year, ref_clause: year === refYear ? t('productivity.ref_clause') : '' }} /></p>
     {/snippet}
     {#if ranked.length}
       <RankTable rows={ranked} columns={rankCols} csvName={`${iso3}_productivity_ranks_${year}`} />
     {:else if !loading}
-      <p class="muted">Labour productivity data are not available for {name} in {year}.</p>
+      <p class="muted">{t('productivity.ranks.none', { country: name, year })}</p>
     {/if}
   </ChartCard>
 
-  <ChartCard title={`Labour productivity and population of functional urban areas, ${year}`} columns={scatterCols} rows={scatter} csvName={`fua_productivity_population_${year}`}>
+  <ChartCard title={t('productivity.scatter.title', { year })} columns={scatterCols} rows={scatter} csvName={`fua_productivity_population_${year}`}>
     {#snippet intro()}
-      <p>Each point is one functional urban area in {year}; point size is proportional to population. Red points are FUAs in {name}, grey the FUAs of the other countries. The labelled FUAs are the highest, median and lowest labour productivity in {name} (red) and across all countries (grey). The dataset holds {scatter.length} FUAs with productivity and population across {nScatterCountries} countries.</p>
-      {#if focusPts.length}<p>Trend lines show the relationship between population size and labour productivity for all FUAs (dashed) and for {poss(name)} FUAs alone (red). The mean productivity of all FUAs and of {poss(name)} FUAs are drawn as horizontal reference lines.{#if natRef != null} For comparison, {poss(name)} nation-wide labour productivity in {year} was {fmtUsd(natRef)} per person employed.{/if}</p>
-      {:else if natRef != null}<p>{poss(name)} nation-wide labour productivity in {year} was {fmtUsd(natRef)} per person employed; the OECD publishes no FUA productivity for {name} in {year}.</p>{/if}
+      <p><Text k="productivity.scatter.intro" vars={{ year, country: name, n_fua: scatter.length, n_countries: nScatterCountries }} /></p>
+      {#if focusPts.length}<p><Text k="productivity.scatter.trend" vars={{ possessive: poss(name) }} />{#if natRef != null}{' '}<Text k="productivity.scatter.nat" vars={{ possessive: poss(name), year, value: fmtUsd(natRef) }} />{/if}</p>
+      {:else if natRef != null}<p><Text k="productivity.scatter.nat_only" vars={{ possessive: poss(name), country: name, year, value: fmtUsd(natRef) }} /></p>{/if}
     {/snippet}
-    <PlotChart make={scatterMake} height={520} label="Labour productivity against population, every FUA" />
+    <PlotChart make={scatterMake} height={520} label={t('productivity.scatter.title', { year })} />
   </ChartCard>
 
   <div class="two">
-    <ChartCard title="Population size and labour productivity: R² by country" columns={r2Cols} rows={r2Rows} csvName="r2_population_productivity" note="R² of labour productivity on log10(population) across each country's FUAs, in each country's most recent year with productivity data.">
-      {#snippet intro()}<p>The length of each bar shows how much of the variation in FUA labour productivity within a country is associated with population size. Population size is strongly associated with productivity in France and, to a lesser degree, the United States, but hardly at all elsewhere: productivity is not directly a function of urban agglomeration.</p>{/snippet}
-      <PlotChart make={r2Make} height={36 * Math.max(1, r2Rows.length) + 50} label="R² by country" />
+    <ChartCard title={t('productivity.r2.title')} columns={r2Cols} rows={r2Rows} csvName="r2_population_productivity" note={t('productivity.r2.note')}>
+      {#snippet intro()}<p><Text k="productivity.r2.intro" /></p>{/snippet}
+      <PlotChart make={r2Make} height={36 * Math.max(1, r2Rows.length) + 50} label={t('productivity.r2.title')} />
     </ChartCard>
-    <ChartCard title="Distribution of FUA labour productivity, by country" columns={distCols} rows={dist.stats} csvName="productivity_distribution" note="Each country's most recent year with productivity data. Box: 25th to 75th percentile; solid line: median; dashed line: mean.">
-      {#snippet intro()}<p>The box edges mark the 25th and 75th percentiles of FUA labour productivity in each country, the solid line the median and the dashed line the mean. The United States has the widest spread; the other countries are narrowly clustered with some high-productivity outliers.</p>{/snippet}
-      <PlotChart make={distMake} height={50 * Math.max(1, dist.stats.length) + 60} label="Distribution of labour productivity by country" />
+    <ChartCard title={t('productivity.dist.title')} columns={distCols} rows={dist.stats} csvName="productivity_distribution" note={t('productivity.dist.note')}>
+      {#snippet intro()}<p><Text k="productivity.dist.intro" /></p>{/snippet}
+      <PlotChart make={distMake} height={50 * Math.max(1, dist.stats.length) + 60} label={t('productivity.dist.title')} />
     </ChartCard>
   </div>
 
-  <ChartCard title={`Change in FUA labour productivity, ${growthStart ?? 2004} to ${year}`}>
+  <ChartCard title={t('productivity.growth.title', { start: growthStart ?? 2004, year })}>
     {#snippet intro()}
-      <p>FUAs ranked by the compound annual growth rate of labour productivity between {growthStart ?? 2004} and {year}.{#if year === refYear} The series ends in {refYear}, the last full year before the Covid-19 pandemic.{/if}{#if growthStart != null && growthStart > 2004} It begins in {growthStart}, the first year OECD labour productivity data are available for {name}.{/if}</p>
+      <p><Text k="productivity.growth.intro" vars={{ start: growthStart ?? 2004, year }} />{#if year === refYear}{' '}<Text k="productivity.growth.ends" vars={{ ref_year: refYear }} />{/if}{#if growthStart != null && growthStart > 2004}{' '}<Text k="productivity.growth.begins" vars={{ start: growthStart, country: name }} />{/if}</p>
     {/snippet}
     {#if growth.length}
       <RankTable rows={growth} columns={growthCols} csvName={`${iso3}_productivity_growth_${growthStart}_${year}`} />
     {:else if !loading}
-      <p class="muted">Insufficient data to calculate productivity growth for {name} over 2004–{year}.</p>
+      <p class="muted">{t('productivity.growth.none', { country: name, year })}</p>
     {/if}
   </ChartCard>
 
-  <ChartCard title={`Spread of FUA labour productivity in ${name}`} columns={pctCols} rows={pctRows} csvName={`${iso3}_productivity_percentiles`} note="The shaded band is the WHO pandemic emergency (March 2020 to May 2023).">
+  <ChartCard title={t('productivity.spread.title', { country: name })} columns={pctCols} rows={pctRows} csvName={`${iso3}_productivity_percentiles`} note={t('productivity.spread.note')}>
     {#snippet intro()}
-      <p>Percentiles of labour productivity across {poss(name)} FUAs in each year: a narrowing of the spread would indicate convergence across FUAs.{#if pctRows.length >= 2} The figure covers the {pctRows.length} years for which the OECD publishes productivity for {name} ({pctRows[0].year}–{pctRows[pctRows.length - 1].year}).{:else} The OECD publishes {pctRows.length ? 'a single year' : 'no years'} of productivity for {name}, so only the cross-country comparison below is shown.{/if}</p>
+      <p><Text k="productivity.spread.intro" vars={{ possessive: poss(name) }} />{#if pctRows.length >= 2}{' '}<Text k="productivity.spread.covers" vars={{ n: pctRows.length, country: name, first: pctRows[0].year, last: pctRows[pctRows.length - 1].year }} />
+        {:else}{' '}<Text k="productivity.spread.few" vars={{ how_many: t(pctRows.length ? 'productivity.spread.single' : 'productivity.spread.none'), country: name }} />{/if}</p>
     {/snippet}
     {#if pctRows.length >= 2}
-      <PlotChart make={pctMake} height={300} label="Percentiles of labour productivity over time" />
+      <PlotChart make={pctMake} height={300} label={t('productivity.spread.title', { country: name })} />
       <div class="pleg">{#each PCT as p, i (p.k)}<span class="it"><svg width="28" height="10"><line x1="1" y1="5" x2="27" y2="5" stroke="currentColor" stroke-width={p.w} stroke-dasharray={p.dash} /></svg>{p.label}</span>{/each}</div>
     {/if}
   </ChartCard>
 
-  <ChartCard title="Coefficient of variation of FUA labour productivity, by country" columns={cyCols} rows={covRows} csvName="productivity_cov" note="Standard deviation as a share of the mean across each country's FUAs, as published by the OECD. The shaded band is the WHO pandemic emergency.">
-    <PlotChart make={covMake} height={260} label="Coefficient of variation by country" />
+  <ChartCard title={t('productivity.cov.title')} columns={cyCols} rows={covRows} csvName="productivity_cov" note={t('productivity.cov.note')}>
+    <PlotChart make={covMake} height={260} label={t('productivity.cov.title')} />
     <CountryLegend {countries} {colours} focus={iso3} {present} />
   </ChartCard>
 
-  <ChartCard title="Mean FUA labour productivity, by country" columns={cyCols} rows={byCY} csvName="productivity_mean" note="Mean values are unweighted: each FUA counts once, regardless of population. The shaded band is the WHO pandemic emergency.">
-    <PlotChart make={meanMake} height={320} label="Mean labour productivity by country" />
+  <ChartCard title={t('productivity.mean.title')} columns={cyCols} rows={byCY} csvName="productivity_mean" note={t('productivity.mean.note')}>
+    <PlotChart make={meanMake} height={320} label={t('productivity.mean.title')} />
     <CountryLegend {countries} {colours} focus={iso3} {present} />
   </ChartCard>
 </div>

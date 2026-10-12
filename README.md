@@ -58,11 +58,32 @@ public/data/             manifest.json, countries/nat/lai/rai/sources.parquet,
 src/App.svelte           shell: top bar, left rail, hash-routed views
 src/routes/              OverviewView, ProductivityView, AutonomyView, MapView, SourcesView, AboutView
 src/lib/db/              DuckDB-WASM engine (db.ts), manifest bootstrap, queries
+text/app_text.csv        every descriptive passage, editable; tools/text_compile.mjs compiles it
+src/lib/text/            t() and the compiled strings; components/Text.svelte renders the markup
 src/lib/charts/          Plot settings, the cross-country line chart
 src/lib/geo/             GeoJSON loading (ring rewinding for d3), projections and insets, land underlay
 src/lib/components/      ChartCard, PlotChart, RankTable, MapCanvas, TimeSlider, Legend, ...
 .github/workflows/       builds and deploys to GitHub Pages on push to main
 ```
+
+## Editing the text
+
+Every descriptive passage the site shows (chart introductions and footnotes,
+the Overview note, the Sources and About prose, KPI labels, map wording)
+lives in `text/app_text.csv`, one row per passage: `key`, `text`, `context`
+(where it appears), `notes`. Open it in Excel or a text editor, edit the
+`text` column, save as CSV (UTF-8), and build. Placeholders such as
+`{country}`, `{year}` or `{possessive}` are filled by the app and must be
+kept. Light markup: `**bold**`, `*italic*`, `` `code` ``,
+`[label](https://url)`, and `[label](view:map)` for a link to a view of the
+current country. Keep each row to one paragraph; a passage of two paragraphs
+is two rows.
+
+`npm run text` compiles the table to `src/lib/text/generated/strings.json`
+(committed) and fails if a key the code uses is missing, a key is
+duplicated or a row has no text; `npm run dev`, `npm run build` and
+`npm run check` run it first, so editing the table and pushing is enough to
+change the live site.
 
 ## Developing
 

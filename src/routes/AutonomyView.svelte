@@ -48,43 +48,46 @@
   const latestOf = (rows: any[], key: string) => { const r = rows.filter((x) => x.cntry_iso3 === iso3 && x[key] != null); return r.length ? r[r.length - 1] : null; };
   const laiLast = $derived(latestOf(lai, 'lai_total'));
   const raiLast = $derived(latestOf(rai, 'rai_total'));
+  import { t } from '../lib/text/t';
+  import Text from '../lib/components/Text.svelte';
 </script>
 
 <div class="view">
   <header>
-    <h1>Local and regional autonomy · {name}</h1>
-    <div class="sub">Local Autonomy Index (1990–2020) and Regional Authority Index (1950–2018), scaled 0–1{#if loading} · <Spinner size={12} />{/if}</div>
+    <h1>{t('autonomy.title', { country: name })}</h1>
+    <div class="sub">{t('autonomy.sub')}{#if loading} · <Spinner size={12} />{/if}</div>
     {#if error}<div class="err">{error}</div>{/if}
   </header>
 
   <div class="strip">
-    <div class="card kpi"><div class="lab">LAI total, {laiLast?.year ?? '—'}</div><div class="big num">{score(laiLast?.lai_total)}</div><div class="sub">local government autonomy</div></div>
-    <div class="card kpi"><div class="lab">LAI fiscal, {laiLast?.year ?? '—'}</div><div class="big num">{score(laiLast?.lai_fiscal_score)}</div><div class="sub">fiscal dimension</div></div>
-    <div class="card kpi"><div class="lab">RAI total, {raiLast?.year ?? '—'}</div><div class="big num">{score(raiLast?.rai_total)}</div><div class="sub">regional authority</div></div>
-    <div class="card kpi"><div class="lab">RAI fiscal, {raiLast?.year ?? '—'}</div><div class="big num">{score(raiLast?.rai_fiscal_score)}</div><div class="sub">fiscal dimension</div></div>
+    <div class="card kpi"><div class="lab">{t('autonomy.kpi.lai', { year: laiLast?.year ?? '—' })}</div><div class="big num">{score(laiLast?.lai_total)}</div><div class="sub">{t('autonomy.kpi.lai.sub')}</div></div>
+    <div class="card kpi"><div class="lab">{t('autonomy.kpi.lai_fiscal', { year: laiLast?.year ?? '—' })}</div><div class="big num">{score(laiLast?.lai_fiscal_score)}</div><div class="sub">{t('autonomy.kpi.lai_fiscal.sub')}</div></div>
+    <div class="card kpi"><div class="lab">{t('autonomy.kpi.rai', { year: raiLast?.year ?? '—' })}</div><div class="big num">{score(raiLast?.rai_total)}</div><div class="sub">{t('autonomy.kpi.rai.sub')}</div></div>
+    <div class="card kpi"><div class="lab">{t('autonomy.kpi.rai_fiscal', { year: raiLast?.year ?? '—' })}</div><div class="big num">{score(raiLast?.rai_fiscal_score)}</div><div class="sub">{t('autonomy.kpi.rai_fiscal.sub')}</div></div>
   </div>
 
-  <ChartCard title="Local Autonomy Index, total score" columns={laiCols} rows={lai} csvName="lai_national">
-    {#snippet intro()}<p>The Local Autonomy Index project calculates an indicator of the political, policy and fiscal autonomy of local government in a range of Global North countries. The composite indicator is shown for 1990–2020.</p>{/snippet}
-    <PlotChart make={laiTotal} height={320} label="LAI total score by country" />
+  <ChartCard title={t('autonomy.lai.title')} columns={laiCols} rows={lai} csvName="lai_national">
+    {#snippet intro()}<p><Text k="autonomy.lai.intro" /></p>{/snippet}
+    <PlotChart make={laiTotal} height={320} label={t('autonomy.lai.title')} />
     <CountryLegend {countries} {colours} focus={iso3} present={laiPresent} />
   </ChartCard>
 
-  <ChartCard title="Local Autonomy Index, fiscal score" columns={laiCols} rows={lai} csvName="lai_national" note="Sub-indicators are summed with the index's own point weights (4, 3, 3, 3) and rescaled to 0–1.">
-    {#snippet intro()}<p>The fiscal dimension of the LAI combines four sub-indicators: fiscal autonomy (independent power to tax), the financial transfer system (unconditionality of transfers received), financial self-reliance (reliance on own-source revenue) and borrowing autonomy (independent power to borrow).</p>{/snippet}
-    <PlotChart make={laiFiscal} height={320} label="LAI fiscal score by country" />
+  <ChartCard title={t('autonomy.lai_fiscal.title')} columns={laiCols} rows={lai} csvName="lai_national" note={t('autonomy.lai_fiscal.note')}>
+    {#snippet intro()}<p><Text k="autonomy.lai_fiscal.intro" /></p>{/snippet}
+    <PlotChart make={laiFiscal} height={320} label={t('autonomy.lai_fiscal.title')} />
     <CountryLegend {countries} {colours} focus={iso3} present={laiPresent} />
   </ChartCard>
 
-  <ChartCard title="Regional Authority Index, total score" columns={raiCols} rows={rai} csvName="rai_national" note="National values are population-weighted means of regional scores, rescaled here to 0–1 from the published 0–30 scale.">
-    {#snippet intro()}<p>The Regional Authority Index measures the self-rule and shared rule of regional governments from 1950 to 2018. Where the LAI assesses the autonomy of local governments, the RAI evaluates the autonomy of regional governments such as cantons, provinces, states or Länder: a federal country with strong provinces but weak local government may score high on the RAI and low on the LAI.</p>{/snippet}
-    <PlotChart make={raiTotal} height={320} label="RAI total score by country" />
+  <ChartCard title={t('autonomy.rai.title')} columns={raiCols} rows={rai} csvName="rai_national" note={t('autonomy.rai.note')}>
+    {#snippet intro()}<p><Text k="autonomy.rai.intro" /></p>{/snippet}
+    <PlotChart make={raiTotal} height={320} label={t('autonomy.rai.title')} />
     <CountryLegend {countries} {colours} focus={iso3} present={raiPresent} />
   </ChartCard>
 
-  <ChartCard title="Regional Authority Index, fiscal score" columns={raiCols} rows={rai} csvName="rai_national" note="Sub-indicators are summed with the index's own point weights (4 and 3) and rescaled to 0–1; national values are population-weighted means of regional scores.">
-    {#snippet intro()}<p>The fiscal dimension of the RAI combines two sub-indicators: fiscal autonomy (independent power to tax) and borrowing autonomy (independent power to borrow).</p>{/snippet}
-    <PlotChart make={raiFiscal} height={320} label="RAI fiscal score by country" />
+  <ChartCard title={t('autonomy.rai_fiscal.title')} columns={raiCols} rows={rai} csvName="rai_national" note={t('autonomy.rai_fiscal.note')}>
+    {#snippet intro()}<p><Text k="autonomy.rai_fiscal.intro" /></p>{/snippet}
+    <PlotChart make={raiFiscal} height={320} label={t('autonomy.rai_fiscal.title')} />
     <CountryLegend {countries} {colours} focus={iso3} present={raiPresent} />
   </ChartCard>
 </div>
+

@@ -5,6 +5,7 @@
   import { routeView, routeCountry } from '../routeState';
   import ThemeToggle from './ThemeToggle.svelte';
   import Spinner from './Spinner.svelte';
+  import { t } from '../text/t';
 
   const view = $derived(routeView());
   const country = $derived(routeCountry());
@@ -20,7 +21,7 @@
 <header>
   <a class="brand" href={href(['overview', country])}>
     <svg class="mark" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 20h18M5 20V9l4-3 4 3v11M13 20V5l6 4v11"/></svg>
-    <span>The Devolution-Productivity Observatory</span>
+    <span>{t('app.title')}</span>
   </a>
   {#if view !== 'about'}
     <label class="cty">

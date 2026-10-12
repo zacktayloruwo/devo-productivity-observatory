@@ -55,14 +55,14 @@
       gdpShare: f.length ? f.reduce((a, r) => a + (r.gdp_pct_nat ?? 0), 0) : null
     };
   }
-  const table = $derived(years.map((y) => ({ year: y, label: y === latestYear ? `${y} (latest)` : String(y), ...stats(y) })));
+  const table = $derived(years.map((y) => ({ year: y, label: y === latestYear ? t('overview.table.latest', { year: y }) : String(y), ...stats(y) })));
   const measures = [
-    { key: 'n', label: 'Functional urban areas', f: fmtInt },
-    { key: 'med', label: 'Median FUA population', f: fmtInt },
-    { key: 'avg', label: 'Average FUA population', f: fmtInt },
-    { key: 'min', label: 'Smallest FUA population', f: fmtInt },
-    { key: 'popShare', label: 'Combined FUA population, share of national population', f: (v: number | null) => fmtPct(v, 1) },
-    { key: 'gdpShare', label: 'Combined FUA GDP, share of national GDP', f: (v: number | null) => fmtPct(v, 1) }
+    { key: 'n', label: t('overview.measure.n'), f: fmtInt },
+    { key: 'med', label: t('overview.measure.median'), f: fmtInt },
+    { key: 'avg', label: t('overview.measure.avg'), f: fmtInt },
+    { key: 'min', label: t('overview.measure.min'), f: fmtInt },
+    { key: 'popShare', label: t('overview.measure.pop_share'), f: (v: number | null) => fmtPct(v, 1) },
+    { key: 'gdpShare', label: t('overview.measure.gdp_share'), f: (v: number | null) => fmtPct(v, 1) }
   ] as const;
 
   // notes under the table: the 250,000 threshold and population provenance
@@ -96,61 +96,62 @@
       x: yearAxis([lo, hi], yearTicks(lo, hi, 5)), y: { label: 'GDP per person employed (USD PPP)', grid: true, tickFormat: (d: number) => '$' + fmtShort(d) }, marks });
   });
   const natCols = [{ key: 'cntry', label: 'Country', value: (r: NatRow) => countryName(r.cntry_iso3) }, { key: 'year', label: 'Year', num: true }, { key: 'gdp_pw', label: 'GDP per person employed (USD PPP)', num: true, render: (r: NatRow) => fmtUsd(r.gdp_pw) }];
+  import { t } from '../lib/text/t';
+  import Text from '../lib/components/Text.svelte';
 </script>
 
 <div class="view">
   <header>
     <h1>{name}</h1>
-    <div class="sub">{countryOf(iso3)?.region ?? ''} · {nFuaAll} functional urban areas in the OECD data{#if lpYears.length}, labour productivity {lpYears[0]}–{lpYears[lpYears.length - 1]}{/if}{#if loading} · <Spinner size={12} />{/if}</div>
+    <div class="sub">{t('overview.sub', { region: countryOf(iso3)?.region ?? '', n_fua: nFuaAll })}{#if lpYears.length}, {t('overview.sub.years', { first: lpYears[0], last: lpYears[lpYears.length - 1] })}{/if}{#if loading} · <Spinner size={12} />{/if}</div>
     {#if error}<div class="err">{error}</div>{/if}
   </header>
 
   <div class="card prose">
-    <h3>Reading the Observatory</h3>
+    <h3>{t('overview.reading.title')}</h3>
     <div>
-      <p><a href={href(['productivity', iso3])}>Productivity</a> ranks {poss(name)} FUAs by labour productivity, compares them with every other country's, and follows the spread of productivity over time. <a href={href(['autonomy', iso3])}>Autonomy</a> traces the Local Autonomy Index and the Regional Authority Index. <a href={href(['map', iso3])}>Map</a> draws any FUA indicator on the OECD boundaries for any year.</p>
-      <p>Every chart can be shown as a table and downloaded as CSV. Dollar figures are nominal USD at purchasing power parity, comparable across countries within a year. Dollar values are not adjusted for inflation across time.</p>
+      <p><Text k="overview.reading.1" vars={{ possessive: poss(name) }} /></p>
+      <p><Text k="overview.reading.2" /></p>
     </div>
   </div>
 
   <div class="strip">
-    <div class="card kpi"><div class="lab">FUAs with productivity, {refYear}</div><div class="big num">{fmtInt(ref.n)}</div><div class="sub">of {nFuaAll} FUAs in {name}</div></div>
-    <div class="card kpi"><div class="lab">Median FUA population, {refYear}</div><div class="big num">{fmtInt(ref.med)}</div></div>
-    <div class="card kpi"><div class="lab">FUA share of population, {refYear}</div><div class="big num">{fmtPct(ref.popShare, 1)}</div></div>
-    <div class="card kpi"><div class="lab">FUA share of GDP, {refYear}</div><div class="big num">{fmtPct(ref.gdpShare, 1)}</div></div>
-    <div class="card kpi"><div class="lab">National GDP per worker, {refYear}</div><div class="big num">{fmtUsd(natRef?.gdp_pw)}</div><div class="sub">USD PPP per person employed</div></div>
+    <div class="card kpi"><div class="lab">{t('overview.kpi.n', { ref_year: refYear })}</div><div class="big num">{fmtInt(ref.n)}</div><div class="sub">{t('overview.kpi.n.sub', { n_fua: nFuaAll, country: name })}</div></div>
+    <div class="card kpi"><div class="lab">{t('overview.kpi.median', { ref_year: refYear })}</div><div class="big num">{fmtInt(ref.med)}</div></div>
+    <div class="card kpi"><div class="lab">{t('overview.kpi.pop_share', { ref_year: refYear })}</div><div class="big num">{fmtPct(ref.popShare, 1)}</div></div>
+    <div class="card kpi"><div class="lab">{t('overview.kpi.gdp_share', { ref_year: refYear })}</div><div class="big num">{fmtPct(ref.gdpShare, 1)}</div></div>
+    <div class="card kpi"><div class="lab">{t('overview.kpi.nat', { ref_year: refYear })}</div><div class="big num">{fmtUsd(natRef?.gdp_pw)}</div><div class="sub">{t('overview.kpi.nat.sub')}</div></div>
   </div>
 
-  <ChartCard title={`Functional urban areas in ${name}`} columns={[{ key: 'year', label: 'Year', num: true }, ...measures.map((m) => ({ key: m.key, label: m.label, num: true, render: (r: any) => m.f(r[m.key]) }))]} rows={table} csvName={`${iso3}_fua_overview`}>
+  <ChartCard title={t('overview.table.title', { country: name })} columns={[{ key: 'year', label: 'Year', num: true }, ...measures.map((m) => ({ key: m.key, label: m.label, num: true, render: (r: any) => m.f(r[m.key]) }))]} rows={table} csvName={`${iso3}_fua_overview`}>
     {#snippet intro()}
-      <p>Functional urban areas (FUAs) are the OECD's definition of a city and its commuting zone. The table summarises those in {name} at the years shown. Only FUAs for which the OECD publishes both GDP and labour productivity are counted; population and GDP are each taken from the year shown. Dollar figures are nominal USD at purchasing power parity: comparable across countries within a year, not across years.</p>
+      <p><Text k="overview.table.intro" vars={{ country: name }} /></p>
     {/snippet}
     {#if !sel.length && !loading}
-      <p class="muted">The OECD publishes no functional urban area GDP or labour productivity for {name}.</p>
+      <p class="muted">{t('overview.table.none', { country: name })}</p>
     {:else}
       <div class="wrap">
         <table class="data">
-          <thead><tr><th>Measure</th>{#each table as t (t.year)}<th class="num">{t.label}</th>{/each}</tr></thead>
+          <thead><tr><th>{t('overview.table.measure')}</th>{#each table as tr (tr.year)}<th class="num">{tr.label}</th>{/each}</tr></thead>
           <tbody>
             {#each measures as m (m.key)}
-              <tr><td>{m.label}</td>{#each table as t (t.year)}<td class="num">{m.f((t as any)[m.key])}</td>{/each}</tr>
+              <tr><td>{m.label}</td>{#each table as tr (tr.year)}<td class="num">{m.f((tr as any)[m.key])}</td>{/each}</tr>
             {/each}
           </tbody>
         </table>
       </div>
-      <p class="small muted">The OECD disseminates FUA labour productivity for areas of 250,000 inhabitants or more; the threshold is applied when FUAs are classified, not to each year's population.
-        {#if nSmall > 0 && smallest} Measured population dips below it in {nSmall} of the {shown.length} area-years shown, the smallest being {smallest.fua_name} at {fmtInt(smallest.pop)} in {smallest.year}.{/if}
-        {#if nInterp > 0} Population is interpolated or carried from a neighbouring year for {nInterp === shown.length ? `all ${nInterp}` : `${nInterp} of the ${shown.length}`} area-years shown.{/if}
-        See <a href={href(['sources', iso3])}>Sources</a> for how the series are combined.</p>
+      <p class="small muted">{t('overview.table.note.threshold')}
+        {#if nSmall > 0 && smallest}{' '}{t('overview.table.note.small', { n_small: nSmall, n_shown: shown.length, fua: smallest.fua_name, pop: fmtInt(smallest.pop), year: smallest.year })}{/if}
+        {#if nInterp > 0}{' '}{t('overview.table.note.interp', { which: nInterp === shown.length ? t('overview.table.note.interp.all', { n: nInterp }) : t('overview.table.note.interp.some', { n: nInterp, total: shown.length }) })}{/if}
+{' '}<Text k="overview.table.note.sources" /></p>
     {/if}
   </ChartCard>
 
-  <ChartCard title="National labour productivity, by country" columns={natCols} rows={natLp} csvName="national_gdp_per_worker" note="OECD Productivity Database: GDP per person employed at chain-linked volumes, PPP-converted. The shaded band is the WHO pandemic emergency (March 2020 to May 2023).">
-    {#snippet intro()}<p>The nation-wide series behind the comparisons that follow: {name} is drawn in red, the other countries in the colours used throughout the Observatory.</p>{/snippet}
-    <PlotChart make={natMake} height={280} label="National GDP per person employed by country" />
+  <ChartCard title={t('overview.nat.title')} columns={natCols} rows={natLp} csvName="national_gdp_per_worker" note={t('overview.nat.note')}>
+    {#snippet intro()}<p><Text k="overview.nat.intro" vars={{ country: name }} /></p>{/snippet}
+    <PlotChart make={natMake} height={280} label={t('overview.nat.title')} />
     <CountryLegend countries={manifest.countries} {colours} focus={iso3} {present} />
   </ChartCard>
-
 </div>
 
 <style>

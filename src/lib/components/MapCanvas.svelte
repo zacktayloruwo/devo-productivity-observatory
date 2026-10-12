@@ -13,6 +13,7 @@
   import { splitFeatures, type Layout } from '../geo/projections';
   import { floatingTip, type TipContent } from '../tooltip';
   import { liveTokens } from '../theme/liveTokens.svelte';
+  import { t } from '../text/t';
 
   interface Props {
     features: FuaFeature[];
@@ -132,7 +133,7 @@
       {/each}
     </div>
   {/if}
-  <button type="button" class="fit" title="Fit to extent" aria-label="Fit to extent" onclick={reset}>
+  <button type="button" class="fit" title={t('map.fit')} aria-label={t('map.fit')} onclick={reset}>
     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></svg>
   </button>
 </div>

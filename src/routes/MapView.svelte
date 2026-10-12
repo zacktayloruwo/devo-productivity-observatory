@@ -75,8 +75,8 @@
     const r = m.get(id); const f = features.find((x) => x.properties.fua_id === id);
     const nm = r?.fua_name ?? f?.properties.fua_name ?? id;
     const cty = countryName(r?.cntry_iso3 ?? f?.properties.cntry_iso3 ?? '');
-    if (!r || r.value == null) return { html: `<b>${esc(nm)}</b> · ${esc(cty)}<br><span class="tipdef">No data in ${y}</span>` };
-    return { html: `<b>${esc(nm)}</b> · ${esc(cty)}<br>${esc(v?.short ?? '')} ${y}: <b>${esc(fmtBy(fmt, r.value))}</b><br><span class="tipdef">Rank ${rk.get(id)} of ${rk.size}${r.pop != null ? ` · population ${esc(fmtInt(r.pop))}` : ''}</span>` };
+    if (!r || r.value == null) return { html: `<b>${esc(nm)}</b> · ${esc(cty)}<br><span class="tipdef">${esc(t('map.tip.nodata', { year: y }))}</span>` };
+    return { html: `<b>${esc(nm)}</b> · ${esc(cty)}<br>${esc(t('map.tip.value', { variable: v?.short ?? '', year: y }))} <b>${esc(fmtBy(fmt, r.value))}</b><br><span class="tipdef">${esc(t('map.tip.rank', { rank: rk.get(id), n: rk.size }))}${r.pop != null ? ` · ${esc(t('map.tip.pop', { pop: fmtInt(r.pop) }))}` : ''}</span>` };
   }; });
 
   function setYear(y: number) { go(['map', iso3, String(y)], route.query); }
@@ -114,26 +114,27 @@
     downloadCsv(`map_${variable?.id}_${year}${scopeAll ? '_all' : '_' + iso3}`, [{ key: 'cntry', label: 'Country', value: (r: MapValue) => countryName(r.cntry_iso3) }, { key: 'fua_id', label: 'FUA id' }, { key: 'fua_name', label: 'FUA' }, { key: 'year', label: 'Year' }, { key: 'value', label: variable?.label ?? 'Value' }, { key: 'pop', label: 'Population' }], rows);
   }
   let mapRef: MapCanvas | undefined = $state();
+  import { t } from '../lib/text/t';
 </script>
 
 <div class="mv">
   <div class="bar">
-    <label class="ctl"><span class="muted">Indicator</span>
+    <label class="ctl"><span class="muted">{t('map.indicator')}</span>
       <select value={variable?.id} onchange={setVar}>{#each variables as v (v.id)}<option value={v.id}>{v.label}</option>{/each}</select>
     </label>
-    <div class="ctl"><span class="muted">Scope</span>
-      <div class="seg"><button type="button" aria-pressed={!scopeAll} onclick={() => setScope(false)}>{name}</button><button type="button" aria-pressed={scopeAll} onclick={() => setScope(true)}>All nine countries</button></div>
+    <div class="ctl"><span class="muted">{t('map.scope')}</span>
+      <div class="seg"><button type="button" aria-pressed={!scopeAll} onclick={() => setScope(false)}>{name}</button><button type="button" aria-pressed={scopeAll} onclick={() => setScope(true)}>{t('map.scope.all')}</button></div>
     </div>
-    <span class="muted small num">{#if loading}<Spinner size={12} /> loading{:else}{nMapped} FUAs with data in {year}{#if nNoGeo} · {nNoGeo} without a boundary{/if}{/if}</span>
+    <span class="muted small num">{#if loading}<Spinner size={12} /> {t('map.loading')}{:else}{t('map.status', { n: nMapped, year })}{#if nNoGeo} · {t('map.status.nogeo', { n: nNoGeo })}{/if}{/if}</span>
     <span class="sp"></span>
-    <button type="button" class="lnk" onclick={exportYear} disabled={!inYear.size}>Download CSV ({year})</button>
+    <button type="button" class="lnk" onclick={exportYear} disabled={!inYear.size}>{t('map.download', { year })}</button>
   </div>
   {#if error}<div class="err pad">{error}</div>{/if}
   <div class="body">
     <div class="map">
       <MapCanvas bind:this={mapRef} {features} layout={layoutFor(scopeAll ? null : iso3)} land={land.countries} borders={scopeAll ? null : countryOutline(land, iso3)} {admin} {fillFor} {tipFor} {selected} onselect={select} />
       {#if bounds.length >= 2}
-        <Legend title={`${variable?.short ?? ''}, ${year}`} {labels} {colours} neutral={tokens.neutral} note={`Quantile classes pooled over ${years.length} years, ${scopeAll ? 'all countries' : name}. ${variable?.label ?? ''}.`} />
+        <Legend title={t('map.legend.title', { variable: variable?.short ?? '', year })} {labels} {colours} neutral={tokens.neutral} note={t('map.legend.note', { n_years: years.length, scope: scopeAll ? t('map.legend.scope_all') : name, variable_label: variable?.label ?? '' })} />
       {/if}
     </div>
     {#if selected}
@@ -143,13 +144,13 @@
           <button type="button" class="x" aria-label="Close" onclick={() => select(null)}>×</button>
         </header>
         <div class="big num">{fmtBy(fmt, selRow?.year === year ? selRow?.value : null)}</div>
-        <div class="muted small">{variable?.label} · {year}{#if rankIn.get(selected)} · rank {rankIn.get(selected)} of {rankIn.size}{/if}</div>
+        <div class="muted small">{t('map.insp.sub', { variable_label: variable?.label ?? '', year })}{#if rankIn.get(selected)} · {t('map.insp.rank', { rank: rankIn.get(selected), n: rankIn.size })}{/if}</div>
         <PlotChart make={seriesMake} height={170} label={`${selName}: ${variable?.short} over time`} />
         {#if selOthers.length}
           <table class="data">
             <tbody>{#each selOthers as o (o.v.id)}<tr><td>{o.v.short}</td><td class="num">{fmtBy(o.v.fmt, o.val)}</td></tr>{/each}</tbody>
           </table>
-          <div class="muted small">Other indicators in {year}</div>
+          <div class="muted small">{t('map.insp.others', { year })}</div>
         {/if}
       </aside>
     {/if}

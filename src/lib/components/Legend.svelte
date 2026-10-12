@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { t } from '../text/t';
   // The map legend: quantile classes with their ranges, and the no-data fill.
   interface Props { title: string; labels: string[]; colours: string[]; note?: string; neutral: string }
   let { title, labels, colours, note = '', neutral }: Props = $props();
@@ -16,7 +17,7 @@
     {#each labels as l, i (i)}
       <div class="row"><span class="sw" style:background={colours[i]}></span><span class="num">{l}</span></div>
     {/each}
-    <div class="row"><span class="sw neutral" style:background={neutral}></span><span>No data</span></div>
+    <div class="row"><span class="sw neutral" style:background={neutral}></span><span>{t('map.legend.nodata')}</span></div>
     {#if note}<div class="note">{note}</div>{/if}
   {/if}
 </div>

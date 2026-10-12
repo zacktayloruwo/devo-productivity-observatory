@@ -2,6 +2,7 @@
   import { route, replace } from './lib/router.svelte';
   import { manifest } from './lib/db/manifest.svelte';
   import { routeView, routeCountry, DEFAULT_COUNTRY, HOME } from './lib/routeState';
+  import { t } from './lib/text/t';
   import TopBar from './lib/components/TopBar.svelte';
   import LeftRail from './lib/components/LeftRail.svelte';
   import OverviewView from './routes/OverviewView.svelte';
@@ -20,7 +21,7 @@
     if (!route.path.length) replace(HOME, route.query);
     else if (view !== 'about' && !/^[A-Z]{3}$/.test(route.path[1] ?? '')) replace([view, DEFAULT_COUNTRY], route.query);
   });
-  $effect(() => { document.title = `The Devolution-Productivity Observatory`; });
+  $effect(() => { document.title = t('app.title'); });
   // a new view or country starts at the top; the map's year and selection do not scroll
   let main: HTMLElement | undefined = $state();
   $effect(() => { void view; void country; main?.scrollTo({ top: 0 }); });
