@@ -180,7 +180,9 @@
       "USA": "geo/admin/USA.geojson",
       "DEU": "geo/admin/DEU.geojson",
       "ESP": "geo/admin/ESP.geojson",
-      "ITA": "geo/admin/ITA.geojson"
+      "ITA": "geo/admin/ITA.geojson",
+      "FRA": "geo/admin/FRA.geojson",
+      "GBR": "geo/admin/GBR.geojson"
     },
     "nat": "nat.parquet",
     "lai": "lai.parquet",

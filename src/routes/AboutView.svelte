@@ -47,7 +47,7 @@
 </section>
 
 <style>
-  .about { max-width: 900px; }
+
   .card h3 { margin-bottom: 6px; }
   dl { display: grid; grid-template-columns: max-content 1fr; gap: 4px 16px; margin: 0; }
   dt { color: var(--fg-2); }

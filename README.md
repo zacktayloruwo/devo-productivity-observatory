@@ -43,7 +43,7 @@ Every chart has a table twin and a CSV download. Light and dark themes.
   selected country's national boundary (from the world-atlas package, fetched
   from a CDN) and, for the federal countries, its first-tier subnational
   governments (OECD TL2 regions: provinces and territories, states, Länder,
-  Spanish autonomous communities, Italian regions, in
+  Spanish autonomous communities, Italian regions, French régions, UK nations, in
   `data/geo/admin/<ISO3>.geojson`) are drawn as outlines over the FUAs. Add a
   country to `admin_countries` in the build script to overlay its regions.
 - Only DuckDB's single-threaded bundles are shipped: GitHub Pages cannot send

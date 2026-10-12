@@ -171,12 +171,17 @@ for (iso in countries$iso3) {
 # OECD TL2 regions are the first-tier subnational governments: provinces and
 # territories, states, Länder. Written for the federal countries, drawn on the
 # map as outlines over the FUAs. Add a country here to overlay its regions.
-admin_countries <- c("CAN", "USA", "DEU", "ESP", "ITA")
+admin_countries <- c("CAN", "USA", "DEU", "ESP", "ITA", "FRA", "GBR")
 dir.create(file.path(out, "geo", "admin"), showWarnings = FALSE)
 tl2 <- st_read(file.path(datapack, "_data/oecd_boundaries/OECD_TL2_shapefile"),
                quiet = TRUE, options = "ENCODING=LATIN1") |>
   filter(iso3 %in% admin_countries) |>
-  st_make_valid()
+  st_make_valid() |>
+  # the UK's nations rather than its ITL1 regions: the English regions dissolve
+  # into England; a stray Windows apostrophe in the source is replaced
+  mutate(name_en = gsub("\u0092", "\u2019", name_en),
+         tl2_id  = ifelse(iso3 == "GBR" & !tl2_id %in% c("UKL", "UKM", "UKN"), "UKENG", tl2_id),
+         name_en = ifelse(tl2_id == "UKENG", "England", name_en))
 admin_files <- character(0)
 for (iso in admin_countries) {
   a  <- tl2 |> filter(iso3 == iso)
