@@ -38,8 +38,8 @@
         <dt>LAI years</dt><dd>{m.years.lai[0]}–{m.years.lai[1]}</dd>
         <dt>RAI years</dt><dd>{m.years.rai[0]}–{m.years.rai[1]}</dd>
       </dl>
-      <h3 class="cite-h">Citing</h3>
-      <p class="cite">Taylor, Zack. <i>The Devolution-Productivity Observatory.</i> Data built {m.built}. Western University.</p>
+      <h3 class="cite-h">Credits</h3>
+      <p class="cite">This project was created by Alan Harding, Sían Peake-Jones, and Zack Taylor.</p>
     {:else}
       <p class="muted">{manifest.status === 'loading' ? 'Loading…' : 'No data build.'}</p>
     {/if}
