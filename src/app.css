@@ -1,0 +1,118 @@
+/* Devolution-Productivity Observatory — one set of tokens, light and dark.
+   Light is the default. Dark applies when the OS prefers it and the user has
+   not chosen light, or when the user chose dark. Plot and the map read these
+   same tokens through src/lib/theme/tokens.ts. */
+:root {
+  --bg: #F5F3EE;
+  --panel: #FFFFFF;
+  --panel-2: #FBFAF7;
+  --line: #DAD6CC;
+  --line-2: #EEECE6;
+  --fg: #1E2229;
+  --fg-2: #5B6068;
+  --fg-3: #8A8F98;
+  --brand: #1F6F78;
+  --accent: #1F6F78;
+  --accent-fg: #FFFFFF;
+  --accent-bg: #E4EFF0;
+  --accent-deep: #14525A;
+  --focal: #C0392B;       /* the selected country, as in the report */
+  --focal-bg: #F5B7B1;
+  --water: #EEF3F5;
+  --land: #E9E6DE;
+  --neutral: #C9CED6;
+  --neutral-line: #8A8F98;
+  --good: #2E8B57;
+  --warn: #D68910;
+  --bad: #C0392B;
+  --focus: #1F6F78;
+  --caution-bg: #FFF8E6;
+  --caution-line: #F2D58A;
+  --covid: rgba(192, 57, 43, 0.10);
+
+  --sans: 'IBM Plex Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
+  --serif: 'Fraunces', Georgia, 'Times New Roman', serif;
+  --mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  --radius: 8px;
+  --radius-s: 6px;
+  --rail-w: 176px;
+  --topbar-h: 56px;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #101215; --panel: #252B32; --panel-2: #1B1F24; --line: #535D69; --line-2: #3A424B;
+    --fg: #E8E6E1; --fg-2: #B4B9C0; --fg-3: #8D939B;
+    --brand: #5FB3BC; --accent: #5FB3BC; --accent-fg: #101215; --accent-bg: #2A4448; --accent-deep: #8FD0D6;
+    --focal: #EC756F; --focal-bg: #6B2F2A;
+    --water: #142029; --land: #2C333B; --neutral: #434A53; --neutral-line: #8D939B;
+    --good: #58B27F; --warn: #E9A93A; --bad: #EC756F; --focus: #5FB3BC;
+    --caution-bg: #2E2A1A; --caution-line: #6B5A22; --covid: rgba(236, 117, 111, 0.14);
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #101215; --panel: #252B32; --panel-2: #1B1F24; --line: #535D69; --line-2: #3A424B;
+  --fg: #E8E6E1; --fg-2: #B4B9C0; --fg-3: #8D939B;
+  --brand: #5FB3BC; --accent: #5FB3BC; --accent-fg: #101215; --accent-bg: #2A4448; --accent-deep: #8FD0D6;
+  --focal: #EC756F; --focal-bg: #6B2F2A;
+  --water: #142029; --land: #2C333B; --neutral: #434A53; --neutral-line: #8D939B;
+  --good: #58B27F; --warn: #E9A93A; --bad: #EC756F; --focus: #5FB3BC;
+  --caution-bg: #2E2A1A; --caution-line: #6B5A22; --covid: rgba(236, 117, 111, 0.14);
+}
+
+* { box-sizing: border-box; }
+html, body { margin: 0; height: 100%; }
+body { background: var(--bg); color: var(--fg); font-family: var(--sans); font-size: 14px; line-height: 1.4; }
+a { color: var(--accent); text-decoration: none; }
+a:hover { color: var(--accent-deep); text-decoration: underline; }
+button, select, input { font: inherit; color: inherit; }
+button { background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius); padding: 6px 12px; cursor: pointer; min-height: 34px; }
+button:hover { background: var(--panel-2); }
+button:disabled { opacity: .5; cursor: default; }
+button.primary { background: var(--accent); color: var(--accent-fg); border-color: var(--accent); font-weight: 600; }
+input, select { background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius); padding: 6px 10px; min-height: 34px; }
+:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+h1, h2, h3 { font-family: var(--serif); font-weight: 500; margin: 0; }
+h1 { font-size: 28px; }
+h2 { font-size: 20px; }
+h3 { font-size: 16px; }
+p { margin: 0 0 10px; }
+.muted { color: var(--fg-2); }
+.faint { color: var(--fg-3); }
+.small { font-size: 12px; }
+.mono { font-family: var(--mono); font-size: 12px; }
+.num { font-variant-numeric: tabular-nums; }
+.card { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 14px 16px; }
+.caution { background: var(--caution-bg); border: 1px solid var(--caution-line); border-radius: 10px; padding: 10px 14px; font-size: 13px; line-height: 1.5; }
+.err { color: var(--bad); font-size: 12px; }
+.prose { max-width: 72ch; line-height: 1.55; }
+.prose p { margin: 0 0 10px; }
+
+/* Page body shared by the chart views */
+.view { padding: 20px 24px; display: flex; flex-direction: column; gap: 16px; }
+.view header .sub { color: var(--fg-2); margin-top: 2px; }
+.strip { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 12px; }
+.kpi { display: flex; flex-direction: column; gap: 2px; padding: 10px 14px; }
+.kpi .lab { font-size: 11px; font-weight: 600; color: var(--fg-2); text-transform: uppercase; letter-spacing: .03em; }
+.kpi .big { font-family: var(--serif); font-size: 22px; }
+.kpi .sub { font-size: 11px; color: var(--fg-3); }
+
+/* Segmented control: a group of buttons where one is selected. */
+.seg { display: inline-flex; gap: 2px; padding: 3px; border: 1px solid var(--line); border-radius: var(--radius); background: var(--panel); }
+.seg > button { min-height: 28px; padding: 0 10px; border: 0; border-radius: var(--radius-s); background: transparent; color: var(--fg); }
+.seg > button:hover { background: var(--panel-2); }
+.seg > button[aria-pressed="true"], .seg > button.on { background: var(--fg); color: var(--bg); font-weight: 600; }
+
+/* Data tables */
+table.data { width: 100%; border-collapse: collapse; font-size: 13px; }
+table.data th { position: sticky; top: 0; background: var(--panel); text-align: left; font-size: 11px; font-weight: 600; color: var(--fg-2); padding: 5px 8px; border-bottom: 1px solid var(--line); white-space: nowrap; }
+table.data td { padding: 4px 8px; border-bottom: 1px solid var(--line-2); }
+table.data .num { text-align: right; font-variant-numeric: tabular-nums; }
+table.data tr.sep td { color: var(--fg-3); text-align: center; padding: 1px 8px; }
+table.data tr.focus td { background: color-mix(in srgb, var(--focal) 10%, transparent); }
+
+/* Hover boxes (src/lib/tooltip.ts, tippy.js theme "obs"). */
+.tippy-box[data-theme~="obs"] { background: var(--panel); color: var(--fg); border: 1px solid var(--line); border-radius: var(--radius-s); box-shadow: 0 6px 20px rgba(0,0,0,.18); font-size: 12px; line-height: 1.45; font-weight: 400; text-align: left; }
+.tippy-box[data-theme~="obs"] > .tippy-content { padding: 6px 10px; }
+.tippy-box[data-theme~="obs"] > .tippy-arrow { color: var(--panel); }
+.tippy-box[data-theme~="obs"] b { font-weight: 600; }
+.tippy-box[data-theme~="obs"] .tipdef { display: inline-block; margin-top: 2px; color: var(--fg-2); }
