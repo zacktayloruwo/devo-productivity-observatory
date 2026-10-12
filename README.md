@@ -106,6 +106,9 @@ Explorer SDMX API; the Local Autonomy Index 2.0 (Ladner, Keuffer and
 Bastianen, 2021); the Regional Authority Index v.3 (Hooghe, Marks, Schakel et
 al., 2021); OECD FUA boundaries. Full citations are on the site's Sources view.
 
-## Citing
+## Credits and citing
 
-Taylor, Zack. *The Devolution-Productivity Observatory.* Western University.
+This project was created by Alan Harding, Sían Peake-Jones, and Zack Taylor.
+
+Harding, Alan, Sían Peake-Jones, and Zack Taylor. *The Devolution-Productivity
+Observatory.* https://zacktayloruwo.github.io/devo-productivity-observatory/
