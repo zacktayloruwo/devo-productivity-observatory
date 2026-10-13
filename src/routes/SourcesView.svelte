@@ -49,12 +49,18 @@
   });
   const retrieved = $derived(sources[0]?.retrieved_on ?? '');
   const fmtDate = (d: string) => { const t = Date.parse(d); return Number.isFinite(t) ? new Date(t).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'UTC' }) : d; };
-  // the regional boundary sources and the countries each covers
-  const regionSources = $derived.by(() => {
-    const g = manifest.value?.geo_sources; if (!g) return '';
+  // the boundary sources: this country's in the table, all of them cited
+  const geo = $derived(manifest.value?.geo_sources);
+  const geoSrc = $derived(geo?.source_by_country[iso3] ?? '');
+  const geoUnits = $derived(geo?.units[iso3]);
+  const geoCites = $derived.by(() => {
+    if (!geo) return [] as { id: string; countries: string; retrieved: string; url: string }[];
     const by: Record<string, string[]> = {};
-    for (const [iso, src] of Object.entries(g.source_by_country)) (by[src] ??= []).push(countryName(iso));
-    return Object.entries(by).map(([src, cs]) => `${cs.join(', ')}: ${g.sources[src]?.cite ?? src}`).join(' ');
+    for (const [c, src] of Object.entries(geo.source_by_country)) (by[src] ??= []).push(countryName(c));
+    return ['ons', 'gisco', 'oecd2020'].filter((id) => by[id]).map((id) => ({
+      id, countries: by[id].join(', '), url: geo.sources[id]?.url ?? '',
+      retrieved: fmtDate(geo.sources[id]?.retrieved ?? '')
+    }));
   });
   const popTotal = $derived([...popSrc.values()].reduce((a, b) => a + b, 0));
   import { t } from '../lib/text/t';
@@ -79,6 +85,12 @@
           {/each}
           <tr><td>{t('sources.lai.name')}</td><td>{t('sources.lai.provides')}</td><td class="num">{cov('lai_total')?.first_year == null ? t('sources.table.na') : span(cov('lai_total')?.first_year, cov('lai_total')?.last_year)}</td></tr>
           <tr><td>{t('sources.rai.name')}</td><td>{t('sources.rai.provides')}</td><td class="num">{cov('rai_total')?.first_year == null ? t('sources.table.na') : span(cov('rai_total')?.first_year, cov('rai_total')?.last_year)}</td></tr>
+          {#if geoSrc && geoUnits}
+            <tr><td>{t('sources.geo.name.' + geoSrc)}</td>
+              <td>{geoUnits.tl3 ? t('sources.geo.provides', { n3: geoUnits.tl3, n2: geoUnits.tl2 }) : t('sources.geo.provides_tl2', { n2: geoUnits.tl2 })}</td>
+              <td class="num">{t('sources.geo.years', { grid: geo?.sources[geoSrc]?.grid ?? '' })}</td></tr>
+          {/if}
+          <tr><td>{t('sources.fua.name')}</td><td>{t('sources.fua.provides')}</td><td class="num">{t('sources.fua.years')}</td></tr>
         </tbody>
       </table>
     </div>
@@ -100,7 +112,10 @@
     <p><Text k="sources.cite.rai" /></p>
     <p><Text k="sources.cite.m49" /></p>
     <p><Text k="sources.cite.boundaries" /></p>
-    {#if regionSources}<p><Text k="sources.cite.regions" vars={{ sources: regionSources }} /></p>{/if}
+    {#if geoCites.length}
+      <p><Text k="sources.cite.geo.intro" /></p>
+      {#each geoCites as g (g.id)}<p class="sub-cite"><Text k={'sources.cite.geo.' + g.id} vars={{ countries: g.countries, retrieved: g.retrieved, url: g.url }} /></p>{/each}
+    {/if}
     {#if retrieved}<p class="muted small"><Text k="sources.retrieved" vars={{ date: fmtDate(retrieved), country: name }} /></p>{/if}
   </div>
 </div>
@@ -108,5 +123,6 @@
 <style>
   .wrap { overflow: auto; margin-top: 8px; }
   .cites p { font-size: 13px; }
+  .cites .sub-cite { padding-left: 14px; }
   .card h3 { margin-bottom: 6px; }
 </style>

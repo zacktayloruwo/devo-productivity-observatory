@@ -875,16 +875,22 @@
     "built": "2026-10-13",
     "sources": {
       "ons": {
-        "url": "https://open-geography-portalx-ons.hub.arcgis.com/api/download/v1/items/b55a2ed98e7241628f0e6ec6f0fb1933/geojson?layers=1",
-        "cite": "Office for National Statistics, International Territorial Level 3 (January 2025) Boundaries UK BGC (V2). Contains OS data © Crown copyright and database right; source: Office for National Statistics licensed under the Open Government Licence v3.0."
+        "url": "https://geoportal.statistics.gov.uk/",
+        "file_url": "https://open-geography-portalx-ons.hub.arcgis.com/api/download/v1/items/b55a2ed98e7241628f0e6ec6f0fb1933/geojson?layers=1",
+        "grid": "ITL 2025",
+        "retrieved": "2026-10-13"
       },
       "gisco": {
-        "url": "https://gisco-services.ec.europa.eu/distribution/v2/nuts/geojson/NUTS_RG_01M_2024_4326_LEVL_3.geojson",
-        "cite": "© EuroGeographics for the administrative boundaries; Eurostat GISCO, NUTS 2024, 1:1 million."
+        "url": "https://ec.europa.eu/eurostat/web/gisco/geodata/statistical-units/territorial-units-statistics",
+        "file_url": "https://gisco-services.ec.europa.eu/distribution/v2/nuts/geojson/NUTS_RG_01M_2024_4326_LEVL_3.geojson",
+        "grid": "NUTS 2024",
+        "retrieved": "2026-10-13"
       },
       "oecd2020": {
-        "url": "OECD regional boundaries 2020 (OECD_TL2_2020, OECD_TL3_2020), OECD Centre for Entrepreneurship, SMEs, Regions and Cities",
-        "cite": "OECD (2020), Regional boundaries, TL2 and TL3 (OECD territorial grid)."
+        "url": "https://www.oecd.org/en/data/datasets/oecd-geographical-definitions.html",
+        "file_url": "",
+        "grid": "OECD 2020",
+        "retrieved": "2020-03-25"
       }
     },
     "source_by_country": {
@@ -897,6 +903,44 @@
       "ESP": "oecd2020",
       "GBR": "ons",
       "USA": "oecd2020"
+    },
+    "units": {
+      "CAN": {
+        "tl2": 13,
+        "tl3": 0
+      },
+      "FRA": {
+        "tl2": 18,
+        "tl3": 101
+      },
+      "DEU": {
+        "tl2": 16,
+        "tl3": 400
+      },
+      "ITA": {
+        "tl2": 21,
+        "tl3": 107
+      },
+      "JPN": {
+        "tl2": 10,
+        "tl3": 47
+      },
+      "KOR": {
+        "tl2": 7,
+        "tl3": 17
+      },
+      "ESP": {
+        "tl2": 19,
+        "tl3": 59
+      },
+      "GBR": {
+        "tl2": 12,
+        "tl3": 182
+      },
+      "USA": {
+        "tl2": 51,
+        "tl3": 179
+      }
     }
   },
   "files": {

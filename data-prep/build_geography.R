@@ -50,16 +50,20 @@ dir.create(out_dir, recursive = TRUE, showWarnings = FALSE)
 
 COUNTRIES <- c("CAN", "FRA", "DEU", "ITA", "JPN", "KOR", "ESP", "GBR", "USA")
 
+# Citation wording lives in text/app_text.csv (sources.cite.geo.<id>); this
+# list records where each file comes from and the grid it represents.
 SOURCES <- list(
   ons = list(
     url  = "https://open-geography-portalx-ons.hub.arcgis.com/api/download/v1/items/b55a2ed98e7241628f0e6ec6f0fb1933/geojson?layers=1",
+    page = "https://geoportal.statistics.gov.uk/",
     file = "ons_itl3_2025_bgc.geojson",
-    cite = "Office for National Statistics, International Territorial Level 3 (January 2025) Boundaries UK BGC (V2). Contains OS data © Crown copyright and database right; source: Office for National Statistics licensed under the Open Government Licence v3.0."
+    grid = "ITL 2025"
   ),
   gisco = list(
     url  = "https://gisco-services.ec.europa.eu/distribution/v2/nuts/geojson/NUTS_RG_01M_2024_4326_LEVL_3.geojson",
+    page = "https://ec.europa.eu/eurostat/web/gisco/geodata/statistical-units/territorial-units-statistics",
     file = "gisco_nuts_2024_l3_01m.geojson",
-    cite = "© EuroGeographics for the administrative boundaries; Eurostat GISCO, NUTS 2024, 1:1 million."
+    grid = "NUTS 2024"
   )
 )
 fetch <- function(s) {
@@ -157,12 +161,25 @@ for (iso in COUNTRIES) {
 }
 idx <- bind_rows(index)
 write_csv(idx, file.path(cache, "geo_index.csv"))
+retrieved <- function(f) format(as.Date(file.info(f)$mtime))
+oecd_shp <- file.path(datapack, "_data/oecd_boundaries/OECD_TL3_shapefile/OECD_TL3_2020.shp")
+src_info <- list(
+  ons      = list(url = SOURCES$ons$page, file_url = SOURCES$ons$url, grid = SOURCES$ons$grid,
+                  retrieved = retrieved(file.path(cache, SOURCES$ons$file))),
+  gisco    = list(url = SOURCES$gisco$page, file_url = SOURCES$gisco$url, grid = SOURCES$gisco$grid,
+                  retrieved = retrieved(file.path(cache, SOURCES$gisco$file))),
+  oecd2020 = list(url = "https://www.oecd.org/en/data/datasets/oecd-geographical-definitions.html",
+                  file_url = "", grid = "OECD 2020", retrieved = retrieved(oecd_shp))
+)
+units <- idx |> count(iso3, level) |> tidyr::pivot_wider(names_from = level, values_from = n, values_fill = 0)
 write_json(list(
   built = format(Sys.Date()),
-  sources = lapply(c(SOURCES, list(oecd2020 = list(url = "OECD regional boundaries 2020 (OECD_TL2_2020, OECD_TL3_2020), OECD Centre for Entrepreneurship, SMEs, Regions and Cities",
-                                                   cite = "OECD (2020), Regional boundaries, TL2 and TL3 (OECD territorial grid)."))),
-                   function(s) list(url = s$url, cite = s$cite)),
-  source_by_country = setNames(as.list(vapply(COUNTRIES, source_of, "")), COUNTRIES)
+  sources = src_info,
+  source_by_country = setNames(as.list(vapply(COUNTRIES, source_of, "")), COUNTRIES),
+  units = setNames(lapply(COUNTRIES, function(i) {
+    u <- units |> filter(iso3 == i)
+    list(tl2 = if (nrow(u) && "tl2" %in% names(u)) u$tl2 else 0L, tl3 = if (nrow(u) && "tl3" %in% names(u)) u$tl3 else 0L)
+  }), COUNTRIES)
 ), file.path(cache, "geo_sources.json"), auto_unbox = TRUE, pretty = TRUE)
 
 # ── Topology: node tools/topology.mjs (mapshaper) ───────────────────────────

@@ -20,7 +20,11 @@ export interface Manifest {
     tl2?: Record<string, string>; tl3?: Record<string, string>; national?: string; regions?: Record<string, string>; regions_all?: string };
   levels?: Record<Level, LevelInfo>;
   eras?: Record<string, Record<string, { from: number; to: number }[]>>;
-  geo_sources?: { sources: Record<string, { url: string; cite: string }>; source_by_country: Record<string, string> };
+  geo_sources?: {
+    sources: Record<string, { url: string; file_url: string; grid: string; retrieved: string }>;
+    source_by_country: Record<string, string>;
+    units: Record<string, { tl2: number; tl3: number }>;
+  };
 }
 
 type Status = 'idle' | 'loading' | 'ready' | 'missing' | 'error';

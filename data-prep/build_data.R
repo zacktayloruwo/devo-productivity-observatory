@@ -285,6 +285,16 @@ cat(sprintf("regional: dropped %d extra-regio codes (no territory: %s) and %d in
             sum(excluded$extra_regio), paste(excluded$reg_id[excluded$extra_regio], collapse = " "),
             sum(!excluded$extra_regio), paste(head(excluded$reg_id[!excluded$extra_regio], 60), collapse = " ")))
 regp <- regp |> filter(paste(level, reg_id) %in% geo_keys)
+# Names: the panel has none for codes created after TL2021 (the UK's ITL 2025
+# units, Thuringia, Sardinia); take them from the boundary file
+regp <- regp |>
+  left_join(geo_index |> transmute(iso3, level, reg_id = id, geo_name = name), by = c("iso3", "level", "reg_id")) |>
+  mutate(name_from_geo = is.na(reg_name) & !is.na(geo_name), reg_name = coalesce(reg_name, geo_name)) |>
+  select(-geo_name)
+cat(sprintf("region names filled from the boundary files: %d regions (%s)\n",
+            n_distinct(regp$reg_id[regp$name_from_geo]), paste(head(unique(regp$reg_id[regp$name_from_geo]), 12), collapse = " ")))
+if (any(is.na(regp$reg_name))) stop("regions without a name: ", paste(unique(regp$reg_id[is.na(regp$reg_name)]), collapse = " "))
+regp <- regp |> select(-name_from_geo)
 regp$has_any <- rowSums(!is.na(regp[reg_ids])) > 0
 regp <- regp |> filter(has_any)
 

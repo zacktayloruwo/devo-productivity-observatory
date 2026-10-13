@@ -114,7 +114,6 @@
 
   function setYear(y: number) { go(['map', iso3, String(y)], route.query); }
   function setVar(e: Event) { setQuery({ var: (e.target as HTMLSelectElement).value, sel: undefined }); }
-  function setScope(all: boolean) { setQuery({ scope: all ? 'all' : undefined, sel: undefined }); }
   function select(id: string | null) { setQuery({ sel: id ?? undefined }); }
 
   // ---- the inspector: the selected unit across years
@@ -157,9 +156,6 @@
     <label class="ctl"><span class="muted">{t('map.indicator')}</span>
       <select value={variable?.id} onchange={setVar}>{#each grouped as g (g.g)}<optgroup label={t('map.group.' + g.g)}>{#each g.items as v (v.id)}<option value={v.id}>{v.label}</option>{/each}</optgroup>{/each}</select>
     </label>
-    {#if !national}<div class="ctl"><span class="muted">{t('map.scope')}</span>
-      <div class="seg"><button type="button" aria-pressed={!scopeAll} onclick={() => setScope(false)}>{name}</button><button type="button" aria-pressed={scopeAll} onclick={() => setScope(true)}>{t('map.scope.all')}</button></div>
-    </div>{/if}
     <span class="muted small num">{#if missingLevel}{:else if loading}<Spinner size={12} /> {t('map.loading')}{:else}{t('map.status', { n: nMapped, units: t('geo.units.' + level), year })}{#if nNoGeo} · {t('map.status.nogeo', { n: nNoGeo })}{/if}{/if}</span>
     <span class="sp"></span>
     <button type="button" class="lnk" onclick={exportYear} disabled={!inYear.size}>{t('map.download', { year })}</button>

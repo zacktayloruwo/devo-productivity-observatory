@@ -22,11 +22,20 @@
     if (followsGeo) go(route.path, q); else go(['map', country], q);
   }
 
+  // One selector for where the map looks: a country, or every country at
+  // once (the map's former Scope toggle). The country stays in the path, so
+  // returning from "All" comes back to it. National maps always show every
+  // country; the other views are about one country and offer no "All".
+  const ALL = 'ALL';
+  const allOffered = $derived(view === 'map');
+  const nationalMap = $derived(view === 'map' && geo === 'national');
+  const shown = $derived(nationalMap || (allOffered && route.query.scope === 'all') ? ALL : country);
   // Changing the country keeps the view (and the map's year and variable)
   function pick(e: Event) {
     const v = (e.target as HTMLSelectElement).value;
+    if (v === ALL) { go(route.path, { ...route.query, scope: 'all', sel: undefined }); return; }
     const rest = route.path.slice(2);
-    go([view, v, ...rest], route.query);
+    go([view, v, ...rest], { ...route.query, scope: undefined, sel: undefined });
   }
 </script>
 
@@ -36,9 +45,10 @@
     <span>{t('app.title')}</span>
   </a>
   {#if view !== 'about'}
-    <label class="cty">
-      <span class="muted">Country</span>
-      <select aria-label="Country" value={country} onchange={pick}>
+    <label class="cty" title={nationalMap ? t('country.all.national') : undefined}>
+      <span class="muted">{t('country.label')}</span>
+      <select aria-label={t('country.label')} value={shown} onchange={pick} disabled={nationalMap}>
+        {#if allOffered}<option value={ALL}>{t('country.all')}</option>{/if}
         {#each manifest.countries as c (c.iso3)}
           <option value={c.iso3}>{c.display}</option>
         {/each}

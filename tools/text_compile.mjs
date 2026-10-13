@@ -71,7 +71,8 @@ for (const f of walk(join(root, 'src'))) {
   const code = readFileSync(f, 'utf8');
   for (const m of code.matchAll(/\bt\(\s*'([a-z0-9_.]+)'\s*([,)+])/g)) (m[2] === '+' ? prefixes : used).add(m[1]);
   for (const m of code.matchAll(/<Text\b[^>]*\bk="([a-z0-9_.]+)"/g)) used.add(m[1]);
-  for (const m of code.matchAll(/\bk=\{?'([a-z0-9_.]+)'/g)) used.add(m[1]);
+  for (const m of code.matchAll(/\bk=\{?'([a-z0-9_.]+)'\s*\}/g)) used.add(m[1]);
+  for (const m of code.matchAll(/\bk=\{'([a-z0-9_.]+)'\s*\+/g)) prefixes.add(m[1]);
   // keys chosen at run time: t(cond ? 'a' : 'b'), <Text k={cond ? 'a' : 'b'}>
   for (const m of code.matchAll(/(?:\bt\(|\bk=\{)[^)}]*?\?\s*'([a-z0-9_.]+)'\s*:\s*'([a-z0-9_.]+)'/g)) { used.add(m[1]); used.add(m[2]); }
 }
