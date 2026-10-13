@@ -84,3 +84,14 @@ export async function tl2Mesh(iso3: string): Promise<MultiLineString | null> {
   meshCache.set(iso3, m);
   return m;
 }
+
+// A country's national boundary: the national object of its topology, which
+// is merged from the same polygons as its TL2 and TL3 regions, so the outline
+// coincides with the regions' outer edges
+const outlineCache = new Map<string, MapFeature | null>();
+export async function nationalOutline(iso3: string): Promise<MapFeature | null> {
+  if (outlineCache.has(iso3)) return outlineCache.get(iso3)!;
+  const f = (await regionFeatures(iso3, 'national', null))[0] ?? null;
+  outlineCache.set(iso3, f);
+  return f;
+}

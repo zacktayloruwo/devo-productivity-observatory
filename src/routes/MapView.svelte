@@ -8,8 +8,8 @@
   import { manifest, countryName, levelInfo, levelHasCountry, type Variable } from '../lib/db/manifest.svelte';
   import { mapValues, unitSeries, type MapValue } from '../lib/db/queries';
   import { geoFor, geoForAll, adminFor, type MapFeature, type AdminFeature } from '../lib/geo/geojson';
-  import { regionFeatures, regionFeaturesAll, tl2Mesh } from '../lib/geo/topo';
-  import { landFeatures, countryOutline, type Land } from '../lib/geo/land';
+  import { regionFeatures, regionFeaturesAll, tl2Mesh, nationalOutline } from '../lib/geo/topo';
+  import { landFeatures, type Land } from '../lib/geo/land';
   import { layoutFor } from '../lib/geo/projections';
   import { fmtBy, fmtShortBy, fmtInt, type Fmt } from '../lib/util/format';
   import { quantileBounds, classOf, classColours, classLabels } from '../lib/util/stats';
@@ -68,13 +68,14 @@
   // ---- polygons: FUAs, or the regional grid valid in the year shown (the
   // arrays are cached per grid era, so moving the slider keeps the zoom)
   let features = $state<MapFeature[]>([]);
-  let land = $state<Land>({ countries: [], borders: null });
+  let land = $state<Land>({ countries: [] });
+  let outline = $state<MapFeature | null>(null);
   let admin = $state<AdminFeature[]>([]);
   let mesh = $state<MultiLineString | null>(null);
   let geoToken = 0;
   $effect(() => {
     const lv = level, c = iso3, all = scopeAll, y = years.length ? year : null; const my = ++geoToken;
-    if (!manifest.countries.length || missingLevel) { features = []; admin = []; mesh = null; return; }
+    if (!manifest.countries.length || missingLevel) { features = []; admin = []; mesh = null; outline = null; return; }
     const isos = manifest.countries.map((x) => x.iso3);
     const fs: Promise<MapFeature[]> = lv === 'fua' ? (all ? geoForAll(isos) : geoFor(c))
       : all ? regionFeaturesAll(lv, y) : regionFeatures(c, lv, y);
@@ -82,10 +83,12 @@
     // FUA and TL2 maps, its TL2 borders on a TL3 map
     const ad: Promise<AdminFeature[]> = !all && (lv === 'fua' || lv === 'tl2') ? adminFor(c) : Promise.resolve([]);
     const me: Promise<MultiLineString | null> = !all && lv === 'tl3' ? tl2Mesh(c) : Promise.resolve(null);
-    Promise.all([fs, ad, me]).then(([f, a, m]) => {
+    // the selected country's boundary, from its own national-level polygon
+    const ol: Promise<MapFeature | null> = all ? Promise.resolve(null) : nationalOutline(c);
+    Promise.all([fs, ad, me, ol]).then(([f, a, m, o]) => {
       if (my !== geoToken) return;
       if (f !== features) features = f;
-      admin = a; mesh = m;
+      admin = a; mesh = m; outline = o;
     }).catch((e) => { if (my === geoToken) error = e?.message ?? String(e); });
   });
   $effect(() => { landFeatures().then((l) => { land = l; }); });
@@ -164,7 +167,7 @@
   {#if missingLevel}<div class="caution pad-box">{t('map.level_missing', { level: levelName, country: name })}</div>{/if}
   <div class="body">
     <div class="map">
-      <MapCanvas bind:this={mapRef} {features} layout={layoutFor(scopeAll ? null : iso3)} land={land.countries} borders={scopeAll ? null : countryOutline(land, iso3)} {admin} {mesh} {fillFor} {tipFor} {selected} onselect={select} />
+      <MapCanvas bind:this={mapRef} {features} layout={layoutFor(scopeAll ? null : iso3)} land={land.countries} borders={scopeAll ? null : outline} {admin} {mesh} {fillFor} {tipFor} {selected} onselect={select} />
       {#if bounds.length >= 2}
         <Legend title={t('map.legend.title', { variable: variable?.short ?? '', year })} {labels} {colours} neutral={tokens.neutral} note={t('map.legend.note', { n_years: years.length, scope: scopeAll ? t('map.legend.scope_all') : name, variable_label: variable?.label ?? '' }) + ((level === 'tl2' || level === 'tl3') && variable?.id.startsWith('lai_') ? ' ' + t('map.legend.regions_note') : '')} />
       {/if}

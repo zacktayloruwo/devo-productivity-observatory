@@ -52,8 +52,9 @@ Every chart has a table twin and a CSV download. Light and dark themes.
   mainland (the French overseas departments, the Canary Islands, Okinawa;
   Alaska and Hawaii should the data include them) appear in fixed inset
   panels that neither pan nor zoom (`src/lib/geo/projections.ts`). The
-  selected country's national boundary (from the world-atlas package, fetched
-  from a CDN) and, for the federal countries, its first-tier subnational
+  selected country's national boundary (the `national` object of its
+  regional TopoJSON, merged from the same polygons as its regions, so it
+  coincides with their outer edges) and, for the federal countries, its first-tier subnational
   governments (OECD TL2 regions: provinces and territories, states, Länder,
   Spanish autonomous communities, Italian regions, French régions, UK nations, in
   `data/geo/admin/<ISO3>.geojson`) are drawn as outlines over the FUAs. Add a
