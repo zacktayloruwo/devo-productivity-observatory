@@ -22,7 +22,9 @@ export function rewind<F extends Feature<Polygon | MultiPolygon, any>>(f: F): F 
   return { ...f, geometry: { ...g, coordinates: g.coordinates.map(rewindPolygon) } };
 }
 
-export type FuaFeature = Feature<Polygon | MultiPolygon, { fua_id: string; fua_name: string; cntry_iso3: string }>;
+// Every map layer (FUA, TL3, TL2, national) is drawn from this one shape
+export type MapFeature = Feature<Polygon | MultiPolygon, { id: string; name: string; cntry_iso3: string }>;
+export type FuaFeature = MapFeature;
 
 const loaded = new Map<string, Promise<FuaFeature[]>>();
 
@@ -33,7 +35,10 @@ export function geoFor(iso3: string): Promise<FuaFeature[]> {
     const p = fetch(versionedDataUrl(file)).then(async (r) => {
       if (!r.ok) throw new Error(`HTTP ${r.status} for ${file}`);
       const fc = (await r.json()) as FeatureCollection;
-      return fc.features.map((f) => rewind({ ...f, properties: { ...(f.properties as any), cntry_iso3: iso3 } } as FuaFeature));
+      return fc.features.map((f) => {
+        const p = f.properties as any;
+        return rewind({ ...f, properties: { id: p.fua_id, name: p.fua_name, cntry_iso3: iso3 } } as MapFeature);
+      });
     });
     loaded.set(iso3, p);
     p.catch(() => loaded.delete(iso3));

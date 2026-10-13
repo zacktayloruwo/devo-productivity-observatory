@@ -1,7 +1,7 @@
 // Route state shared by the views: `#/<view>/<ISO3>/...`. The country is the
 // second path segment on every view; a bare view opens the default.
 import { route } from './router.svelte';
-import { manifest } from './db/manifest.svelte';
+import { manifest, LEVELS, type Level } from './db/manifest.svelte';
 
 export const DEFAULT_COUNTRY = 'GBR';
 // a bare visit opens the map of the United Kingdom in the reference year
@@ -27,4 +27,11 @@ export function routeYear(years: number[], fallback?: number): number {
   if (years.includes(y)) return y;
   if (fallback != null && years.includes(fallback)) return fallback;
   return years.length ? years[years.length - 1] : 0;
+}
+
+// The geography in view (?geo=national|tl2|tl3|fua); FUA by default, so
+// links made before the selector existed keep their meaning
+export function routeGeo(): Level {
+  const g = route.query.geo as Level;
+  return LEVELS.includes(g) ? g : 'fua';
 }

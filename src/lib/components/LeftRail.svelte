@@ -5,7 +5,11 @@
 
   let { current }: { current: View } = $props();
   const country = $derived(routeCountry());
-  const to = (v: View) => href(v === 'about' ? ['about'] : [v, country]);
+  import { route } from '../router.svelte';
+  // the map link returns to the geography last shown on the map
+  let lastGeo = $state('');
+  $effect(() => { if (current === 'map') lastGeo = route.query.geo ?? ''; });
+  const to = (v: View) => href(v === 'about' ? ['about'] : [v, country], v === 'map' && lastGeo ? { geo: lastGeo } : {});
 </script>
 
 <nav aria-label="Views">

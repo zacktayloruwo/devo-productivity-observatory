@@ -1,6 +1,6 @@
 # Scope: national, TL2 and TL3 geographies in the Observatory
 
-*13 October 2026. Scoping note; nothing here is built yet.*
+*13 October 2026. Scoping note. The map at all four geographies is built (see 6); the other views remain FUA and national.*
 
 The Observatory maps and charts OECD functional urban areas (FUAs) for nine
 countries. This note scopes adding three more geographies, national, TL2
@@ -251,3 +251,21 @@ TL2021 boundaries are sourced for step 1.
 3. Whether the nine-country restriction stays. The panels cover 43 countries
    and the TL geometry covers all OECD members; the only cost of widening is
    boundary file size and the per-country projection list.
+
+## 6. Built (13 October 2026)
+
+- Boundaries: ONS ITL3 2025 (GBR, 182 units), GISCO NUTS 2024 (DEU 400, ITA
+  107), OECD 2020 (CAN, ESP, FRA, JPN, KOR, USA). One TopoJSON per country
+  with national, TL2 and TL3 objects; TL2 and national dissolved from TL3
+  except in the USA. Polygons carry validity years; one era per country today.
+- Data: `tl2` and `tl3` Parquet per country, `national.parquet`, a
+  level-aware indicator catalogue in the manifest. The build checks that every
+  region-year with data has exactly one polygon valid that year and stops
+  otherwise. Dropped: 8 extra-regio codes and 47 UK index-only codes (listed
+  in the build log; reported to the Devo Analysis pipeline as a panel issue).
+- App: geography selector in the top bar (National, TL2, TL3, FUA; from any
+  view it opens the map at that level), map, legend, hover box, inspector and
+  CSV export at every level; TL2 borders drawn over TL3 maps; a notice where
+  a country has no data at a level (Canada, TL3).
+- Not built: Overview, Productivity and Autonomy views at national and
+  regional level (section 2.1).

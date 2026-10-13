@@ -9,24 +9,25 @@
   import { zoom as d3zoom, zoomIdentity, type ZoomTransform, type ZoomBehavior } from 'd3-zoom';
   import { select } from 'd3-selection';
   import type { Feature, Geometry, MultiLineString } from 'geojson';
-  import type { FuaFeature, AdminFeature } from '../geo/geojson';
+  import type { MapFeature, AdminFeature } from '../geo/geojson';
   import { splitFeatures, type Layout } from '../geo/projections';
   import { floatingTip, type TipContent } from '../tooltip';
   import { liveTokens } from '../theme/liveTokens.svelte';
   import { t } from '../text/t';
 
   interface Props {
-    features: FuaFeature[];
+    features: MapFeature[];
     layout: Layout;
     land?: Feature<Geometry>[];              // the land fill, every country
     borders?: Feature<Geometry> | MultiLineString | null;   // the selected country's national boundary
     admin?: AdminFeature[];                  // subnational outlines, drawn over the FUAs
+    mesh?: MultiLineString | null;           // interior borders of a higher level (TL2 over TL3)
     fillFor: (id: string) => string;
     tipFor: (id: string) => TipContent;
     selected?: string;
     onselect?: (id: string | null) => void;
   }
-  let { features, layout, land = [], borders = null, admin = [], fillFor, tipFor, selected = '', onselect }: Props = $props();
+  let { features, layout, land = [], borders = null, admin = [], mesh = null, fillFor, tipFor, selected = '', onselect }: Props = $props();
 
   let host: HTMLDivElement | undefined = $state();
   let svgEl: SVGSVGElement | undefined = $state();
@@ -55,9 +56,10 @@
     return p;
   });
   const path = $derived(projection ? geoPath(projection) : null);
-  const fuaPaths = $derived.by(() => { const d = new Map<string, string>(); if (!path) return d; for (const f of split.main) d.set(f.properties.fua_id, path(f as any) ?? ''); return d; });
+  const fuaPaths = $derived.by(() => { const d = new Map<string, string>(); if (!path) return d; for (const f of split.main) d.set(f.properties.id, path(f as any) ?? ''); return d; });
   const landPath = $derived.by(() => { if (!path || !land.length) return ''; return land.map((f) => path(f as any) ?? '').join(''); });
   const borderPath = $derived(path && borders ? path(borders as any) ?? '' : '');
+  const meshPath = $derived(path && mesh ? path(mesh as any) ?? '' : '');
   // the subnational outlines, split between the main map and the insets as the FUAs are
   const adminSplit = $derived(splitFeatures(admin, layout));
   const adminPaths = $derived.by(() => { if (!path) return []; return adminSplit.main.map((f) => ({ id: f.properties.id, name: f.properties.name, d: path(f as any) ?? '' })); });
@@ -68,9 +70,9 @@
     p.fitExtent([[10, 10], [INSET_W - 10, INSET_H - 10]], { type: 'FeatureCollection', features: fs } as any);
     const pth = geoPath(p);
     const adm = adminSplit.insets.find((a) => a.inset.id === inset.id)?.features ?? [];
-    return { inset, paths: fs.map((f) => ({ id: f.properties.fua_id, name: f.properties.fua_name, d: pth(f as any) ?? '' })),
+    return { inset, paths: fs.map((f) => ({ id: f.properties.id, name: f.properties.name, d: pth(f as any) ?? '' })),
       land: land.length ? land.map((f) => pth(f as any) ?? '').join('') : '', borders: borders ? pth(borders as any) ?? '' : '',
-      admin: adm.map((f) => pth(f as any) ?? '').join('') };
+      admin: adm.map((f) => pth(f as any) ?? '').join('') + (mesh ? pth(mesh as any) ?? '' : '') };
   }));
 
   let zb: ZoomBehavior<SVGSVGElement, unknown> | null = null;
@@ -104,13 +106,14 @@
     <rect class="bg" width={width} height={height} fill={tokens.water} onclick={() => onselect?.(null)} role="presentation" />
     <g transform={transform.toString()}>
       {#if landPath}<path d={landPath} fill={tokens.land} stroke={tokens.line} stroke-width={0.5 * sw} />{/if}
-      {#each split.main as f (f.properties.fua_id)}
-        {@const id = f.properties.fua_id}
+      {#each split.main as f (f.properties.id)}
+        {@const id = f.properties.id}
         <path d={fuaPaths.get(id)} fill={fillFor(id)} stroke={strokeOf(id)} stroke-width={widthOf(id) * sw}
-          onmousemove={(e) => over(e, id)} onmouseleave={out} onclick={() => onselect?.(id)} onkeydown={(e) => { if (e.key === 'Enter') onselect?.(id); }} role="button" tabindex="-1" aria-label={f.properties.fua_name} />
+          onmousemove={(e) => over(e, id)} onmouseleave={out} onclick={() => onselect?.(id)} onkeydown={(e) => { if (e.key === 'Enter') onselect?.(id); }} role="button" tabindex="-1" aria-label={f.properties.name} />
       {/each}
       <!-- outlines over the FUAs, never catching the pointer -->
       {#each adminPaths as a (a.id)}<path class="adm" d={a.d} stroke={tokens['fg-2']} stroke-width={0.8 * sw} />{/each}
+      {#if meshPath}<path class="adm" d={meshPath} stroke={tokens['fg-2']} stroke-width={0.9 * sw} />{/if}
       {#if borderPath}<path class="adm" d={borderPath} stroke={tokens.fg} stroke-width={1.1 * sw} />{/if}
     </g>
   </svg>

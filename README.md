@@ -16,7 +16,7 @@ draws every figure from the same data pack.
 | Overview | The profile's FUA summary table (2009, 2014, 2019, latest), reference-year KPIs, national GDP per worker by country |
 | Productivity | Ranked FUAs (top, middle, bottom ten), productivity against population, R² by country, distribution by country, change over 2004–2019 (CAGR), percentile spread and coefficient of variation, mean productivity by country. The snapshot year can be changed. |
 | Autonomy | Local Autonomy Index and Regional Authority Index, total and fiscal scores, step charts by country |
-| Map | Choropleth of any FUA indicator (productivity, GDP, GDP per capita, GDP share, population, density, dependency ratio, patents) for any year, one country or all nine, with a year slider, a per-FUA inspector and quantile classes pooled across years |
+| Map | Choropleth at four geographies, chosen in the top bar: **National** (every country at once), **TL2** and **TL3** (OECD large and small regions) and **FUA**. National indicators include productivity and growth, LAI and RAI, the fiscal, administrative and political decentralization indices, IMF and OECD fiscal ratios, quality of government and regional dispersion; TL2/TL3 indicators include productivity, GDP per capita, gap to the frontier region, population and labour market, region-specific LAI and RAI, and EQI; FUA indicators are productivity, GDP, population, density, dependency ratio and patents. One country or all nine, year slider, inspector with the unit's time series, quantile classes pooled across years |
 | Sources | Every source with its years of coverage for the country, how the series are combined, full citations |
 
 The country is chosen in the top bar; the URL hash carries every selection
@@ -33,7 +33,19 @@ Every chart has a table twin and a CSV download. Light and dark themes.
   country-scoped query touches only that country's file and the cross-country
   comparisons read all nine. National, LAI, RAI and source tables are small
   single files. All SQL lives in `src/lib/db/queries.ts`.
-- **Boundaries** are one simplified GeoJSON per country (`data/geo/<ISO3>.geojson`),
+- **Regional boundaries** are one TopoJSON per country
+  (`data/geo/regions/<ISO3>.topo.json`, objects `national`, `tl2`, `tl3`) plus
+  a light all-countries file. TL2 and the national outline are dissolved from
+  TL3, so the levels nest and share every border (the United States, whose
+  TL3 economic areas cross state lines, keeps separate state polygons). The
+  OECD publishes no polygons for its current grid, so each country's TL3
+  comes from one official source that reproduces the panel's codes exactly:
+  ONS ITL3 January 2025 (United Kingdom), Eurostat GISCO NUTS 2024 (Germany,
+  Italy) and the OECD 2020 regional boundaries (the other six). Every polygon
+  carries its validity years; the data build fails unless every region-year
+  with data has exactly one polygon valid that year, and a later grid change
+  adds a new era whose unchanged units reuse the existing arcs.
+- **FUA boundaries** are one simplified GeoJSON per country (`data/geo/<ISO3>.geojson`),
   fetched only when the map is opened for that country. Each country is drawn
   on its own projection (Lambert conformal conic with the country's customary
   parallels; transverse Mercator for Great Britain) and parts far from the
@@ -52,9 +64,12 @@ Every chart has a table twin and a CSV download. Light and dark themes.
 ## Layout
 
 ```
-data-prep/build_data.R   converts the devo_data_pack datapack into public/data/
-public/data/             manifest.json, countries/nat/lai/rai/sources.parquet,
-                         fua/cntry_iso3=<ISO3>/part.parquet, geo/<ISO3>.geojson
+data-prep/build_geography.R  regional boundaries: sources, eras, TopoJSON (via tools/topology.mjs)
+data-prep/build_data.R   converts the devo_data_pack datapack and analysis panels into public/data/;
+                         checks every region-year against the polygons
+public/data/             manifest.json, countries/nat/lai/rai/sources/national.parquet,
+                         fua|tl2|tl3/cntry_iso3=<ISO3>/part.parquet,
+                         geo/<ISO3>.geojson (FUA), geo/regions/<ISO3>.topo.json
 src/App.svelte           shell: top bar, left rail, hash-routed views
 src/routes/              OverviewView, ProductivityView, AutonomyView, MapView, SourcesView, AboutView
 src/lib/db/              DuckDB-WASM engine (db.ts), manifest bootstrap, queries
@@ -98,12 +113,21 @@ npm run preview    # serve dist/
 ### Rebuilding the data
 
 Needs R with `dplyr`, `haven`, `arrow`, `sf`, `rmapshaper`, `geojsonsf` and
-`jsonlite`, and the `devo_data_pack` project (its `_data/_datapack/` files and
-the OECD FUA boundary geopackage under `_data/oecd_boundaries/`):
+`jsonlite`, Node with the dev dependencies (`mapshaper`, `topojson-server`),
+and the `devo_data_pack` project: its `_data/_datapack/` files, the analysis
+panels in `_data/processed/` (`regional_panel_tl.csv.gz`,
+`national_panel.csv.gz`) and the OECD boundaries under `_data/oecd_boundaries/`.
+The ONS and GISCO files are downloaded into `data-prep/cache/` (not committed)
+on first run.
 
 ```bash
-Rscript data-prep/build_data.R "/path/to/devo_data_pack"
+npm run data        # build_geography.R, then build_data.R
 ```
+
+The build drops region codes outside the grid and lists them: extra-regio
+codes (`…ZZ`, no territory) and 47 UK codes in the panel that carry only
+national and index columns (ITL2-level codes filed as TL3, and `UKI7` filed
+as TL2).
 
 The script writes `public/data/` and records the build date in
 `manifest.json`; data URLs carry it as a cache-buster.

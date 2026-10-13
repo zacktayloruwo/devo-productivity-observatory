@@ -2,7 +2,7 @@
 // manifest before they reach SQL; numeric parameters go through prepared
 // statements.
 import { query, lit } from './db';
-import { manifest } from './manifest.svelte';
+import { manifest, levelInfo, type Level } from './manifest.svelte';
 
 export interface FuaRow {
   cntry_iso3: string; fua_id: string; fua_name: string; year: number;
@@ -95,16 +95,30 @@ export async function coverageFor(iso3: string): Promise<Coverage[]> {
   return (await query(parts.join(' UNION ALL '))) as Coverage[];
 }
 
-// ---- the map: one variable, one country (or all), every year, for the
-// pooled quantile classes and the year shown
-export interface MapValue { cntry_iso3: string; fua_id: string; fua_name: string; year: number; value: number | null; pop: number | null }
-export async function mapValues(variable: string, iso3: string | null): Promise<MapValue[]> {
-  const v = requireVar(variable);
+// ---- the map: one variable at one level, one country (or all), every
+// year, for the pooled quantile classes and the year shown
+export interface MapValue { cntry_iso3: string; id: string; name: string; year: number; value: number | null; pop: number | null }
+const LEVEL_SQL: Record<Level, { table: string; id: string; name: string; pop: string }> = {
+  fua: { table: 'fua', id: 'fua_id', name: 'fua_name', pop: 'pop' },
+  tl2: { table: 'tl2', id: 'reg_id', name: 'reg_name', pop: 'pop_total' },
+  tl3: { table: 'tl3', id: 'reg_id', name: 'reg_name', pop: 'pop_total' },
+  national: { table: 'national', id: 'cntry_iso3', name: 'cntry_iso3', pop: 'pop' }
+};
+function requireLevelVar(level: Level, v: string): string {
+  if (!levelInfo(level).variables.some((x) => x.id === v)) throw new Error(`unknown ${level} variable ${v}`);
+  return v;
+}
+export async function mapValues(level: Level, variable: string, iso3: string | null): Promise<MapValue[]> {
+  const L = LEVEL_SQL[level];
+  const v = requireLevelVar(level, variable);
   const where = iso3 ? `WHERE cntry_iso3 = ${requireCountry(iso3)} AND ${v} IS NOT NULL` : `WHERE ${v} IS NOT NULL`;
-  return (await query(`SELECT cntry_iso3, fua_id, fua_name, year, ${v} AS value, pop FROM fua ${where} ORDER BY cntry_iso3, fua_id, year`)) as MapValue[];
+  return (await query(`SELECT cntry_iso3, ${L.id} AS id, ${L.name} AS name, year, ${v} AS value, ${L.pop} AS pop
+    FROM ${L.table} ${where} ORDER BY cntry_iso3, id, year`)) as MapValue[];
 }
 
-// ---- one FUA, every year (the map inspector)
-export async function fuaSeries(iso3: string, fuaId: string): Promise<FuaRow[]> {
-  return (await query(`SELECT ${FUA_COLS} FROM fua WHERE cntry_iso3 = ${requireCountry(iso3)} AND fua_id = ? ORDER BY year`, [fuaId])) as FuaRow[];
+// ---- one unit, every year and every indicator of its level (the map inspector)
+export async function unitSeries(level: Level, iso3: string, id: string): Promise<Record<string, any>[]> {
+  const L = LEVEL_SQL[level];
+  const cols = levelInfo(level).variables.map((x) => x.id).join(', ');
+  return await query(`SELECT year, ${cols} FROM ${L.table} WHERE cntry_iso3 = ${requireCountry(iso3)} AND ${L.id} = ? ORDER BY year`, [id]);
 }

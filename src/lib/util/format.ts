@@ -37,10 +37,11 @@ export function fmtShort(n: number | null | undefined): string {
   return fmtNum(n, 0);
 }
 
-export type Fmt = 'usd' | 'num' | 'pct' | 'ratio' | 'score';
+export type Fmt = 'usd' | 'usd2' | 'num' | 'pct' | 'ratio' | 'score';
 export function fmtBy(kind: Fmt, v: number | null | undefined): string {
   switch (kind) {
     case 'usd': return fmtUsd(v);
+    case 'usd2': return v == null ? '—' : '$' + fmtNum(v, 2);
     case 'pct': return fmtPct(v, 1);
     case 'ratio': return fmtNum(v, 2);
     case 'score': return fmtNum(v, 2);
@@ -51,6 +52,7 @@ export function fmtBy(kind: Fmt, v: number | null | undefined): string {
 export function fmtShortBy(kind: Fmt, v: number | null | undefined): string {
   switch (kind) {
     case 'usd': return v == null ? '—' : '$' + fmtShort(v);
+    case 'usd2': return v == null ? '—' : '$' + fmtNum(v, 0);
     case 'pct': return fmtPct(v, 1);
     case 'ratio': return fmtNum(v, 2);
     case 'score': return fmtNum(v, 2);

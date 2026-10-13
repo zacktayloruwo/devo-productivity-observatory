@@ -1,5 +1,5 @@
 {
-  "built": "2026-10-12",
+  "built": "2026-10-13",
   "ref_year": 2019,
   "countries": [
     {
@@ -152,6 +152,753 @@
     "USA": [-124.1586845, 25.1391152, -69.865413, 49.0023465]
   },
   "no_geo": [],
+  "levels": {
+    "national": {
+      "variables": [
+        {
+          "id": "gdp_pw",
+          "label": "GDP per person employed (USD PPP, constant prices)",
+          "short": "GDP per worker",
+          "fmt": "usd",
+          "group": "economy"
+        },
+        {
+          "id": "gdp_ph",
+          "label": "GDP per hour worked (USD PPP, constant prices)",
+          "short": "GDP per hour",
+          "fmt": "usd2",
+          "group": "economy"
+        },
+        {
+          "id": "gdp_pc",
+          "label": "GDP per capita (USD PPP, constant prices)",
+          "short": "GDP per capita",
+          "fmt": "usd",
+          "group": "economy"
+        },
+        {
+          "id": "growth_gdp_pc",
+          "label": "Growth of GDP per capita (% per year)",
+          "short": "Per-capita growth",
+          "fmt": "pct",
+          "group": "economy"
+        },
+        {
+          "id": "growth_gdp_pw",
+          "label": "Growth of GDP per person employed (% per year)",
+          "short": "Productivity growth",
+          "fmt": "pct",
+          "group": "economy"
+        },
+        {
+          "id": "pop",
+          "label": "Population",
+          "short": "Population",
+          "fmt": "num",
+          "group": "people"
+        },
+        {
+          "id": "rd_tl2_cv",
+          "label": "Regional dispersion of productivity, TL2 (coefficient of variation)",
+          "short": "TL2 dispersion",
+          "fmt": "ratio",
+          "group": "dispersion"
+        },
+        {
+          "id": "rd_tl3_cv",
+          "label": "Regional dispersion of productivity, TL3 (coefficient of variation)",
+          "short": "TL3 dispersion",
+          "fmt": "ratio",
+          "group": "dispersion"
+        },
+        {
+          "id": "rd_tl2_frontier_empsh",
+          "label": "Employment share of the most productive TL2 region (%)",
+          "short": "Frontier share",
+          "fmt": "pct",
+          "group": "dispersion"
+        },
+        {
+          "id": "lai_total",
+          "label": "Local Autonomy Index, national (points, 0–37)",
+          "short": "LAI",
+          "fmt": "score",
+          "group": "autonomy"
+        },
+        {
+          "id": "lai_selfrule",
+          "label": "Local Autonomy Index, self-rule (points, 0–28)",
+          "short": "LAI self-rule",
+          "fmt": "score",
+          "group": "autonomy"
+        },
+        {
+          "id": "lai_fiscalautonomy",
+          "label": "Local Autonomy Index, fiscal autonomy (points, 0–4)",
+          "short": "LAI fiscal autonomy",
+          "fmt": "score",
+          "group": "autonomy"
+        },
+        {
+          "id": "rai_total",
+          "label": "Regional Authority Index, national (points)",
+          "short": "RAI",
+          "fmt": "score",
+          "group": "autonomy"
+        },
+        {
+          "id": "rai_selfrule",
+          "label": "Regional Authority Index, self-rule (points)",
+          "short": "RAI self-rule",
+          "fmt": "score",
+          "group": "autonomy"
+        },
+        {
+          "id": "rai_sharedrule",
+          "label": "Regional Authority Index, shared rule (points)",
+          "short": "RAI shared rule",
+          "fmt": "score",
+          "group": "autonomy"
+        },
+        {
+          "id": "fiscal_dec_dj_z",
+          "label": "Fiscal decentralization index, de jure (OECD z-score)",
+          "short": "Fiscal decentralization",
+          "fmt": "score",
+          "group": "autonomy"
+        },
+        {
+          "id": "administrative_dec_z",
+          "label": "Administrative decentralization index (OECD z-score)",
+          "short": "Administrative decentralization",
+          "fmt": "score",
+          "group": "autonomy"
+        },
+        {
+          "id": "political_dec_z",
+          "label": "Political decentralization index (OECD z-score)",
+          "short": "Political decentralization",
+          "fmt": "score",
+          "group": "autonomy"
+        },
+        {
+          "id": "imf_sd_sng",
+          "label": "Subnational share of government spending (%)",
+          "short": "Spending decentralization",
+          "fmt": "pct",
+          "group": "fiscal"
+        },
+        {
+          "id": "imf_rd_sng",
+          "label": "Subnational share of government revenue (%)",
+          "short": "Revenue decentralization",
+          "fmt": "pct",
+          "group": "fiscal"
+        },
+        {
+          "id": "imf_taxd_sng",
+          "label": "Subnational share of tax revenue (%)",
+          "short": "Tax decentralization",
+          "fmt": "pct",
+          "group": "fiscal"
+        },
+        {
+          "id": "ta_ab_share_scg",
+          "label": "Subnational tax revenue over which subnational government sets rates or reliefs (%)",
+          "short": "Tax autonomy",
+          "fmt": "pct",
+          "group": "fiscal"
+        },
+        {
+          "id": "wgi_ge",
+          "label": "Government effectiveness (WGI estimate)",
+          "short": "Government effectiveness",
+          "fmt": "score",
+          "group": "governance"
+        },
+        {
+          "id": "wgi_mean4",
+          "label": "Quality of government (mean of four WGI indicators)",
+          "short": "Quality of government",
+          "fmt": "score",
+          "group": "governance"
+        },
+        {
+          "id": "icrg_qog",
+          "label": "Quality of government (ICRG, 0–1)",
+          "short": "ICRG quality of government",
+          "fmt": "score",
+          "group": "governance"
+        }
+      ],
+      "var_years": {
+        "gdp_pw": [1970, 1971, 1972, 1973, 1974, 1975, 1976, 1977, 1978, 1979, 1980, 1981, 1982, 1983, 1984, 1985, 1986, 1987, 1988, 1989, 1990, 1991, 1992, 1993, 1994, 1995, 1996, 1997, 1998, 1999, 2000, 2001, 2002, 2003, 2004, 2005, 2006, 2007, 2008, 2009, 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2021, 2022, 2023, 2024],
+        "gdp_ph": [1970, 1971, 1972, 1973, 1974, 1975, 1976, 1977, 1978, 1979, 1980, 1981, 1982, 1983, 1984, 1985, 1986, 1987, 1988, 1989, 1990, 1991, 1992, 1993, 1994, 1995, 1996, 1997, 1998, 1999, 2000, 2001, 2002, 2003, 2004, 2005, 2006, 2007, 2008, 2009, 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2021, 2022, 2023, 2024],
+        "gdp_pc": [1970, 1971, 1972, 1973, 1974, 1975, 1976, 1977, 1978, 1979, 1980, 1981, 1982, 1983, 1984, 1985, 1986, 1987, 1988, 1989, 1990, 1991, 1992, 1993, 1994, 1995, 1996, 1997, 1998, 1999, 2000, 2001, 2002, 2003, 2004, 2005, 2006, 2007, 2008, 2009, 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2021, 2022, 2023, 2024],
+        "growth_gdp_pc": [1971, 1972, 1973, 1974, 1975, 1976, 1977, 1978, 1979, 1980, 1981, 1982, 1983, 1984, 1985, 1986, 1987, 1988, 1989, 1990, 1991, 1992, 1993, 1994, 1995, 1996, 1997, 1998, 1999, 2000, 2001, 2002, 2003, 2004, 2005, 2006, 2007, 2008, 2009, 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2021, 2022, 2023, 2024],
+        "growth_gdp_pw": [1971, 1972, 1973, 1974, 1975, 1976, 1977, 1978, 1979, 1980, 1981, 1982, 1983, 1984, 1985, 1986, 1987, 1988, 1989, 1990, 1991, 1992, 1993, 1994, 1995, 1996, 1997, 1998, 1999, 2000, 2001, 2002, 2003, 2004, 2005, 2006, 2007, 2008, 2009, 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2021, 2022, 2023, 2024],
+        "pop": [1970, 1971, 1972, 1973, 1974, 1975, 1976, 1977, 1978, 1979, 1980, 1981, 1982, 1983, 1984, 1985, 1986, 1987, 1988, 1989, 1990, 1991, 1992, 1993, 1994, 1995, 1996, 1997, 1998, 1999, 2000, 2001, 2002, 2003, 2004, 2005, 2006, 2007, 2008, 2009, 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2021, 2022, 2023, 2024],
+        "rd_tl2_cv": [1981, 1982, 1983, 1984, 1985, 1986, 1987, 1988, 1989, 1990, 1991, 1992, 1993, 1994, 1995, 1996, 1997, 1998, 1999, 2000, 2001, 2002, 2003, 2004, 2005, 2006, 2007, 2008, 2009, 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2021, 2022, 2023, 2024],
+        "rd_tl3_cv": [2000, 2001, 2002, 2003, 2004, 2005, 2006, 2007, 2008, 2009, 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2021, 2022, 2023, 2024],
+        "rd_tl2_frontier_empsh": [2000, 2001, 2002, 2003, 2004, 2005, 2006, 2007, 2008, 2009, 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2021, 2022, 2023, 2024],
+        "lai_total": [1990, 1991, 1992, 1993, 1994, 1995, 1996, 1997, 1998, 1999, 2000, 2001, 2002, 2003, 2004, 2005, 2006, 2007, 2008, 2009, 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020],
+        "lai_selfrule": [1990, 1991, 1992, 1993, 1994, 1995, 1996, 1997, 1998, 1999, 2000, 2001, 2002, 2003, 2004, 2005, 2006, 2007, 2008, 2009, 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020],
+        "lai_fiscalautonomy": [1990, 1991, 1992, 1993, 1994, 1995, 1996, 1997, 1998, 1999, 2000, 2001, 2002, 2003, 2004, 2005, 2006, 2007, 2008, 2009, 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020],
+        "rai_total": [1970, 1971, 1972, 1973, 1974, 1975, 1976, 1977, 1978, 1979, 1980, 1981, 1982, 1983, 1984, 1985, 1986, 1987, 1988, 1989, 1990, 1991, 1992, 1993, 1994, 1995, 1996, 1997, 1998, 1999, 2000, 2001, 2002, 2003, 2004, 2005, 2006, 2007, 2008, 2009, 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018],
+        "rai_selfrule": [1970, 1971, 1972, 1973, 1974, 1975, 1976, 1977, 1978, 1979, 1980, 1981, 1982, 1983, 1984, 1985, 1986, 1987, 1988, 1989, 1990, 1991, 1992, 1993, 1994, 1995, 1996, 1997, 1998, 1999, 2000, 2001, 2002, 2003, 2004, 2005, 2006, 2007, 2008, 2009, 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018],
+        "rai_sharedrule": [1970, 1971, 1972, 1973, 1974, 1975, 1976, 1977, 1978, 1979, 1980, 1981, 1982, 1983, 1984, 1985, 1986, 1987, 1988, 1989, 1990, 1991, 1992, 1993, 1994, 1995, 1996, 1997, 1998, 1999, 2000, 2001, 2002, 2003, 2004, 2005, 2006, 2007, 2008, 2009, 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018],
+        "fiscal_dec_dj_z": [1990, 1991, 1992, 1993, 1994, 1995, 1996, 1997, 1998, 1999, 2000, 2001, 2002, 2003, 2004, 2005, 2006, 2007, 2008, 2009, 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018],
+        "administrative_dec_z": [1990, 1991, 1992, 1993, 1994, 1995, 1996, 1997, 1998, 1999, 2000, 2001, 2002, 2003, 2004, 2005, 2006, 2007, 2008, 2009, 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018],
+        "political_dec_z": [1990, 1991, 1992, 1993, 1994, 1995, 1996, 1997, 1998, 1999, 2000, 2001, 2002, 2003, 2004, 2005, 2006, 2007, 2008, 2009, 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018],
+        "imf_sd_sng": [1990, 1991, 1992, 1993, 1994, 1995, 1996, 1997, 1998, 1999, 2000, 2001, 2002, 2003, 2004, 2005, 2006, 2007, 2008, 2009, 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020],
+        "imf_rd_sng": [1973, 1974, 1975, 1976, 1977, 1978, 1979, 1980, 1981, 1982, 1983, 1984, 1985, 1986, 1987, 1988, 1989, 1990, 1991, 1992, 1993, 1994, 1995, 1996, 1997, 1998, 1999, 2000, 2001, 2002, 2003, 2004, 2005, 2006, 2007, 2008, 2009, 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020],
+        "imf_taxd_sng": [1972, 1973, 1974, 1975, 1976, 1977, 1978, 1979, 1980, 1981, 1982, 1983, 1984, 1985, 1986, 1987, 1988, 1989, 1990, 1991, 1992, 1993, 1994, 1995, 1996, 1997, 1998, 1999, 2000, 2001, 2002, 2003, 2004, 2005, 2006, 2007, 2008, 2009, 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020],
+        "ta_ab_share_scg": [2000, 2001, 2002, 2003, 2004, 2005, 2006, 2007, 2008, 2009, 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2021, 2022, 2023],
+        "wgi_ge": [1996, 1997, 1998, 1999, 2000, 2001, 2002, 2003, 2004, 2005, 2006, 2007, 2008, 2009, 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2021, 2022, 2023, 2024],
+        "wgi_mean4": [1996, 1997, 1998, 1999, 2000, 2001, 2002, 2003, 2004, 2005, 2006, 2007, 2008, 2009, 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2021, 2022, 2023, 2024],
+        "icrg_qog": [1984, 1985, 1986, 1987, 1988, 1989, 1990, 1991, 1992, 1993, 1994, 1995, 1996, 1997, 1998, 1999, 2000, 2001, 2002, 2003, 2004, 2005, 2006, 2007, 2008, 2009, 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2021, 2022, 2023, 2024]
+      }
+    },
+    "tl2": {
+      "variables": [
+        {
+          "id": "lp_lpr",
+          "label": "Labour productivity: GVA per worker (USD PPP, constant 2020 prices)",
+          "short": "Labour productivity",
+          "fmt": "usd",
+          "group": "economy"
+        },
+        {
+          "id": "lp_gdp_q",
+          "label": "GDP per worker (USD PPP, constant prices)",
+          "short": "GDP per worker",
+          "fmt": "usd",
+          "group": "economy"
+        },
+        {
+          "id": "gdppc_q_usdppp",
+          "label": "GDP per capita (USD PPP, constant prices)",
+          "short": "GDP per capita",
+          "fmt": "usd",
+          "group": "economy"
+        },
+        {
+          "id": "lp_gap_frontier_pct",
+          "label": "Productivity gap to the country's most productive region (%)",
+          "short": "Gap to frontier",
+          "fmt": "pct",
+          "group": "economy"
+        },
+        {
+          "id": "pop_total",
+          "label": "Population",
+          "short": "Population",
+          "fmt": "num",
+          "group": "people"
+        },
+        {
+          "id": "pop_density",
+          "label": "Population density (persons per km²)",
+          "short": "Population density",
+          "fmt": "num",
+          "group": "people"
+        },
+        {
+          "id": "share_65plus",
+          "label": "Population aged 65 and over (%)",
+          "short": "Aged 65+",
+          "fmt": "pct",
+          "group": "people"
+        },
+        {
+          "id": "emp",
+          "label": "Employment (persons, place of work)",
+          "short": "Employment",
+          "fmt": "num",
+          "group": "people"
+        },
+        {
+          "id": "emp_rate_15_64",
+          "label": "Employment rate, 15–64 (%)",
+          "short": "Employment rate",
+          "fmt": "pct",
+          "group": "people"
+        },
+        {
+          "id": "une_rate_15_64",
+          "label": "Unemployment rate, 15–64 (%)",
+          "short": "Unemployment rate",
+          "fmt": "pct",
+          "group": "people"
+        },
+        {
+          "id": "tert_share_25_64",
+          "label": "Tertiary-educated share of population 25–64 (%)",
+          "short": "Tertiary educated",
+          "fmt": "pct",
+          "group": "people"
+        },
+        {
+          "id": "lai_total_reg",
+          "label": "Local Autonomy Index, region-specific (0–1)",
+          "short": "LAI",
+          "fmt": "score",
+          "group": "autonomy"
+        },
+        {
+          "id": "lai_fiscal_reg",
+          "label": "Local Autonomy Index, fiscal, region-specific (0–1)",
+          "short": "LAI fiscal",
+          "fmt": "score",
+          "group": "autonomy"
+        },
+        {
+          "id": "lai_policy_reg",
+          "label": "Local Autonomy Index, policy, region-specific (0–1)",
+          "short": "LAI policy",
+          "fmt": "score",
+          "group": "autonomy"
+        },
+        {
+          "id": "rai_total_reg",
+          "label": "Regional Authority Index, region-specific (points, summed over every tier governing the region)",
+          "short": "RAI",
+          "fmt": "score",
+          "group": "autonomy"
+        },
+        {
+          "id": "rai_selfrule_reg",
+          "label": "Regional Authority Index, self-rule, region-specific (points)",
+          "short": "RAI self-rule",
+          "fmt": "score",
+          "group": "autonomy"
+        },
+        {
+          "id": "rai_sharedrule_reg",
+          "label": "Regional Authority Index, shared rule, region-specific (points)",
+          "short": "RAI shared rule",
+          "fmt": "score",
+          "group": "autonomy"
+        },
+        {
+          "id": "rai_fiscalautonomy_reg",
+          "label": "Regional Authority Index, fiscal autonomy, region-specific (points)",
+          "short": "RAI fiscal autonomy",
+          "fmt": "score",
+          "group": "autonomy"
+        },
+        {
+          "id": "eqi_reg",
+          "label": "European Quality of Government Index (z-score; EU and UK to 2017)",
+          "short": "EQI",
+          "fmt": "score",
+          "group": "governance"
+        }
+      ],
+      "var_years": {
+        "lp_lpr": [1981, 1982, 1983, 1984, 1985, 1986, 1987, 1988, 1989, 1990, 1991, 1992, 1993, 1994, 1995, 1996, 1997, 1998, 1999, 2000, 2001, 2002, 2003, 2004, 2005, 2006, 2007, 2008, 2009, 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2021, 2022, 2023, 2024],
+        "lp_gdp_q": [2000, 2001, 2002, 2003, 2004, 2005, 2006, 2007, 2008, 2009, 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2021, 2022, 2023, 2024],
+        "gdppc_q_usdppp": [2000, 2001, 2002, 2003, 2004, 2005, 2006, 2007, 2008, 2009, 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2021, 2022, 2023, 2024],
+        "lp_gap_frontier_pct": [1981, 1982, 1983, 1984, 1985, 1986, 1987, 1988, 1989, 1990, 1991, 1992, 1993, 1994, 1995, 1996, 1997, 1998, 1999, 2000, 2001, 2002, 2003, 2004, 2005, 2006, 2007, 2008, 2009, 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2021, 2022, 2023, 2024],
+        "pop_total": [2000, 2001, 2002, 2003, 2004, 2005, 2006, 2007, 2008, 2009, 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2021, 2022, 2023, 2024, 2025],
+        "pop_density": [2000, 2001, 2002, 2003, 2004, 2005, 2006, 2007, 2008, 2009, 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2021, 2022, 2023, 2024, 2025],
+        "share_65plus": [2000, 2001, 2002, 2003, 2004, 2005, 2006, 2007, 2008, 2009, 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2021, 2022, 2023, 2024],
+        "emp": [2000, 2001, 2002, 2003, 2004, 2005, 2006, 2007, 2008, 2009, 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2021, 2022, 2023, 2024, 2025],
+        "emp_rate_15_64": [2000, 2001, 2002, 2003, 2004, 2005, 2006, 2007, 2008, 2009, 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2021, 2022, 2023, 2024, 2025],
+        "une_rate_15_64": [2000, 2001, 2002, 2003, 2004, 2005, 2006, 2007, 2008, 2009, 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2021, 2022, 2023, 2024, 2025],
+        "tert_share_25_64": [2000, 2001, 2002, 2003, 2004, 2005, 2006, 2007, 2008, 2009, 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2021, 2022, 2023, 2024],
+        "lai_total_reg": [1990, 1991, 1992, 1993, 1994, 1995, 1996, 1997, 1998, 1999, 2000, 2001, 2002, 2003, 2004, 2005, 2006, 2007, 2008, 2009, 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020],
+        "lai_fiscal_reg": [1990, 1991, 1992, 1993, 1994, 1995, 1996, 1997, 1998, 1999, 2000, 2001, 2002, 2003, 2004, 2005, 2006, 2007, 2008, 2009, 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020],
+        "lai_policy_reg": [1990, 1991, 1992, 1993, 1994, 1995, 1996, 1997, 1998, 1999, 2000, 2001, 2002, 2003, 2004, 2005, 2006, 2007, 2008, 2009, 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020],
+        "rai_total_reg": [1990, 1991, 1992, 1993, 1994, 1995, 1996, 1997, 1998, 1999, 2000, 2001, 2002, 2003, 2004, 2005, 2006, 2007, 2008, 2009, 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018],
+        "rai_selfrule_reg": [1990, 1991, 1992, 1993, 1994, 1995, 1996, 1997, 1998, 1999, 2000, 2001, 2002, 2003, 2004, 2005, 2006, 2007, 2008, 2009, 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018],
+        "rai_sharedrule_reg": [1990, 1991, 1992, 1993, 1994, 1995, 1996, 1997, 1998, 1999, 2000, 2001, 2002, 2003, 2004, 2005, 2006, 2007, 2008, 2009, 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018],
+        "rai_fiscalautonomy_reg": [1990, 1991, 1992, 1993, 1994, 1995, 1996, 1997, 1998, 1999, 2000, 2001, 2002, 2003, 2004, 2005, 2006, 2007, 2008, 2009, 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018],
+        "eqi_reg": [2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2021, 2022, 2023, 2024]
+      },
+      "countries": ["CAN", "FRA", "DEU", "ITA", "JPN", "KOR", "ESP", "GBR", "USA"]
+    },
+    "tl3": {
+      "variables": [
+        {
+          "id": "lp_lpr",
+          "label": "Labour productivity: GVA per worker (USD PPP, constant 2020 prices)",
+          "short": "Labour productivity",
+          "fmt": "usd",
+          "group": "economy"
+        },
+        {
+          "id": "lp_gdp_q",
+          "label": "GDP per worker (USD PPP, constant prices)",
+          "short": "GDP per worker",
+          "fmt": "usd",
+          "group": "economy"
+        },
+        {
+          "id": "gdppc_q_usdppp",
+          "label": "GDP per capita (USD PPP, constant prices)",
+          "short": "GDP per capita",
+          "fmt": "usd",
+          "group": "economy"
+        },
+        {
+          "id": "lp_gap_frontier_pct",
+          "label": "Productivity gap to the country's most productive region (%)",
+          "short": "Gap to frontier",
+          "fmt": "pct",
+          "group": "economy"
+        },
+        {
+          "id": "pop_total",
+          "label": "Population",
+          "short": "Population",
+          "fmt": "num",
+          "group": "people"
+        },
+        {
+          "id": "pop_density",
+          "label": "Population density (persons per km²)",
+          "short": "Population density",
+          "fmt": "num",
+          "group": "people"
+        },
+        {
+          "id": "share_65plus",
+          "label": "Population aged 65 and over (%)",
+          "short": "Aged 65+",
+          "fmt": "pct",
+          "group": "people"
+        },
+        {
+          "id": "emp",
+          "label": "Employment (persons, place of work)",
+          "short": "Employment",
+          "fmt": "num",
+          "group": "people"
+        },
+        {
+          "id": "emp_rate_15_64",
+          "label": "Employment rate, 15–64 (%)",
+          "short": "Employment rate",
+          "fmt": "pct",
+          "group": "people"
+        },
+        {
+          "id": "une_rate_15_64",
+          "label": "Unemployment rate, 15–64 (%)",
+          "short": "Unemployment rate",
+          "fmt": "pct",
+          "group": "people"
+        },
+        {
+          "id": "tert_share_25_64",
+          "label": "Tertiary-educated share of population 25–64 (%)",
+          "short": "Tertiary educated",
+          "fmt": "pct",
+          "group": "people"
+        },
+        {
+          "id": "lai_total_reg",
+          "label": "Local Autonomy Index, region-specific (0–1)",
+          "short": "LAI",
+          "fmt": "score",
+          "group": "autonomy"
+        },
+        {
+          "id": "lai_fiscal_reg",
+          "label": "Local Autonomy Index, fiscal, region-specific (0–1)",
+          "short": "LAI fiscal",
+          "fmt": "score",
+          "group": "autonomy"
+        },
+        {
+          "id": "lai_policy_reg",
+          "label": "Local Autonomy Index, policy, region-specific (0–1)",
+          "short": "LAI policy",
+          "fmt": "score",
+          "group": "autonomy"
+        },
+        {
+          "id": "rai_total_reg",
+          "label": "Regional Authority Index, region-specific (points, summed over every tier governing the region)",
+          "short": "RAI",
+          "fmt": "score",
+          "group": "autonomy"
+        },
+        {
+          "id": "rai_selfrule_reg",
+          "label": "Regional Authority Index, self-rule, region-specific (points)",
+          "short": "RAI self-rule",
+          "fmt": "score",
+          "group": "autonomy"
+        },
+        {
+          "id": "rai_sharedrule_reg",
+          "label": "Regional Authority Index, shared rule, region-specific (points)",
+          "short": "RAI shared rule",
+          "fmt": "score",
+          "group": "autonomy"
+        },
+        {
+          "id": "rai_fiscalautonomy_reg",
+          "label": "Regional Authority Index, fiscal autonomy, region-specific (points)",
+          "short": "RAI fiscal autonomy",
+          "fmt": "score",
+          "group": "autonomy"
+        },
+        {
+          "id": "eqi_reg",
+          "label": "European Quality of Government Index (z-score; EU and UK to 2017)",
+          "short": "EQI",
+          "fmt": "score",
+          "group": "governance"
+        }
+      ],
+      "var_years": {
+        "lp_lpr": [2000, 2001, 2002, 2003, 2004, 2005, 2006, 2007, 2008, 2009, 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2021, 2022, 2023, 2024],
+        "lp_gdp_q": [2000, 2001, 2002, 2003, 2004, 2005, 2006, 2007, 2008, 2009, 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2021, 2022, 2023, 2024],
+        "gdppc_q_usdppp": [2000, 2001, 2002, 2003, 2004, 2005, 2006, 2007, 2008, 2009, 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2021, 2022, 2023, 2024],
+        "lp_gap_frontier_pct": [2000, 2001, 2002, 2003, 2004, 2005, 2006, 2007, 2008, 2009, 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2021, 2022, 2023, 2024],
+        "pop_total": [2000, 2001, 2002, 2003, 2004, 2005, 2006, 2007, 2008, 2009, 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2021, 2022, 2023, 2024, 2025],
+        "pop_density": [2000, 2001, 2002, 2003, 2004, 2005, 2006, 2007, 2008, 2009, 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2021, 2022, 2023, 2024, 2025],
+        "share_65plus": [2000, 2001, 2002, 2003, 2004, 2005, 2006, 2007, 2008, 2009, 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2021, 2022, 2023, 2024],
+        "emp": [2000, 2001, 2002, 2003, 2004, 2005, 2006, 2007, 2008, 2009, 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2021, 2022, 2023, 2024, 2025],
+        "emp_rate_15_64": [2000, 2001, 2002, 2003, 2004, 2005, 2006, 2007, 2008, 2009, 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2021, 2022, 2023, 2024, 2025],
+        "une_rate_15_64": [2000, 2001, 2002, 2003, 2004, 2005, 2006, 2007, 2008, 2009, 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2021, 2022, 2023, 2024, 2025],
+        "tert_share_25_64": [2005, 2010, 2015, 2020],
+        "lai_total_reg": [2000, 2001, 2002, 2003, 2004, 2005, 2006, 2007, 2008, 2009, 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020],
+        "lai_fiscal_reg": [2000, 2001, 2002, 2003, 2004, 2005, 2006, 2007, 2008, 2009, 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020],
+        "lai_policy_reg": [2000, 2001, 2002, 2003, 2004, 2005, 2006, 2007, 2008, 2009, 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020],
+        "rai_total_reg": [2000, 2001, 2002, 2003, 2004, 2005, 2006, 2007, 2008, 2009, 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018],
+        "rai_selfrule_reg": [2000, 2001, 2002, 2003, 2004, 2005, 2006, 2007, 2008, 2009, 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018],
+        "rai_sharedrule_reg": [2000, 2001, 2002, 2003, 2004, 2005, 2006, 2007, 2008, 2009, 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018],
+        "rai_fiscalautonomy_reg": [2000, 2001, 2002, 2003, 2004, 2005, 2006, 2007, 2008, 2009, 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018],
+        "eqi_reg": [2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2021, 2022, 2023, 2024]
+      },
+      "countries": ["FRA", "DEU", "ITA", "JPN", "KOR", "ESP", "GBR", "USA"]
+    },
+    "fua": {
+      "variables": [
+        {
+          "id": "labprod_usdppp",
+          "label": "Labour productivity (USD PPP per worker)",
+          "short": "Labour productivity",
+          "fmt": "usd",
+          "source": "fua_labprod"
+        },
+        {
+          "id": "gdppc_usdppp",
+          "label": "GDP per person (USD PPP)",
+          "short": "GDP per capita",
+          "fmt": "usd",
+          "source": "fua_gdp_pc"
+        },
+        {
+          "id": "gdp_usdppp",
+          "label": "GDP (USD PPP, millions)",
+          "short": "GDP",
+          "fmt": "num",
+          "source": "fua_gdp"
+        },
+        {
+          "id": "gdp_pct_nat",
+          "label": "GDP, share of national GDP (%)",
+          "short": "GDP share of national",
+          "fmt": "pct",
+          "source": "fua_gdp_pct_nat"
+        },
+        {
+          "id": "pop",
+          "label": "Population",
+          "short": "Population",
+          "fmt": "num",
+          "source": "fua_pop"
+        },
+        {
+          "id": "popdens_km2",
+          "label": "Population density (persons per km²)",
+          "short": "Population density",
+          "fmt": "num",
+          "source": "fua_popdens"
+        },
+        {
+          "id": "depratio",
+          "label": "Dependency ratio (share of population 15–64)",
+          "short": "Dependency ratio",
+          "fmt": "ratio",
+          "source": "fua_depratio"
+        },
+        {
+          "id": "patents",
+          "label": "Patent applications",
+          "short": "Patents",
+          "fmt": "num",
+          "source": "fua_patents"
+        }
+      ],
+      "var_years": {
+        "labprod_usdppp": [2000, 2001, 2002, 2003, 2004, 2005, 2006, 2007, 2008, 2009, 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2021, 2022, 2023],
+        "gdppc_usdppp": [2001, 2002, 2003, 2004, 2005, 2006, 2007, 2008, 2009, 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2021, 2022, 2023],
+        "gdp_usdppp": [2000, 2001, 2002, 2003, 2004, 2005, 2006, 2007, 2008, 2009, 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2021, 2022, 2023],
+        "gdp_pct_nat": [2000, 2001, 2002, 2003, 2004, 2005, 2006, 2007, 2008, 2009, 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2021, 2022, 2023],
+        "pop": [1980, 1985, 1990, 1995, 2000, 2001, 2002, 2003, 2004, 2005, 2006, 2007, 2008, 2009, 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2021, 2022, 2023, 2024, 2025],
+        "popdens_km2": [2000, 2001, 2002, 2003, 2004, 2005, 2006, 2007, 2008, 2009, 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2021, 2022, 2023, 2024],
+        "depratio": [1980, 1985, 1990, 1995, 2000, 2001, 2002, 2003, 2004, 2005, 2006, 2007, 2008, 2009, 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2021, 2022, 2023, 2024, 2025],
+        "patents": [2000, 2001, 2002, 2003, 2004, 2005, 2006, 2007, 2008, 2009, 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2021, 2022]
+      },
+      "countries": ["CAN", "FRA", "DEU", "ITA", "JPN", "KOR", "ESP", "GBR", "USA"]
+    }
+  },
+  "eras": {
+    "CAN": {
+      "tl2": [
+        {
+          "from": 1981,
+          "to": 2024
+        }
+      ]
+    },
+    "DEU": {
+      "tl2": [
+        {
+          "from": 2000,
+          "to": 2024
+        }
+      ],
+      "tl3": [
+        {
+          "from": 2000,
+          "to": 2024
+        }
+      ]
+    },
+    "ESP": {
+      "tl2": [
+        {
+          "from": 2000,
+          "to": 2024
+        }
+      ],
+      "tl3": [
+        {
+          "from": 2000,
+          "to": 2023
+        }
+      ]
+    },
+    "FRA": {
+      "tl2": [
+        {
+          "from": 2000,
+          "to": 2024
+        }
+      ],
+      "tl3": [
+        {
+          "from": 2000,
+          "to": 2024
+        }
+      ]
+    },
+    "GBR": {
+      "tl2": [
+        {
+          "from": 1998,
+          "to": 2024
+        }
+      ],
+      "tl3": [
+        {
+          "from": 2000,
+          "to": 2024
+        }
+      ]
+    },
+    "ITA": {
+      "tl2": [
+        {
+          "from": 1995,
+          "to": 2024
+        }
+      ],
+      "tl3": [
+        {
+          "from": 1995,
+          "to": 2024
+        }
+      ]
+    },
+    "JPN": {
+      "tl2": [
+        {
+          "from": 2009,
+          "to": 2024
+        }
+      ],
+      "tl3": [
+        {
+          "from": 2009,
+          "to": 2024
+        }
+      ]
+    },
+    "KOR": {
+      "tl2": [
+        {
+          "from": 2000,
+          "to": 2025
+        }
+      ],
+      "tl3": [
+        {
+          "from": 2000,
+          "to": 2025
+        }
+      ]
+    },
+    "USA": {
+      "tl2": [
+        {
+          "from": 1997,
+          "to": 2024
+        }
+      ],
+      "tl3": [
+        {
+          "from": 2001,
+          "to": 2022
+        }
+      ]
+    }
+  },
+  "geo_sources": {
+    "built": "2026-10-13",
+    "sources": {
+      "ons": {
+        "url": "https://open-geography-portalx-ons.hub.arcgis.com/api/download/v1/items/b55a2ed98e7241628f0e6ec6f0fb1933/geojson?layers=1",
+        "cite": "Office for National Statistics, International Territorial Level 3 (January 2025) Boundaries UK BGC (V2). Contains OS data © Crown copyright and database right; source: Office for National Statistics licensed under the Open Government Licence v3.0."
+      },
+      "gisco": {
+        "url": "https://gisco-services.ec.europa.eu/distribution/v2/nuts/geojson/NUTS_RG_01M_2024_4326_LEVL_3.geojson",
+        "cite": "© EuroGeographics for the administrative boundaries; Eurostat GISCO, NUTS 2024, 1:1 million."
+      },
+      "oecd2020": {
+        "url": "OECD regional boundaries 2020 (OECD_TL2_2020, OECD_TL3_2020), OECD Centre for Entrepreneurship, SMEs, Regions and Cities",
+        "cite": "OECD (2020), Regional boundaries, TL2 and TL3 (OECD territorial grid)."
+      }
+    },
+    "source_by_country": {
+      "CAN": "oecd2020",
+      "FRA": "oecd2020",
+      "DEU": "gisco",
+      "ITA": "gisco",
+      "JPN": "oecd2020",
+      "KOR": "oecd2020",
+      "ESP": "oecd2020",
+      "GBR": "ons",
+      "USA": "oecd2020"
+    }
+  },
   "files": {
     "fua": {
       "CAN": "fua/cntry_iso3=CAN/part.parquet",
@@ -184,6 +931,40 @@
       "FRA": "geo/admin/FRA.geojson",
       "GBR": "geo/admin/GBR.geojson"
     },
+    "tl2": {
+      "CAN": "tl2/cntry_iso3=CAN/part.parquet",
+      "FRA": "tl2/cntry_iso3=FRA/part.parquet",
+      "DEU": "tl2/cntry_iso3=DEU/part.parquet",
+      "ITA": "tl2/cntry_iso3=ITA/part.parquet",
+      "JPN": "tl2/cntry_iso3=JPN/part.parquet",
+      "KOR": "tl2/cntry_iso3=KOR/part.parquet",
+      "ESP": "tl2/cntry_iso3=ESP/part.parquet",
+      "GBR": "tl2/cntry_iso3=GBR/part.parquet",
+      "USA": "tl2/cntry_iso3=USA/part.parquet"
+    },
+    "tl3": {
+      "FRA": "tl3/cntry_iso3=FRA/part.parquet",
+      "DEU": "tl3/cntry_iso3=DEU/part.parquet",
+      "ITA": "tl3/cntry_iso3=ITA/part.parquet",
+      "JPN": "tl3/cntry_iso3=JPN/part.parquet",
+      "KOR": "tl3/cntry_iso3=KOR/part.parquet",
+      "ESP": "tl3/cntry_iso3=ESP/part.parquet",
+      "GBR": "tl3/cntry_iso3=GBR/part.parquet",
+      "USA": "tl3/cntry_iso3=USA/part.parquet"
+    },
+    "national": "national.parquet",
+    "regions": {
+      "CAN": "geo/regions/CAN.topo.json",
+      "FRA": "geo/regions/FRA.topo.json",
+      "DEU": "geo/regions/DEU.topo.json",
+      "ITA": "geo/regions/ITA.topo.json",
+      "JPN": "geo/regions/JPN.topo.json",
+      "KOR": "geo/regions/KOR.topo.json",
+      "ESP": "geo/regions/ESP.topo.json",
+      "GBR": "geo/regions/GBR.topo.json",
+      "USA": "geo/regions/USA.topo.json"
+    },
+    "regions_all": "geo/regions/national.topo.json",
     "nat": "nat.parquet",
     "lai": "lai.parquet",
     "rai": "rai.parquet",

@@ -66,13 +66,19 @@ function walk(dir, acc = []) {
   return acc;
 }
 const used = new Set();
+const prefixes = new Set();   // t('geo.' + level): every key with the prefix counts as used
 for (const f of walk(join(root, 'src'))) {
   const code = readFileSync(f, 'utf8');
-  for (const m of code.matchAll(/\bt\(\s*'([a-z0-9_.]+)'/g)) used.add(m[1]);
+  for (const m of code.matchAll(/\bt\(\s*'([a-z0-9_.]+)'\s*([,)+])/g)) (m[2] === '+' ? prefixes : used).add(m[1]);
   for (const m of code.matchAll(/<Text\b[^>]*\bk="([a-z0-9_.]+)"/g)) used.add(m[1]);
   for (const m of code.matchAll(/\bk=\{?'([a-z0-9_.]+)'/g)) used.add(m[1]);
   // keys chosen at run time: t(cond ? 'a' : 'b')
   for (const m of code.matchAll(/\bt\([^)]*?\?\s*'([a-z0-9_.]+)'\s*:\s*'([a-z0-9_.]+)'/g)) { used.add(m[1]); used.add(m[2]); }
+}
+for (const p of prefixes) {
+  const hits = Object.keys(strings).filter((k) => k.startsWith(p));
+  if (!hits.length) errors.push(`the code builds keys from "${p}" but text/app_text.csv has no row starting with it`);
+  hits.forEach((k) => used.add(k));
 }
 for (const k of used) if (!(k in strings)) errors.push(`the code uses "${k}" but text/app_text.csv has no such row`);
 const unused = Object.keys(strings).filter((k) => !used.has(k));

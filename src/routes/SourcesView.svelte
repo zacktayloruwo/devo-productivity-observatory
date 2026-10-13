@@ -49,6 +49,13 @@
   });
   const retrieved = $derived(sources[0]?.retrieved_on ?? '');
   const fmtDate = (d: string) => { const t = Date.parse(d); return Number.isFinite(t) ? new Date(t).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'UTC' }) : d; };
+  // the regional boundary sources and the countries each covers
+  const regionSources = $derived.by(() => {
+    const g = manifest.value?.geo_sources; if (!g) return '';
+    const by: Record<string, string[]> = {};
+    for (const [iso, src] of Object.entries(g.source_by_country)) (by[src] ??= []).push(countryName(iso));
+    return Object.entries(by).map(([src, cs]) => `${cs.join(', ')}: ${g.sources[src]?.cite ?? src}`).join(' ');
+  });
   const popTotal = $derived([...popSrc.values()].reduce((a, b) => a + b, 0));
   import { t } from '../lib/text/t';
   import Text from '../lib/components/Text.svelte';
@@ -93,6 +100,7 @@
     <p><Text k="sources.cite.rai" /></p>
     <p><Text k="sources.cite.m49" /></p>
     <p><Text k="sources.cite.boundaries" /></p>
+    {#if regionSources}<p><Text k="sources.cite.regions" vars={{ sources: regionSources }} /></p>{/if}
     {#if retrieved}<p class="muted small"><Text k="sources.retrieved" vars={{ date: fmtDate(retrieved), country: name }} /></p>{/if}
   </div>
 </div>

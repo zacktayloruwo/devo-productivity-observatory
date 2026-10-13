@@ -61,6 +61,12 @@ async function createViews(): Promise<void> {
   const fuaList = Object.values(m.files.fua).map(q).join(', ');
   await conn!.query(`CREATE OR REPLACE VIEW fua AS SELECT * FROM read_parquet([${fuaList}], hive_partitioning = true, union_by_name = true)`);
   await conn!.query(`CREATE OR REPLACE VIEW nat AS SELECT * FROM read_parquet(${q(m.files.nat)})`);
+  // regional levels: segmented by country like the FUA table
+  for (const lv of ['tl2', 'tl3'] as const) {
+    const files = Object.values(m.files[lv] ?? {});
+    if (files.length) await conn!.query(`CREATE OR REPLACE VIEW ${lv} AS SELECT * FROM read_parquet([${files.map(q).join(', ')}], hive_partitioning = true, union_by_name = true)`);
+  }
+  if (m.files.national) await conn!.query(`CREATE OR REPLACE VIEW national AS SELECT * FROM read_parquet(${q(m.files.national)})`);
   await conn!.query(`CREATE OR REPLACE VIEW lai AS SELECT * FROM read_parquet(${q(m.files.lai)})`);
   await conn!.query(`CREATE OR REPLACE VIEW rai AS SELECT * FROM read_parquet(${q(m.files.rai)})`);
   await conn!.query(`CREATE OR REPLACE VIEW sources AS SELECT * FROM read_parquet(${q(m.files.sources)})`);
