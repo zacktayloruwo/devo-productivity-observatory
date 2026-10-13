@@ -148,28 +148,59 @@ country: 150–400 KB at TL3 detail, replacing today's GeoJSON plus admin files.
 
 ## 3. Issues found
 
-### 3.1 Boundary vintage does not match the panel codes
+### 3.1 Boundary source and the panel's grid (investigated 13 October 2026)
 
-The boundary files in the data pack are the OECD 2020 shapefiles; the panel
-uses TL2021 codes and, since the DF_LPR 2.4 switch, some later recodes.
-Checked against the nine countries:
+**No OECD source publishes TL2021 polygons.** The OECD Geographical
+Definitions page offers the territorial grid (PDF) and the correspondence
+table (XLSX) only. The OECD regional-statistics Dropbox cited on
+GIS StackExchange holds "Regions - shapefiles 2020 - old" (the same
+`OECD_TL2_shapefile` and `OECD_TL3_shapefile` already in the data pack); its
+FUA link has been deleted. The Regions and Cities Atlas serves
+`/cache-geometry/REGS/TL2.json` and `TL3.json`, but these are the same
+pre-2021 vintage (`UKL14`, `ITG29`; no `UKC31` or `ITG2D`). The TL2024 grid
+(April 2026) is published as a PDF of maps only.
 
-- United Kingdom: 229 TL3 codes in the panel, 115 in the shapefile. The
-  panel's `UKC31`, `UKM01`, `UKN0A` style codes (ITL 2021) have no 2020
-  geometry; the shapefile's `UKC11`, `UKL14` style codes have no panel rows.
-  106 UK TL3 are `geo_fallback`.
-- Germany: six Thuringia TL3 (`DEG0Q`–`DEG0V`) have no geometry; the panel
-  gives them productivity.
-- Italy: five Sardinia TL3 (`ITG2D`–`ITG2H`) likewise.
-- Extra-regio `ZZ` codes have no territory (expected).
+**The panel is not on TL2021 for three countries.** It back-casts the OECD's
+current grid to every year (all codes below carry data 2000–2023), so in each
+year it is one partition, but not the TL2021 one:
 
-Resolution needed before TL3 mapping is useful for Britain: obtain the OECD
-TL2021 (or 2024) territorial grid boundaries, which the OECD publishes with
-its regional statistics, or build the UK ITL 2021 layer from ONS Open
-Geography and the German and Italian recodes from Eurostat NUTS 2021. The
-alternative, mapping the panel's `geo_fallback` rows to old codes by name,
-loses the regions whose definitions changed. **This is the one dependency
-outside the app.**
+| Country | Panel TL3 units | Without a 2020 OECD polygon | What they are |
+|---|---|---|---|
+| United Kingdom | 182 (122 TL2021 codes kept + 60 new) | 60 new codes (`UKC31`…`UKM34`) and 7 NI recodes | ITL 2025: the 60 replace 60 TL2021 units whose boundaries changed. `UKN0A`–`UKN0G` are TL2021 "recoded" units with the same areas as the 2020 polygons `UKN10`–`UKN16` |
+| Germany | 400 | 6 (`DEG0Q`–`DEG0V`) | Thuringia's post-2021 districts, replacing 7 TL2021 codes (`DEG04`, `DEG0B`, `DEG0F`, `DEG0H`, `DEG0I`, `DEG0N`, `DEG0P`) |
+| Italy | 107 | 5 (`ITG2D`–`ITG2H`) | Sardinia's 2016 provinces; the 2020 file has the eight old ones (`ITG25`–`ITG2C`), and the boundaries changed |
+| Others (CAN, ESP, FRA, JPN, KOR, USA) | as in 1.1 | 0 | Every unit with data has a 2020 OECD polygon |
+
+The panel also files 46 four-character UK codes (`UKC3`, `UKM0`, …) as TL3 and
+`UKI7` as TL2. They carry only derived and national columns (ROPI GVA,
+national LAI/RAI, QoG), not productivity or population; they are ITL2-level
+artefacts of the code mapping and are excluded from the TL3 partition. They
+should be reported to the Devo Analysis pipeline (script 09).
+
+**Consequence.** A 1:1 match between data and polygons in every year is
+possible with the OECD 2020 polygons alone for six countries, and for the
+others with these additions:
+
+- Northern Ireland: 7 polygons renamed from the OECD 2020 file (exact; no new
+  source).
+- Sardinia: 5 polygons, Thuringia: 6, United Kingdom: 60, which no OECD
+  source provides. The official sources for those units are Eurostat GISCO
+  (NUTS 2021 and NUTS 2024, the EU's own release, which the OECD's European
+  TL grid follows) and the ONS (ITL3 2025, codes `TLxxx` = OECD `UKxxx`).
+
+Mixing sources along a seam (an ONS polygon beside an OECD one) leaves
+slivers and breaks shared arcs. For the three affected countries the clean
+option is to take the whole country's TL3 from one source (ONS ITL3 2025 for
+the UK; GISCO NUTS 2024 for Germany and Italy) and derive TL2 by dissolving
+TL3, keeping the OECD 2020 polygons for the other six.
+
+**Cross-time topology.** Because the panel back-casts one grid per country,
+each country currently needs one era. The TopoJSON build should still key
+polygons by (code, valid-from, valid-to) and check, for every country,
+level and year, that the codes with data equal the polygons valid that year,
+so that a future panel with genuine grid changes (or the TL2021 codes, if the
+pipeline is ever switched back) adds an era whose unchanged units reuse the
+existing arcs.
 
 ### 3.2 US TL3 do not nest in TL2
 
@@ -211,8 +242,10 @@ TL2021 boundaries are sourced for step 1.
 
 ## 5. Decisions needed
 
-1. Source of TL2021 boundaries (OECD grid, ONS plus Eurostat, or accept the
-   2020 geometry with gaps in the UK).
+1. ~~Source of TL2021 boundaries~~ Decided 13 October: OECD TL2021, nine
+   countries. Superseded by 3.1: OECD publishes no TL2021 polygons, and the
+   panel is on the current grid for GBR, DEU and ITA. Needs a decision on
+   the source for those three countries' polygons.
 2. Which national indicators to expose: the full catalogue above, or the
    subset the profile reports use.
 3. Whether the nine-country restriction stays. The panels cover 43 countries
