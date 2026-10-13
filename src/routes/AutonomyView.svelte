@@ -1,7 +1,9 @@
 <script lang="ts">
   // The Autonomy view: the Local Autonomy Index and the Regional Authority
-  // Index, total and fiscal, every country. Route: #/autonomy/<ISO3>
-  import { routeCountry } from '../lib/routeState';
+  // Index, total and fiscal, every country; at the national level also the
+  // dimension indices and fiscal ratios, and region-specific indices at TL2
+  // and TL3. Route: #/autonomy/<ISO3>?geo=<level>
+  import { routeCountry, routeGeo } from '../lib/routeState';
   import { manifest, countryName } from '../lib/db/manifest.svelte';
   import { laiAll, raiAll, type LaiRow, type RaiRow } from '../lib/db/queries';
   import { fmtNum } from '../lib/util/format';
@@ -11,9 +13,12 @@
   import PlotChart from '../lib/components/PlotChart.svelte';
   import CountryLegend from '../lib/components/CountryLegend.svelte';
   import Spinner from '../lib/components/Spinner.svelte';
+  import RegionAutonomy from './level/RegionAutonomy.svelte';
+  import NationalAutonomyExtra from './level/NationalAutonomyExtra.svelte';
 
   const iso3 = $derived(routeCountry());
   const name = $derived(countryName(iso3));
+  const geo = $derived(routeGeo());
   const countries = $derived(manifest.countries);
   const colours = $derived(countryColours(countries, iso3, '#c0392b'));
 
@@ -22,7 +27,7 @@
   let loading = $state(true);
   let error = $state('');
   $effect(() => {
-    if (!countries.length) return;
+    if (!countries.length || geo === 'tl2' || geo === 'tl3') return;
     Promise.all([laiAll(), raiAll()]).then(([l, r]) => { lai = l; rai = r; loading = false; }).catch((e) => { error = e?.message ?? String(e); loading = false; });
   });
 
@@ -52,6 +57,9 @@
   import Text from '../lib/components/Text.svelte';
 </script>
 
+{#if geo === 'tl2' || geo === 'tl3'}
+<RegionAutonomy level={geo} />
+{:else}
 <div class="view">
   <header>
     <h1>{t('autonomy.title', { country: name })}</h1>
@@ -89,5 +97,6 @@
     <PlotChart make={raiFiscal} height={320} label={t('autonomy.rai_fiscal.title')} />
     <CountryLegend {countries} {colours} focus={iso3} present={raiPresent} />
   </ChartCard>
+  {#if geo === 'national'}<NationalAutonomyExtra />{/if}
 </div>
-
+{/if}

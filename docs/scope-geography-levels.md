@@ -1,6 +1,6 @@
 # Scope: national, TL2 and TL3 geographies in the Observatory
 
-*13 October 2026. Scoping note. The map at all four geographies is built (see 6); the other views remain FUA and national.*
+*13 October 2026. Scoping note. The map, Overview, Productivity and Autonomy views follow all four geographies (see 6).*
 
 The Observatory maps and charts OECD functional urban areas (FUAs) for nine
 countries. This note scopes adding three more geographies, national, TL2
@@ -263,9 +263,27 @@ TL2021 boundaries are sourced for step 1.
   region-year with data has exactly one polygon valid that year and stops
   otherwise. Dropped: 8 extra-regio codes and 47 UK index-only codes (listed
   in the build log; reported to the Devo Analysis pipeline as a panel issue).
-- App: geography selector in the top bar (National, TL2, TL3, FUA; from any
-  view it opens the map at that level), map, legend, hover box, inspector and
+- App: geography selector in the top bar (National, TL2, TL3, FUA; Sources
+  and About open the map at that level, the other views stay put), map, legend, hover box, inspector and
   CSV export at every level; TL2 borders drawn over TL3 maps; a notice where
   a country has no data at a level (Canada, TL3).
-- Not built: Overview, Productivity and Autonomy views at national and
-  regional level (section 2.1).
+- Views at every level (section 2.1). Productivity at TL2/TL3 runs the FUA
+  sections over regions (`lp_lpr`, constant 2020 prices; the coefficient of
+  variation is computed across regions, where the FUA one is the OECD's); at
+  national level it shows GDP per worker and per hour, the decomposition of
+  GDP per capita growth into GDP per worker and persons employed per head
+  (log points, exact), and `rd_tl2_cv` / `rd_tl3_cv` over time. Overview at
+  TL2/TL3: region count, median, P10/P90 and their ratio, coefficient of
+  variation, median gap to the frontier region and the frontier itself, with
+  the gap and P90/P10 over time by country; at national level the KPIs and
+  the latest dispersion of every country. Autonomy at TL2/TL3: every
+  region's LAI, LAI fiscal, RAI and RAI fiscal autonomy (raw points) drawn
+  faint, the median dashed and a selected region (`?reg=`) in red, with a
+  link to the map; at national level the dimension indices and the IMF/OECD
+  fiscal ratios are added. Canada at TL3 gets a notice, not empty charts.
+- Not built: Overview "share of national GDP" for regions (no regional GDP
+  share in the TL panel), Theil and Gini dispersion (only the CV and the
+  frontier share are in `national.parquet`), FUA-level LAI/RAI from the FUA
+  panel, and the Sources additions. 66 TL3 regions with data have no name in
+  the panel (60 UK ITL fallback codes, 6 recoded Thuringia districts); the
+  views show their codes.

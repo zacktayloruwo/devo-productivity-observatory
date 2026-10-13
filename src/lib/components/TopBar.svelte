@@ -12,11 +12,14 @@
   const country = $derived(routeCountry());
 
   const geo = $derived(routeGeo());
-  // The geography applies to the map; choosing one elsewhere opens the map
-  // at that level. The indicator resets when the level has no such indicator.
+  // The map, Overview, Productivity and Autonomy follow the geography, so
+  // choosing one keeps the view; Sources and About open the map at that
+  // level. The map's indicator resets when the level has no such indicator.
+  const GEO_VIEWS = ['map', 'overview', 'productivity', 'autonomy'];
+  const followsGeo = $derived(GEO_VIEWS.includes(view));
   function pickGeo(lv: Level) {
-    const q = { ...route.query, geo: lv === 'fua' ? undefined : lv, sel: undefined };
-    if (view === 'map') go(route.path, q); else go(['map', country], q);
+    const q = { ...route.query, geo: lv === 'fua' ? undefined : lv, sel: undefined, reg: undefined };
+    if (followsGeo) go(route.path, q); else go(['map', country], q);
   }
 
   // Changing the country keeps the view (and the map's year and variable)
@@ -28,7 +31,7 @@
 </script>
 
 <header>
-  <a class="brand" href={href(['overview', country])}>
+  <a class="brand" href={href(['overview', country], { geo: route.query.geo })}>
     <svg class="mark" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 20h18M5 20V9l4-3 4 3v11M13 20V5l6 4v11"/></svg>
     <span>{t('app.title')}</span>
   </a>
@@ -46,7 +49,7 @@
     <span class="muted">{t('geo.label')}</span>
     <div class="seg">
       {#each LEVELS as lv (lv)}
-        <button type="button" aria-pressed={view === 'map' && geo === lv} title={t('geo.tip.' + lv)}
+        <button type="button" aria-pressed={followsGeo && geo === lv} title={t('geo.tip.' + lv)}
           disabled={lv === 'tl3' && view === 'map' && route.query.scope !== 'all' && !levelHasCountry('tl3', country)}
           onclick={() => pickGeo(lv)}>{t('geo.' + lv)}</button>
       {/each}

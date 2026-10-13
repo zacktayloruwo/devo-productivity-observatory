@@ -35,31 +35,95 @@ export async function fuaCountry(iso3: string): Promise<FuaRow[]> {
   return (await query(`SELECT ${FUA_COLS} FROM fua WHERE cntry_iso3 = ${requireCountry(iso3)} ORDER BY fua_id, year`)) as FuaRow[];
 }
 
-// ---- every country, FUAs with labour productivity in one year (the scatter)
-export async function fuaYearAll(year: number): Promise<FuaRow[]> {
-  return (await query(`SELECT ${FUA_COLS} FROM fua WHERE year = ? AND labprod_usdppp IS NOT NULL ORDER BY cntry_iso3, fua_id`, [year])) as FuaRow[];
+// ---- labour productivity by unit (FUA, TL2 or TL3 region), one shape for
+// the Productivity view: id, name, population and productivity
+export type UnitLevel = 'fua' | 'tl2' | 'tl3';
+export interface UnitRow { cntry_iso3: string; id: string; name: string; year: number; pop: number | null; lp: number | null }
+const UNIT_LP: Record<UnitLevel, string> = { fua: 'labprod_usdppp', tl2: 'lp_lpr', tl3: 'lp_lpr' };
+function unitCols(level: UnitLevel, prefix = ''): string {
+  const L = LEVEL_SQL[level];
+  // some recoded TL3 regions carry no name in the panel: show the code
+  const name = level === 'fua' ? `${prefix}${L.name}` : `coalesce(${prefix}${L.name}, ${prefix}${L.id})`;
+  return `${prefix}cntry_iso3, ${prefix}${L.id} AS id, ${name} AS name, ${prefix}year, ${prefix}${L.pop} AS pop, ${prefix}${UNIT_LP[level]} AS lp`;
+}
+function requireUnitLevel(level: string): UnitLevel {
+  if (level !== 'fua' && level !== 'tl2' && level !== 'tl3') throw new Error(`unknown level ${level}`);
+  return level;
 }
 
-// ---- every country, its own latest year with labour productivity (distribution, R²)
-export async function fuaLatestAll(): Promise<FuaRow[]> {
+// one country, every unit and year (the country's own file only)
+export async function unitsCountry(level: UnitLevel, iso3: string): Promise<UnitRow[]> {
+  const lv = requireUnitLevel(level);
+  return (await query(`SELECT ${unitCols(lv)} FROM ${LEVEL_SQL[lv].table} WHERE cntry_iso3 = ${requireCountry(iso3)} ORDER BY id, year`)) as UnitRow[];
+}
+
+// every country, units with labour productivity in one year (the scatter)
+export async function unitsYearAll(level: UnitLevel, year: number): Promise<UnitRow[]> {
+  const lv = requireUnitLevel(level);
+  return (await query(`SELECT ${unitCols(lv)} FROM ${LEVEL_SQL[lv].table} WHERE year = ? AND ${UNIT_LP[lv]} IS NOT NULL ORDER BY cntry_iso3, id`, [year])) as UnitRow[];
+}
+
+// every country, its own latest year with labour productivity (distribution, R²)
+export async function unitsLatestAll(level: UnitLevel): Promise<UnitRow[]> {
+  const lv = requireUnitLevel(level), T = LEVEL_SQL[lv].table, lp = UNIT_LP[lv];
   return (await query(`
-    WITH latest AS (SELECT cntry_iso3, max(year) AS year FROM fua WHERE labprod_usdppp IS NOT NULL GROUP BY cntry_iso3)
-    SELECT ${FUA_COLS.split(', ').map((c) => 'f.' + c).join(', ')}
-    FROM fua f JOIN latest l ON f.cntry_iso3 = l.cntry_iso3 AND f.year = l.year
-    WHERE f.labprod_usdppp IS NOT NULL ORDER BY f.cntry_iso3, f.fua_id`)) as FuaRow[];
+    WITH latest AS (SELECT cntry_iso3, max(year) AS year FROM ${T} WHERE ${lp} IS NOT NULL GROUP BY cntry_iso3)
+    SELECT ${unitCols(lv, 'f.')}
+    FROM ${T} f JOIN latest l ON f.cntry_iso3 = l.cntry_iso3 AND f.year = l.year
+    WHERE f.${lp} IS NOT NULL ORDER BY f.cntry_iso3, id`)) as UnitRow[];
 }
 
-// ---- mean labour productivity and coefficient of variation by country-year
+// mean labour productivity and coefficient of variation (%) by country-year:
+// the OECD's published value for FUAs, computed across regions for TL2/TL3
 export interface CountryYear { cntry_iso3: string; year: number; mean_lp: number | null; cov: number | null; n: number }
-export async function productivityByCountryYear(): Promise<CountryYear[]> {
+export async function productivityByCountryYear(level: UnitLevel): Promise<CountryYear[]> {
+  const lv = requireUnitLevel(level), lp = UNIT_LP[lv];
+  const cov = lv === 'fua' ? 'any_value(labprod_cov)' : `100 * stddev_samp(${lp}) / avg(${lp})`;
   return (await query(`
-    SELECT cntry_iso3, year, avg(labprod_usdppp) AS mean_lp, any_value(labprod_cov) AS cov, count(*)::BIGINT AS n
-    FROM fua WHERE labprod_usdppp IS NOT NULL GROUP BY cntry_iso3, year ORDER BY cntry_iso3, year`)) as CountryYear[];
+    SELECT cntry_iso3, year, avg(${lp}) AS mean_lp, ${cov} AS cov, count(*)::BIGINT AS n
+    FROM ${LEVEL_SQL[lv].table} WHERE ${lp} IS NOT NULL GROUP BY cntry_iso3, year ORDER BY cntry_iso3, year`)) as CountryYear[];
 }
 
-// ---- years for which any country has labour productivity (the snapshot year picker)
-export async function productivityYears(): Promise<{ year: number; n: number; n_countries: number }[]> {
-  return (await query(`SELECT year, count(*)::BIGINT AS n, count(DISTINCT cntry_iso3)::BIGINT AS n_countries FROM fua WHERE labprod_usdppp IS NOT NULL GROUP BY year ORDER BY year`)) as any;
+// years for which any country has labour productivity (the snapshot year picker)
+export async function productivityYears(level: UnitLevel): Promise<{ year: number; n: number; n_countries: number }[]> {
+  const lv = requireUnitLevel(level), lp = UNIT_LP[lv];
+  return (await query(`SELECT year, count(*)::BIGINT AS n, count(DISTINCT cntry_iso3)::BIGINT AS n_countries FROM ${LEVEL_SQL[lv].table} WHERE ${lp} IS NOT NULL GROUP BY year ORDER BY year`)) as any;
+}
+
+// ---- TL2/TL3: one country, every region and year, with the columns the
+// Overview and Autonomy views use
+export interface RegionRow {
+  cntry_iso3: string; reg_id: string; reg_name: string; year: number; lp_lpr: number | null; pop_total: number | null; lp_gap_frontier_pct: number | null;
+  lai_total_reg: number | null; lai_fiscal_reg: number | null; lai_policy_reg: number | null;
+  rai_total_reg: number | null; rai_selfrule_reg: number | null; rai_sharedrule_reg: number | null; rai_fiscalautonomy_reg: number | null;
+}
+const REGION_COLS = 'cntry_iso3, reg_id, coalesce(reg_name, reg_id) AS reg_name, year, lp_lpr, pop_total, lp_gap_frontier_pct, lai_total_reg, lai_fiscal_reg, lai_policy_reg, rai_total_reg, rai_selfrule_reg, rai_sharedrule_reg, rai_fiscalautonomy_reg';
+export async function regionsCountry(level: 'tl2' | 'tl3', iso3: string): Promise<RegionRow[]> {
+  const lv = requireUnitLevel(level);
+  return (await query(`SELECT ${REGION_COLS} FROM ${lv} WHERE cntry_iso3 = ${requireCountry(iso3)} ORDER BY reg_id, year`)) as RegionRow[];
+}
+
+// TL2/TL3: every country-year, the median and spread of regional
+// productivity and the median gap to the country's frontier region
+export interface RegionCountryYear { cntry_iso3: string; year: number; n: number; p10: number | null; p50: number | null; p90: number | null; gap_med: number | null }
+export async function regionsByCountryYear(level: 'tl2' | 'tl3'): Promise<RegionCountryYear[]> {
+  const lv = requireUnitLevel(level);
+  return (await query(`
+    SELECT cntry_iso3, year, count(*)::BIGINT AS n, quantile_cont(lp_lpr, 0.1) AS p10, quantile_cont(lp_lpr, 0.5) AS p50,
+      quantile_cont(lp_lpr, 0.9) AS p90, quantile_cont(lp_gap_frontier_pct, 0.5) AS gap_med
+    FROM ${lv} WHERE lp_lpr IS NOT NULL GROUP BY cntry_iso3, year ORDER BY cntry_iso3, year`)) as RegionCountryYear[];
+}
+
+// ---- the national table (national.parquet): productivity, growth,
+// regional dispersion, autonomy and fiscal ratios, country by year
+export interface NationalRow {
+  cntry_iso3: string; year: number; gdp_pw: number | null; gdp_ph: number | null; gdp_pc: number | null; growth_gdp_pc: number | null; growth_gdp_pw: number | null; pop: number | null;
+  rd_tl2_cv: number | null; rd_tl3_cv: number | null; rd_tl2_frontier_empsh: number | null;
+  fiscal_dec_dj_z: number | null; administrative_dec_z: number | null; political_dec_z: number | null;
+  imf_sd_sng: number | null; imf_rd_sng: number | null; imf_taxd_sng: number | null; ta_ab_share_scg: number | null; [k: string]: any;
+}
+export async function nationalAll(): Promise<NationalRow[]> {
+  return (await query(`SELECT * FROM national ORDER BY cntry_iso3, year`)) as NationalRow[];
 }
 
 // ---- national series

@@ -1,9 +1,10 @@
 <script lang="ts">
   // The Overview: the report's "Functional Urban Areas in <country>" table
-  // and the national context. Route: #/overview/<ISO3>
+  // and the national context; TL2/TL3 and national have their own
+  // components. Route: #/overview/<ISO3>?geo=<level>
   import * as Plot from '@observablehq/plot';
   import { href } from '../lib/router.svelte';
-  import { routeCountry } from '../lib/routeState';
+  import { routeCountry, routeGeo } from '../lib/routeState';
   import { manifest, countryName, countryOf } from '../lib/db/manifest.svelte';
   import { fuaCountry, natAll, type FuaRow, type NatRow } from '../lib/db/queries';
   import { fmtInt, fmtPct, fmtUsd, fmtShort, poss } from '../lib/util/format';
@@ -14,10 +15,13 @@
   import PlotChart from '../lib/components/PlotChart.svelte';
   import CountryLegend from '../lib/components/CountryLegend.svelte';
   import Spinner from '../lib/components/Spinner.svelte';
+  import RegionOverview from './level/RegionOverview.svelte';
+  import NationalOverview from './level/NationalOverview.svelte';
 
   const iso3 = $derived(routeCountry());
   const name = $derived(countryName(iso3));
   const refYear = $derived(manifest.refYear);
+  const geo = $derived(routeGeo());
 
   let fua = $state<FuaRow[]>([]);
   let nat = $state<NatRow[]>([]);
@@ -26,7 +30,7 @@
   let token = 0;
   $effect(() => {
     const c = iso3; const my = ++token;
-    if (!manifest.countries.length) return;
+    if (!manifest.countries.length || geo !== 'fua') return;
     loading = true; error = '';
     Promise.all([fuaCountry(c), natAll()]).then(([f, n]) => { if (my !== token) return; fua = f; nat = n; loading = false; })
       .catch((e) => { if (my === token) { error = e?.message ?? String(e); loading = false; } });
@@ -100,6 +104,11 @@
   import Text from '../lib/components/Text.svelte';
 </script>
 
+{#if geo === 'national'}
+<NationalOverview />
+{:else if geo !== 'fua'}
+<RegionOverview level={geo} />
+{:else}
 <div class="view">
   <header>
     <h1>{name}</h1>
@@ -153,6 +162,7 @@
     <CountryLegend countries={manifest.countries} {colours} focus={iso3} {present} />
   </ChartCard>
 </div>
+{/if}
 
 <style>
   .wrap { overflow: auto; }
