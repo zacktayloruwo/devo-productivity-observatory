@@ -4,8 +4,12 @@
 export interface Country { iso3: string; iso2: string; display: string; data_name: string; region: Region }
 export type Region = 'Anglo' | 'Continental Europe' | 'Nordic' | 'Asia';
 export interface Variable { id: string; label: string; short: string; fmt: 'usd' | 'usd2' | 'num' | 'pct' | 'ratio' | 'score'; source?: string; group?: string }
-export type Level = 'national' | 'tl2' | 'tl3' | 'fua';
-export const LEVELS: Level[] = ['national', 'tl2', 'tl3', 'fua'];
+export type Level = 'national' | 'tl2' | 'tl2b' | 'tl3' | 'fua';
+export const LEVELS: Level[] = ['national', 'tl2', 'tl2b', 'tl3', 'fua'];
+// the regional levels; TL2b (NUTS 2 between TL2 and TL3) exists only where
+// the OECD's TL2 is NUTS 1: the United Kingdom, Germany, Belgium and France
+export type RegionLevel = 'tl2' | 'tl2b' | 'tl3';
+export const isRegionLevel = (l: string): l is RegionLevel => l === 'tl2' || l === 'tl2b' || l === 'tl3';
 export interface LevelInfo { variables: Variable[]; var_years: Record<string, number[]>; countries?: string[] }
 export interface Manifest {
   built: string;
@@ -17,13 +21,13 @@ export interface Manifest {
   bboxes: Record<string, [number, number, number, number]>;   // xmin, ymin, xmax, ymax (lon/lat)
   no_geo: string[];
   files: { fua: Record<string, string>; geo: Record<string, string>; admin?: Record<string, string>; nat: string; lai: string; rai: string; sources: string; countries: string;
-    tl2?: Record<string, string>; tl3?: Record<string, string>; national?: string; regions?: Record<string, string>; regions_all?: string };
+    tl2?: Record<string, string>; tl2b?: Record<string, string>; tl3?: Record<string, string>; national?: string; regions?: Record<string, string>; regions_all?: string };
   levels?: Record<Level, LevelInfo>;
   eras?: Record<string, Record<string, { from: number; to: number }[]>>;
   geo_sources?: {
     sources: Record<string, { url: string; file_url: string; grid: string; retrieved: string }>;
     source_by_country: Record<string, string>;
-    units: Record<string, { tl2: number; tl3: number }>;
+    units: Record<string, { tl2: number; tl2b?: number; tl3: number }>;
   };
 }
 

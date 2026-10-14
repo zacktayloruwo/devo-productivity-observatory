@@ -1,5 +1,5 @@
 // Regional boundaries: one TopoJSON per country (objects national, tl2,
-// tl3) and a light all-countries national file, built by
+// tl2b where it exists, tl3) and a light all-countries national file, built by
 // data-prep/build_geography.R. Each polygon carries its validity years
 // (from, to); features(level, year) returns the polygons valid in that year.
 //
@@ -12,7 +12,7 @@ import type { MultiLineString } from 'geojson';
 import { versionedDataUrl, manifest } from '../db/manifest.svelte';
 import { rewind, type MapFeature } from './geojson';
 
-export type GeoLevel = 'national' | 'tl2' | 'tl3';
+export type GeoLevel = 'national' | 'tl2' | 'tl2b' | 'tl3';
 interface Props { id: string; name: string; parent: string; from?: number; to?: number }
 
 const topoCache = new Map<string, Promise<Topology | null>>();

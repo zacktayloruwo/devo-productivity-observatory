@@ -1,6 +1,6 @@
 <script lang="ts">
   import { route, replace } from './lib/router.svelte';
-  import { manifest } from './lib/db/manifest.svelte';
+  import { manifest, levelHasCountry } from './lib/db/manifest.svelte';
   import { routeView, routeCountry, routeGeo, viewLevels, DEFAULT_COUNTRY, HOME } from './lib/routeState';
   import { t } from './lib/text/t';
   import TopBar from './lib/components/TopBar.svelte';
@@ -28,6 +28,10 @@
   const geo = $derived(routeGeo());
   $effect(() => {
     if (view === 'autonomy' && !viewLevels(view).includes(geo)) replace(route.path, { ...route.query, geo: 'national' });
+    // TL2b in a country without it (TL2 is already NUTS 2 there) opens TL2,
+    // except on the all-countries map
+    else if (geo === 'tl2b' && manifest.value && !levelHasCountry('tl2b', country) && !(view === 'map' && route.query.scope === 'all'))
+      replace(route.path, { ...route.query, geo: 'tl2', sel: undefined, reg: undefined });
   });
   // a new view or country starts at the top; the map's year and selection do not scroll
   let main: HTMLElement | undefined = $state();

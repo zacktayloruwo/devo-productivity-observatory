@@ -3,10 +3,10 @@
   import { manifest } from '../db/manifest.svelte';
   import { dbStatus } from '../db/status.svelte';
   import { routeView, routeCountry, routeGeo, viewLevels } from '../routeState';
-  import { LEVELS, levelHasCountry, type Level } from '../db/manifest.svelte';
+  import { LEVELS, levelHasCountry, countryName, type Level } from '../db/manifest.svelte';
   import ThemeToggle from './ThemeToggle.svelte';
   import Spinner from './Spinner.svelte';
-  import { t } from '../text/t';
+  import { t, has } from '../text/t';
 
   const view = $derived(routeView());
   const country = $derived(routeCountry());
@@ -23,6 +23,21 @@
   function pickGeo(lv: Level) {
     const q = { ...route.query, geo: lv === 'fua' ? undefined : lv, sel: undefined, reg: undefined };
     if (followsGeo) go(route.path, q); else go(['map', country], q);
+  }
+
+  // A country without the level: TL2b outside the four countries that have it
+  // (every view), TL3 in Canada (the map; the other views say so in place)
+  const scopeAll = $derived(view === 'map' && route.query.scope === 'all');
+  const lacks = (lv: Level) => !scopeAll && ((lv === 'tl2b' && !levelHasCountry('tl2b', country)) || (lv === 'tl3' && view === 'map' && !levelHasCountry('tl3', country)));
+  // The hover box names the level in the selected country (geo.tip.<level>.<iso3>),
+  // else describes it in general (every country at once, or no country text)
+  function tip(lv: Level): string {
+    if (!offered.includes(lv)) return t('geo.unavailable.' + view);
+    const c = scopeAll || (view === 'map' && geo === 'national') ? '' : country;
+    const k = 'geo.tip.' + lv + '.' + c.toLowerCase();
+    if (c && has(k)) return t('geo.tip.' + lv + '.' + c.toLowerCase());
+    if (c && lv === 'tl2b' && lacks(lv)) return t('geo.tip.tl2b.none', { country: countryName(c) });
+    return t('geo.tip.' + lv);
   }
 
   // One selector for where the map looks: a country, or every country at
@@ -62,8 +77,8 @@
     <span class="muted">{t('geo.label')}</span>
     <div class="seg">
       {#each LEVELS as lv (lv)}
-        <button type="button" aria-pressed={followsGeo && shownGeo === lv} title={offered.includes(lv) ? t('geo.tip.' + lv) : t('geo.unavailable.' + view)}
-          disabled={!offered.includes(lv) || (lv === 'tl3' && view === 'map' && route.query.scope !== 'all' && !levelHasCountry('tl3', country))}
+        <button type="button" aria-pressed={followsGeo && shownGeo === lv} title={tip(lv)}
+          disabled={!offered.includes(lv) || lacks(lv)}
           onclick={() => pickGeo(lv)}>{t('geo.' + lv)}</button>
       {/each}
     </div>

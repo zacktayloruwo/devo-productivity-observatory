@@ -24,6 +24,14 @@
 # (BEA economic areas) cross state lines: its TL2 are the OECD state
 # polygons and its national outline is dissolved from them.
 #
+# TL2b: in the United Kingdom, Germany, Belgium and France the OECD's TL2 is
+# NUTS 1 (ITL 1), so the NUTS 2 (ITL 2) level between TL2 and TL3 is added
+# as TL2b, from the common database's tl2b table. Its polygons are TL3
+# dissolved by the first four characters of the code, in the same arc table,
+# so the three levels nest exactly. French overseas units equal their TL2
+# region and are left out. Names: Eurostat GISCO NUTS 2024 level 2, and the
+# ONS ITL 2 (January 2025) names and codes for the United Kingdom.
+#
 # Every polygon carries id, name, parent and its validity years (from, to).
 # The panel back-casts one grid per country, so today each country has one
 # era; a later grid change adds polygons with their own years, and the
@@ -80,7 +88,13 @@ SOURCES <- list(
     file = "gisco_nuts_2024_l3_01m.geojson",
     grid = "NUTS 2024"
   ),
-  # level 2, for the names of TL2 units the OECD has not named yet (NL35, NL36)
+  # ONS ITL 2 (January 2025) names and codes, for the UK's TL2b units
+  ons_itl2 = list(
+    url  = "https://services1.arcgis.com/ESMARspQHYMw9BZ9/arcgis/rest/services/ITL2_JAN_2025_UK_NC/FeatureServer/0/query?where=1%3D1&outFields=ITL225CD,ITL225NM&f=json",
+    file = "ons_itl2_2025_names.json"
+  ),
+  # level 2, for the names of TL2 units the OECD has not named yet (NL35,
+  # NL36) and of the TL2b units
   gisco2 = list(
     url  = "https://gisco-services.ec.europa.eu/distribution/v2/nuts/geojson/NUTS_RG_60M_2024_4326_LEVL_2.geojson",
     file = "gisco_nuts_2024_l2_60m.geojson"
@@ -104,6 +118,12 @@ DATA_VARS <- c("lp_lpr", "lp_gdp_q", "gdppc_q_usdppp", "pop_total", "emp")
 panel <- panel[rowSums(!is.na(panel[DATA_VARS])) > 0, ]
 names_panel <- panel |> filter(!is.na(reg_name)) |> distinct(reg_id, reg_name)
 
+# TL2b: units with data, from the common database (see the header)
+TL2B <- c("GBR", "DEU", "BEL", "FRA")
+panel2b <- arrow::open_dataset(file.path(datapack, "_data/db", "tl2b")) |> collect() |>
+  filter(iso3 %in% TL2B, !grepl("^FRY", reg_id))
+panel2b <- panel2b[rowSums(!is.na(panel2b[DATA_VARS])) > 0, ]
+
 # ── TL3 per country, full resolution ────────────────────────────────────────
 oecd3 <- st_read(file.path(datapack, "_data/oecd_boundaries/OECD_TL3_shapefile/OECD_TL3_2020.shp"),
                  quiet = TRUE, options = "ENCODING=LATIN1") |>
@@ -123,7 +143,9 @@ gisco <- st_read(fetch(SOURCES$gisco), quiet = TRUE) |>
   transmute(iso3, id = NUTS_ID, name = NAME_LATN, parent = substr(id, 1, tl2_len))
 
 gisco2_names <- st_read(fetch(SOURCES$gisco2), quiet = TRUE) |> st_drop_geometry() |>
-  transmute(id = NUTS_ID, name = NAME_LATN)
+  transmute(id = NUTS_ID, name = NUTS_NAME)
+uk2_names <- jsonlite::fromJSON(fetch(SOURCES$ons_itl2))$features$attributes |>
+  transmute(id = sub("^TL", "UK", ITL225CD), name = ITL225NM)
 
 tl3_all <- bind_rows(
   oecd3 |> filter(!iso3 %in% c("GBR", GISCO$iso3)),
@@ -167,20 +189,35 @@ for (iso in COUNTRIES) {
   }
   t2 <- t2 |> mutate(name = gsub("\u0092", "’", name), parent = iso,
                      from = e2$from, to = e2$to)
+  # TL2b: TL3 grouped by the code's first four characters (metropolitan
+  # France only); the attributes go to the topology step as a CSV
+  t2b <- NULL
+  f2b <- file.path(src_dir, sprintf("%s.tl2b.csv", iso))
+  if (file.exists(f2b)) unlink(f2b)
+  if (has_tl3 && iso %in% TL2B) {
+    t3 <- t3 |> mutate(tl2b = ifelse(grepl("^FRY", id), NA_character_, substr(id, 1, 4)))
+    e2b <- panel2b |> filter(iso3 == iso)
+    t2b <- st_drop_geometry(t3) |> filter(!is.na(tl2b)) |> distinct(id = tl2b, parent) |>
+      left_join(bind_rows(gisco2_names, uk2_names) |> distinct(id, .keep_all = TRUE), by = "id") |>
+      mutate(name = coalesce(gsub("\u0092", "’", name), id), from = min(e2b$year), to = max(e2b$year))
+    if (anyDuplicated(t2b$id)) stop(iso, ": a TL2b unit spans two TL2 regions")
+    write_csv(t2b, f2b)
+  }
   # write the sources for the topology step
   w <- function(x, lv) {
     f <- file.path(src_dir, sprintf("%s.%s.geojson", iso, lv))
     if (file.exists(f)) unlink(f)
     x <- st_transform(x, 4326)
-    st_write(x |> select(id, name, parent, from, to), f, driver = "GeoJSON", quiet = TRUE)
+    st_write(x |> select(any_of(c("id", "name", "parent", "from", "to", "tl2b"))), f, driver = "GeoJSON", quiet = TRUE)
   }
-  if (has_tl3) w(t3 |> select(id, name, parent, from, to), "tl3")
+  if (has_tl3) w(t3, "tl3")
   w(t2, "tl2")
   index[[iso]] <- bind_rows(
     if (has_tl3) st_drop_geometry(t3) |> transmute(iso3 = iso, level = "tl3", id, name, parent, from, to),
+    if (!is.null(t2b)) t2b |> transmute(iso3 = iso, level = "tl2b", id, name, parent, from, to),
     st_drop_geometry(t2) |> transmute(iso3 = iso, level = "tl2", id, name, parent, from, to)
   )
-  message(sprintf("%s  %-8s  tl3 %3d  tl2 %2d", iso, source_of(iso), nrow(t3), nrow(t2)))
+  message(sprintf("%s  %-8s  tl3 %3d  tl2b %2d  tl2 %2d", iso, source_of(iso), nrow(t3), if (is.null(t2b)) 0L else nrow(t2b), nrow(t2)))
 }
 idx <- bind_rows(index)
 write_csv(idx, file.path(cache, "geo_index.csv"))
@@ -201,7 +238,8 @@ write_json(list(
   source_by_country = setNames(as.list(vapply(COUNTRIES, source_of, "")), COUNTRIES),
   units = setNames(lapply(COUNTRIES, function(i) {
     u <- units |> filter(iso3 == i)
-    list(tl2 = if (nrow(u) && "tl2" %in% names(u)) u$tl2 else 0L, tl3 = if (nrow(u) && "tl3" %in% names(u)) u$tl3 else 0L)
+    list(tl2 = if (nrow(u) && "tl2" %in% names(u)) u$tl2 else 0L, tl2b = if (nrow(u) && "tl2b" %in% names(u)) u$tl2b else 0L,
+         tl3 = if (nrow(u) && "tl3" %in% names(u)) u$tl3 else 0L)
   }), COUNTRIES)
 ), file.path(cache, "geo_sources.json"), auto_unbox = TRUE, pretty = TRUE)
 

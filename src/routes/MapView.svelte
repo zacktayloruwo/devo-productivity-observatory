@@ -82,7 +82,7 @@
     // outlines of the selected country only: its subnational governments on
     // FUA and TL2 maps, its TL2 borders on a TL3 map
     const ad: Promise<AdminFeature[]> = !all && (lv === 'fua' || lv === 'tl2') ? adminFor(c) : Promise.resolve([]);
-    const me: Promise<MultiLineString | null> = !all && lv === 'tl3' ? tl2Mesh(c) : Promise.resolve(null);
+    const me: Promise<MultiLineString | null> = !all && (lv === 'tl3' || lv === 'tl2b') ? tl2Mesh(c) : Promise.resolve(null);
     // the selected country's boundary, from its own national-level polygon
     const ol: Promise<MapFeature | null> = all ? Promise.resolve(null) : nationalOutline(c);
     Promise.all([fs, ad, me, ol]).then(([f, a, m, o]) => {
@@ -202,7 +202,7 @@
     <div class="map">
       <MapCanvas bind:this={mapRef} {features} layout={layoutFor(scopeAll ? null : iso3)} land={land.countries} borders={scopeAll ? null : outline} {admin} {mesh} {fillFor} {tipFor} {selected} onselect={select} />
       {#if relative ? relT.length === 3 : bounds.length >= 2}
-        <Legend title={relative ? t('map.rel.legend_title', { variable: variable?.short ?? '', year }) : t('map.legend.title', { variable: variable?.short ?? '', year })} {labels} {colours} neutral={tokens.neutral} note={relative ? t(relPct ? 'map.rel.note_pct' : 'map.rel.note_diff', { units: t('geo.units.' + level), variable_label: variable?.label ?? '' }) : t('map.legend.note', { n_years: years.length, scope: scopeAll ? t('map.legend.scope_all') : name, variable_label: variable?.label ?? '' }) + ((level === 'tl2' || level === 'tl3') && variable?.id.startsWith('lai_') ? ' ' + t('map.legend.regions_note') : '')} />
+        <Legend title={relative ? t('map.rel.legend_title', { variable: variable?.short ?? '', year }) : t('map.legend.title', { variable: variable?.short ?? '', year })} {labels} {colours} neutral={tokens.neutral} note={relative ? t(relPct ? 'map.rel.note_pct' : 'map.rel.note_diff', { units: t('geo.units.' + level), variable_label: variable?.label ?? '' }) : t('map.legend.note', { n_years: years.length, scope: scopeAll ? t('map.legend.scope_all') : name, variable_label: variable?.label ?? '' }) + ((level === 'tl2' || level === 'tl2b' || level === 'tl3') && variable?.id.startsWith('lai_') ? ' ' + t('map.legend.regions_note') : '')} />
       {/if}
     </div>
     {#if selected}

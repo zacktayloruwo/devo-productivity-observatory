@@ -16,7 +16,7 @@
 
 {#if geo === 'national'}
   <NationalDispersion />
-{:else if geo === 'tl2' || geo === 'tl3'}
+{:else if geo === 'tl2' || geo === 'tl2b' || geo === 'tl3'}
   <RegionDispersion level={geo} />
 {:else}
   <div class="view">

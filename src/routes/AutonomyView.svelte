@@ -28,7 +28,7 @@
   let loading = $state(true);
   let error = $state('');
   $effect(() => {
-    if (!countries.length || geo === 'tl2' || geo === 'tl3') return;
+    if (!countries.length || geo === 'tl2' || geo === 'tl2b' || geo === 'tl3') return;
     Promise.all([laiAll(), raiAll()]).then(([l, r]) => { lai = fromFirstYear(l); rai = fromFirstYear(r); loading = false; }).catch((e) => { error = e?.message ?? String(e); loading = false; });
   });
 
@@ -58,7 +58,7 @@
   import Text from '../lib/components/Text.svelte';
 </script>
 
-{#if geo === 'tl2' || geo === 'tl3'}
+{#if geo === 'tl2' || geo === 'tl2b' || geo === 'tl3'}
 <RegionAutonomy level={geo} />
 {:else}
 <div class="view">

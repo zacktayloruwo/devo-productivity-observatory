@@ -39,6 +39,17 @@ for (const iso of countries) {
   const input = { 'tl2.json': readFileSync(tl2, 'utf8') };
   if (has3) input['tl3.json'] = readFileSync(tl3, 'utf8');
   const nested = has3 && iso !== 'USA';
+  // TL2b (NUTS 2 where the OECD's TL2 is NUTS 1): TL3 dissolved by its tl2b
+  // field, attributes joined from <ISO3>.tl2b.csv
+  const tl2bCsv = join(srcDir, `${iso}.tl2b.csv`);
+  const has2b = nested && existsSync(tl2bCsv);
+  if (has2b) input['tl2b.csv'] = readFileSync(tl2bCsv, 'utf8');
+  const tl2bCmd = has2b
+    ? `-dissolve tl2b target=tl3 + name=tl2b_d -filter "tl2b != null && tl2b !== ''" target=tl2b_d ` +
+      `-i tl2b.csv name=tl2b_attr string-fields=id,parent ` +
+      `-join tl2b_attr keys=tl2b,id fields=id,name,parent,from,to target=tl2b_d -rename-layers tl2b target=tl2b_d -drop target=tl2b_attr `
+    : '';
+  const targets = has2b ? 'tl3,tl2b,tl2,national' : 'tl3,tl2,national';
   const v = vertexCount(JSON.parse(has3 ? input['tl3.json'] : input['tl2.json']));
   const keepFor = (n) => Math.max(0.2, Math.min(100, (100 * BUDGET) / n)).toFixed(3);
   const keep = keepFor(v);
@@ -47,11 +58,11 @@ for (const iso of countries) {
   // table. USA: TL3 and TL2 imported together (shared arcs where they
   // coincide), national dissolved from TL2.
   const cmd = nested
-    ? `-i tl3.json name=tl3 -dissolve parent copy-fields=parent + name=tl2_d -i tl2.json name=tl2_attr ` +
+    ? `-i tl3.json name=tl3 ${tl2bCmd}-dissolve parent target=tl3 copy-fields=parent + name=tl2_d -i tl2.json name=tl2_attr ` +
       `-join tl2_attr keys=parent,id fields=id,name,from,to target=tl2_d -rename-layers tl2 target=tl2_d ` +
       `-drop target=tl2_attr -dissolve target=tl2 + name=national ` +
       `-simplify ${keep}% keep-shapes target=* -clean target=* ` +
-      `-o format=topojson quantization=100000 target=tl3,tl2,national out.json`
+      `-o format=topojson quantization=100000 target=${targets} out.json`
     : has3
       ? `-i combine-files tl3.json tl2.json -rename-layers tl3,tl2 -dissolve target=tl2 + name=national ` +
         `-simplify ${keep}% keep-shapes target=* -clean target=* ` +
@@ -82,10 +93,16 @@ for (const iso of countries) {
     const p = g.properties ?? {};
     g.properties = { id: p.id ?? p.parent, name: p.name ?? p.id ?? p.parent, parent: iso, from: p.from, to: p.to };
   }
+  // tl2b: the joined attributes; tl3 drops its helper field
+  for (const g of topo.objects.tl2b?.geometries ?? []) {
+    const p = g.properties ?? {};
+    g.properties = { id: p.id ?? p.tl2b, name: p.name ?? p.id ?? p.tl2b, parent: p.parent, from: p.from, to: p.to };
+  }
+  for (const g of topo.objects.tl3?.geometries ?? []) if (g.properties) delete g.properties.tl2b;
   const file = join(outDir, `${iso}.topo.json`);
   writeFileSync(file, JSON.stringify(topo));
   const n = (k) => topo.objects[k]?.geometries.length ?? 0;
-  console.log(`${iso}  tl3 ${String(n('tl3')).padStart(3)}  tl2 ${String(n('tl2')).padStart(2)}  ${(statSync(file).size / 1024).toFixed(0).padStart(4)} KB  keep ${keep}%`);
+  console.log(`${iso}  tl3 ${String(n('tl3')).padStart(3)}  tl2b ${String(n('tl2b')).padStart(2)}  tl2 ${String(n('tl2')).padStart(2)}  ${(statSync(file).size / 1024).toFixed(0).padStart(4)} KB  keep ${keep}%`);
 
   // light national outline for the all-countries map
   const light = await run(

@@ -18,7 +18,7 @@
   import NationalLpCard from '../../lib/components/cards/NationalLpCard.svelte';
   import { t } from '../../lib/text/t';
 
-  let { level }: { level: 'tl2' | 'tl3' } = $props();
+  let { level }: { level: 'tl2' | 'tl2b' | 'tl3' } = $props();
   const iso3 = $derived(routeCountry());
   const name = $derived(countryName(iso3));
   const refYear = $derived(manifest.refYear);

@@ -574,6 +574,117 @@
       },
       "countries": ["CAN", "FRA", "DEU", "ITA", "JPN", "KOR", "ESP", "GBR", "USA", "AUS", "NZL", "BEL", "NLD", "FIN", "NOR", "SWE"]
     },
+    "tl2b": {
+      "variables": [
+        {
+          "id": "lp_lpr",
+          "label": "Labour productivity: GVA per worker (USD PPP, constant 2020 prices)",
+          "short": "Labour productivity",
+          "fmt": "usd",
+          "group": "economy"
+        },
+        {
+          "id": "lp_gdp_q",
+          "label": "GDP per worker (USD PPP, constant prices)",
+          "short": "GDP per worker",
+          "fmt": "usd",
+          "group": "economy"
+        },
+        {
+          "id": "gdppc_q_usdppp",
+          "label": "GDP per capita (USD PPP, constant prices)",
+          "short": "GDP per capita",
+          "fmt": "usd",
+          "group": "economy"
+        },
+        {
+          "id": "lp_gap_frontier_pct",
+          "label": "Productivity gap to the country's most productive region (%)",
+          "short": "Gap to frontier",
+          "fmt": "pct",
+          "group": "economy"
+        },
+        {
+          "id": "pop_total",
+          "label": "Population",
+          "short": "Population",
+          "fmt": "num",
+          "group": "people"
+        },
+        {
+          "id": "emp",
+          "label": "Employment (persons, place of work)",
+          "short": "Employment",
+          "fmt": "num",
+          "group": "people"
+        },
+        {
+          "id": "lai_total_reg",
+          "label": "Local Autonomy Index, region-specific (0–1)",
+          "short": "LAI",
+          "fmt": "score",
+          "group": "autonomy"
+        },
+        {
+          "id": "lai_fiscal_reg",
+          "label": "Local Autonomy Index, fiscal, region-specific (0–1)",
+          "short": "LAI fiscal",
+          "fmt": "score",
+          "group": "autonomy"
+        },
+        {
+          "id": "lai_policy_reg",
+          "label": "Local Autonomy Index, policy, region-specific (0–1)",
+          "short": "LAI policy",
+          "fmt": "score",
+          "group": "autonomy"
+        },
+        {
+          "id": "rai_total_reg",
+          "label": "Regional Authority Index, region-specific (points, summed over every tier governing the region)",
+          "short": "RAI",
+          "fmt": "score",
+          "group": "autonomy"
+        },
+        {
+          "id": "rai_selfrule_reg",
+          "label": "Regional Authority Index, self-rule, region-specific (points)",
+          "short": "RAI self-rule",
+          "fmt": "score",
+          "group": "autonomy"
+        },
+        {
+          "id": "rai_sharedrule_reg",
+          "label": "Regional Authority Index, shared rule, region-specific (points)",
+          "short": "RAI shared rule",
+          "fmt": "score",
+          "group": "autonomy"
+        },
+        {
+          "id": "rai_fiscalautonomy_reg",
+          "label": "Regional Authority Index, fiscal autonomy, region-specific (points)",
+          "short": "RAI fiscal autonomy",
+          "fmt": "score",
+          "group": "autonomy"
+        }
+      ],
+      "var_years": {
+        "lp_lpr": [2000, 2001, 2002, 2003, 2004, 2005, 2006, 2007, 2008, 2009, 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2021, 2022, 2023, 2024],
+        "lp_gdp_q": [2000, 2001, 2002, 2003, 2004, 2005, 2006, 2007, 2008, 2009, 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2021, 2022, 2023, 2024],
+        "gdppc_q_usdppp": [2000, 2001, 2002, 2003, 2004, 2005, 2006, 2007, 2008, 2009, 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2021, 2022, 2023, 2024],
+        "lp_gap_frontier_pct": [2000, 2001, 2002, 2003, 2004, 2005, 2006, 2007, 2008, 2009, 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2021, 2022, 2023, 2024],
+        "pop_total": [2000, 2001, 2002, 2003, 2004, 2005, 2006, 2007, 2008, 2009, 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2021, 2022, 2023, 2024],
+        "emp": [2000, 2001, 2002, 2003, 2004, 2005, 2006, 2007, 2008, 2009, 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2021, 2022, 2023, 2024],
+        "lai_total_reg": [2000, 2001, 2002, 2003, 2004, 2005, 2006, 2007, 2008, 2009, 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020],
+        "lai_fiscal_reg": [2000, 2001, 2002, 2003, 2004, 2005, 2006, 2007, 2008, 2009, 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020],
+        "lai_policy_reg": [2000, 2001, 2002, 2003, 2004, 2005, 2006, 2007, 2008, 2009, 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020],
+        "rai_total_reg": [2000, 2001, 2002, 2003, 2004, 2005, 2006, 2007, 2008, 2009, 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018],
+        "rai_selfrule_reg": [2000, 2001, 2002, 2003, 2004, 2005, 2006, 2007, 2008, 2009, 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018],
+        "rai_sharedrule_reg": [2000, 2001, 2002, 2003, 2004, 2005, 2006, 2007, 2008, 2009, 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018],
+        "rai_fiscalautonomy_reg": [2000, 2001, 2002, 2003, 2004, 2005, 2006, 2007, 2008, 2009, 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018]
+      },
+      "countries": ["FRA", "DEU", "GBR", "BEL"]
+    },
     "tl3": {
       "variables": [
         {
@@ -827,6 +938,12 @@
           "to": 2024
         }
       ],
+      "tl2b": [
+        {
+          "from": 2003,
+          "to": 2024
+        }
+      ],
       "tl3": [
         {
           "from": 2003,
@@ -844,6 +961,12 @@
     },
     "DEU": {
       "tl2": [
+        {
+          "from": 2000,
+          "to": 2024
+        }
+      ],
+      "tl2b": [
         {
           "from": 2000,
           "to": 2024
@@ -891,6 +1014,12 @@
           "to": 2024
         }
       ],
+      "tl2b": [
+        {
+          "from": 2000,
+          "to": 2024
+        }
+      ],
       "tl3": [
         {
           "from": 2000,
@@ -902,6 +1031,12 @@
       "tl2": [
         {
           "from": 1998,
+          "to": 2024
+        }
+      ],
+      "tl2b": [
+        {
+          "from": 2000,
           "to": 2024
         }
       ],
@@ -1068,66 +1203,82 @@
     "units": {
       "CAN": {
         "tl2": 13,
+        "tl2b": 0,
         "tl3": 0
       },
       "FRA": {
         "tl2": 18,
+        "tl2b": 22,
         "tl3": 101
       },
       "DEU": {
         "tl2": 16,
+        "tl2b": 38,
         "tl3": 400
       },
       "ITA": {
         "tl2": 21,
+        "tl2b": 0,
         "tl3": 107
       },
       "JPN": {
         "tl2": 10,
+        "tl2b": 0,
         "tl3": 47
       },
       "KOR": {
         "tl2": 7,
+        "tl2b": 0,
         "tl3": 17
       },
       "ESP": {
         "tl2": 19,
+        "tl2b": 0,
         "tl3": 59
       },
       "GBR": {
         "tl2": 12,
+        "tl2b": 46,
         "tl3": 182
       },
       "USA": {
         "tl2": 51,
+        "tl2b": 0,
         "tl3": 179
       },
       "AUS": {
         "tl2": 8,
+        "tl2b": 0,
         "tl3": 49
       },
       "BEL": {
         "tl2": 3,
+        "tl2b": 11,
         "tl3": 44
       },
       "FIN": {
         "tl2": 5,
+        "tl2b": 0,
         "tl3": 19
       },
       "NLD": {
         "tl2": 12,
+        "tl2b": 0,
         "tl3": 40
       },
       "NZL": {
         "tl2": 14,
+        "tl2b": 0,
         "tl3": 14
       },
       "NOR": {
         "tl2": 7,
+        "tl2b": 0,
         "tl3": 17
       },
       "SWE": {
         "tl2": 8,
+        "tl2b": 0,
         "tl3": 21
       }
     }
@@ -1197,6 +1348,12 @@
       "FIN": "tl2/cntry_iso3=FIN/part.parquet",
       "NOR": "tl2/cntry_iso3=NOR/part.parquet",
       "SWE": "tl2/cntry_iso3=SWE/part.parquet"
+    },
+    "tl2b": {
+      "FRA": "tl2b/cntry_iso3=FRA/part.parquet",
+      "DEU": "tl2b/cntry_iso3=DEU/part.parquet",
+      "GBR": "tl2b/cntry_iso3=GBR/part.parquet",
+      "BEL": "tl2b/cntry_iso3=BEL/part.parquet"
     },
     "tl3": {
       "FRA": "tl3/cntry_iso3=FRA/part.parquet",

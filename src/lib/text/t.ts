@@ -29,6 +29,9 @@ function fill(key: string, vars: Vars = {}): string {
   });
 }
 
+// whether the text table has a key (for optional, e.g. per-country, texts)
+export function has(key: string): boolean { return TABLE[key] !== undefined; }
+
 // the raw string with placeholders filled and markup kept (for Text.svelte)
 export function raw(key: string, vars?: Vars): string { return fill(key, vars); }
 

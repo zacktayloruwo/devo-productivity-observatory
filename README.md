@@ -18,7 +18,7 @@ Analysis pipeline.
 | Overview | The profile's FUA summary table (2009, 2014, 2019, latest), reference-year KPIs, national GDP per worker by country |
 | Productivity | Ranked FUAs (top, middle, bottom ten), productivity against population, R² by country, distribution by country, change over 2004–2019 (CAGR), percentile spread and coefficient of variation, mean productivity by country. The snapshot year can be changed. |
 | Autonomy | Local Autonomy Index and Regional Authority Index, total and fiscal scores, step charts by country |
-| Map | Choropleth at four geographies, chosen in the top bar: **National** (every country at once), **TL2** and **TL3** (OECD large and small regions) and **FUA**. National indicators include productivity and growth, LAI and RAI, the fiscal, administrative and political decentralization indices, IMF and OECD fiscal ratios, quality of government and regional dispersion; TL2/TL3 indicators include productivity, GDP per capita, gap to the frontier region, population and labour market, region-specific LAI and RAI, and EQI; FUA indicators are productivity, GDP, population, density, dependency ratio and patents. One country or all nine, year slider, inspector with the unit's time series, quantile classes pooled across years |
+| Map | Choropleth at five geographies, chosen in the top bar: **National** (every country at once), **TL2** and **TL3** (OECD large and small regions), **TL2b** (NUTS 2 between them, in four countries) and **FUA**. Hovering a geography button names the level in the selected country. National indicators include productivity and growth, LAI and RAI, the fiscal, administrative and political decentralization indices, IMF and OECD fiscal ratios, quality of government and regional dispersion; TL2/TL3 indicators include productivity, GDP per capita, gap to the frontier region, population and labour market, region-specific LAI and RAI, and EQI; FUA indicators are productivity, GDP, population, density, dependency ratio and patents. One country or all of them, year slider, inspector with the unit's time series, quantile classes pooled across years |
 | Sources | Every source with its years of coverage for the country, how the series are combined, full citations |
 
 The country is chosen in the top bar; the URL hash carries every selection
@@ -48,6 +48,12 @@ Every chart has a table twin and a CSV download. Light and dark themes.
   carries its validity years; the data build fails unless every region-year
   with data has exactly one polygon valid that year, and a later grid change
   adds a new era whose unchanged units reuse the existing arcs.
+- **TL2b** is the NUTS 2 (ITL 2) level between TL2 and TL3 in the four
+  countries where the OECD's TL2 is NUTS 1: the United Kingdom, Germany,
+  Belgium and metropolitan France. Its data are the common database's `tl2b`
+  table; its polygons are TL3 dissolved by the code's first four characters,
+  in the same topology, and its names come from Eurostat GISCO NUTS 2024 and
+  the ONS ITL 2 (January 2025) names and codes.
 - **FUA boundaries** are one simplified GeoJSON per country (`data/geo/<ISO3>.geojson`),
   fetched only when the map is opened for that country. Each country is drawn
   on its own projection (Lambert conformal conic with the country's customary

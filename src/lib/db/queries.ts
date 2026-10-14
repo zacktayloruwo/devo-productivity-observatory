@@ -37,9 +37,9 @@ export async function fuaCountry(iso3: string): Promise<FuaRow[]> {
 
 // ---- labour productivity by unit (FUA, TL2 or TL3 region), one shape for
 // the Productivity view: id, name, population and productivity
-export type UnitLevel = 'fua' | 'tl2' | 'tl3';
+export type UnitLevel = 'fua' | 'tl2' | 'tl2b' | 'tl3';
 export interface UnitRow { cntry_iso3: string; id: string; name: string; year: number; pop: number | null; lp: number | null }
-const UNIT_LP: Record<UnitLevel, string> = { fua: 'labprod_usdppp', tl2: 'lp_lpr', tl3: 'lp_lpr' };
+const UNIT_LP: Record<UnitLevel, string> = { fua: 'labprod_usdppp', tl2: 'lp_lpr', tl2b: 'lp_lpr', tl3: 'lp_lpr' };
 function unitCols(level: UnitLevel, prefix = ''): string {
   const L = LEVEL_SQL[level];
   // some recoded TL3 regions carry no name in the panel: show the code
@@ -47,7 +47,7 @@ function unitCols(level: UnitLevel, prefix = ''): string {
   return `${prefix}cntry_iso3, ${prefix}${L.id} AS id, ${name} AS name, ${prefix}year, ${prefix}${L.pop} AS pop, ${prefix}${UNIT_LP[level]} AS lp`;
 }
 function requireUnitLevel(level: string): UnitLevel {
-  if (level !== 'fua' && level !== 'tl2' && level !== 'tl3') throw new Error(`unknown level ${level}`);
+  if (level !== 'fua' && level !== 'tl2' && level !== 'tl2b' && level !== 'tl3') throw new Error(`unknown level ${level}`);
   return level;
 }
 
@@ -98,7 +98,7 @@ export interface RegionRow {
   rai_total_reg: number | null; rai_selfrule_reg: number | null; rai_sharedrule_reg: number | null; rai_fiscalautonomy_reg: number | null;
 }
 const REGION_COLS = 'cntry_iso3, reg_id, coalesce(reg_name, reg_id) AS reg_name, year, lp_lpr, pop_total, lp_gap_frontier_pct, lai_total_reg, lai_fiscal_reg, lai_policy_reg, rai_total_reg, rai_selfrule_reg, rai_sharedrule_reg, rai_fiscalautonomy_reg';
-export async function regionsCountry(level: 'tl2' | 'tl3', iso3: string): Promise<RegionRow[]> {
+export async function regionsCountry(level: 'tl2' | 'tl2b' | 'tl3', iso3: string): Promise<RegionRow[]> {
   const lv = requireUnitLevel(level);
   return (await query(`SELECT ${REGION_COLS} FROM ${lv} WHERE cntry_iso3 = ${requireCountry(iso3)} ORDER BY reg_id, year`)) as RegionRow[];
 }
@@ -106,7 +106,7 @@ export async function regionsCountry(level: 'tl2' | 'tl3', iso3: string): Promis
 // TL2/TL3: every country-year, the median and spread of regional
 // productivity and the median gap to the country's frontier region
 export interface RegionCountryYear { cntry_iso3: string; year: number; n: number; p10: number | null; p50: number | null; p90: number | null; gap_med: number | null }
-export async function regionsByCountryYear(level: 'tl2' | 'tl3'): Promise<RegionCountryYear[]> {
+export async function regionsByCountryYear(level: 'tl2' | 'tl2b' | 'tl3'): Promise<RegionCountryYear[]> {
   const lv = requireUnitLevel(level);
   return (await query(`
     SELECT cntry_iso3, year, count(*)::BIGINT AS n, quantile_cont(lp_lpr, 0.1) AS p10, quantile_cont(lp_lpr, 0.5) AS p50,
@@ -170,6 +170,7 @@ export interface MapValue { cntry_iso3: string; id: string; name: string; year: 
 const LEVEL_SQL: Record<Level, { table: string; id: string; name: string; pop: string }> = {
   fua: { table: 'fua', id: 'fua_id', name: 'fua_name', pop: 'pop' },
   tl2: { table: 'tl2', id: 'reg_id', name: 'reg_name', pop: 'pop_total' },
+  tl2b: { table: 'tl2b', id: 'reg_id', name: 'reg_name', pop: 'pop_total' },
   tl3: { table: 'tl3', id: 'reg_id', name: 'reg_name', pop: 'pop_total' },
   national: { table: 'national', id: 'cntry_iso3', name: 'cntry_iso3', pop: 'pop' }
 };

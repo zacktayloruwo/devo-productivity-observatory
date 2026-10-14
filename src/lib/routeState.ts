@@ -12,7 +12,7 @@ export const VIEWS = ['overview', 'productivity', 'growth', 'dispersion', 'auton
 // Growth is national series only, Autonomy has no FUA indices
 export function viewLevels(view: View): Level[] {
   if (view === 'growth') return ['national'];
-  if (view === 'autonomy') return ['national', 'tl2', 'tl3'];
+  if (view === 'autonomy') return ['national', 'tl2', 'tl2b', 'tl3'];
   return LEVELS;
 }
 export type View = (typeof VIEWS)[number];
@@ -37,7 +37,7 @@ export function routeYear(years: number[], fallback?: number): number {
   return years.length ? years[years.length - 1] : 0;
 }
 
-// The geography in view (?geo=national|tl2|tl3|fua); FUA by default, so
+// The geography in view (?geo=national|tl2|tl2b|tl3|fua); FUA by default, so
 // links made before the selector existed keep their meaning
 export function routeGeo(): Level {
   const g = route.query.geo as Level;

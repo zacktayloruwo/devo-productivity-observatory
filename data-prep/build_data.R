@@ -281,10 +281,19 @@ nat_vars <- list(
 )
 reg_ids <- vapply(reg_vars, `[[`, "", "id"); nat_ids <- vapply(nat_vars, `[[`, "", "id")
 
-regp <- bind_rows(from_db("tl2"), from_db("tl3")) |>
+# TL2b: the NUTS 2 (ITL 2) level between TL2 and TL3 where the OECD's TL2 is
+# NUTS 1 (GBR, DEU, BEL, metropolitan FRA). It has no frontier gap or
+# names in the store: the gap is computed here as for TL2/TL3, the names
+# come from the boundary files below
+tl2b <- from_db("tl2b") |> filter(!grepl("^FRY", reg_id)) |>
+  group_by(iso3, year) |>
+  mutate(ln_lp_gap_frontier = if (any(!is.na(lp_lpr))) log(lp_lpr) - log(max(lp_lpr, na.rm = TRUE)) else NA_real_) |>
+  ungroup()
+regp <- bind_rows(from_db("tl2"), tl2b, from_db("tl3")) |>
   filter(iso3 %in% countries$iso3) |>
   mutate(year = as.integer(year), level = tolower(tl),
          lp_gap_frontier_pct = 100 * (exp(ln_lp_gap_frontier) - 1))
+for (v in setdiff(reg_ids, names(regp))) regp[[v]] <- NA_real_
 CORE <- c("lp_lpr", "lp_gdp_q", "gdppc_q_usdppp", "pop_total", "emp")   # as in build_geography.R
 regp$has_core <- rowSums(!is.na(regp[CORE])) > 0
 # Rows outside the grid: extra-regio codes, and codes that carry none of the
@@ -331,8 +340,8 @@ for (key in unique(paste(regp$iso3, regp$level))) {
 }
 cat("one-to-one check passed: every region-year with data has exactly one polygon\n")
 
-reg_files <- list(tl2 = list(), tl3 = list())
-for (lv in c("tl2", "tl3")) for (iso in countries$iso3) {
+reg_files <- list(tl2 = list(), tl2b = list(), tl3 = list())
+for (lv in c("tl2", "tl2b", "tl3")) for (iso in countries$iso3) {
   d <- regp |> filter(level == lv, iso3 == iso) |>
     transmute(reg_id, reg_name, year, !!!rlang::syms(reg_ids)) |> arrange(reg_id, year)
   if (nrow(d) == 0) next
@@ -400,6 +409,11 @@ manifest <- list(
     national = list(variables = nat_vars, var_years = years_of(natp, nat_ids)),
     tl2      = list(variables = reg_vars, var_years = years_of(regp |> filter(level == "tl2"), reg_ids),
                     countries = names(reg_files$tl2)),
+    # TL2b offers only the indicators it has
+    tl2b     = local({
+      d <- regp |> filter(level == "tl2b"); y <- years_of(d, reg_ids); keep <- lengths(y) > 0
+      list(variables = reg_vars[keep], var_years = y[keep], countries = names(reg_files$tl2b))
+    }),
     tl3      = list(variables = reg_vars, var_years = years_of(regp |> filter(level == "tl3"), reg_ids),
                     countries = names(reg_files$tl3)),
     fua      = list(variables = variables, var_years = var_years, countries = countries$iso3)
@@ -410,7 +424,7 @@ manifest <- list(
     fua = as.list(fua_files),
     geo = setNames(as.list(paste0("geo/", names(bboxes), ".geojson")), names(bboxes)),
     admin = as.list(admin_files),
-    tl2 = reg_files$tl2, tl3 = reg_files$tl3, national = "national.parquet",
+    tl2 = reg_files$tl2, tl2b = reg_files$tl2b, tl3 = reg_files$tl3, national = "national.parquet",
     regions = setNames(as.list(paste0("geo/regions/", countries$iso3, ".topo.json")), countries$iso3),
     regions_all = "geo/regions/national.topo.json",
     nat = "nat.parquet", lai = "lai.parquet", rai = "rai.parquet",
