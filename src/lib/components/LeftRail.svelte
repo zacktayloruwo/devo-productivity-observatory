@@ -16,6 +16,10 @@
     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M3 21h18M5 21V8l7-5 7 5v13M10 21v-6h4v6"></path></svg>Overview</a>
   <a href={to('productivity')} class:on={current === 'productivity'}>
     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M3 17l5-6 4 4 5-8 4 5"></path><path d="M3 21h18"></path></svg>Productivity</a>
+  <a href={to('growth')} class:on={current === 'growth'}>
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M4 20V14M10 20V10M16 20V6"></path><path d="M3 9l6-5 4 3 8-5"></path></svg>Growth</a>
+  <a href={to('dispersion')} class:on={current === 'dispersion'}>
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="5" cy="17" r="1.5"></circle><circle cx="9" cy="9" r="1.5"></circle><circle cx="13" cy="14" r="1.5"></circle><circle cx="17" cy="6" r="1.5"></circle><circle cx="20" cy="15" r="1.5"></circle><path d="M3 21h18"></path></svg>Dispersion</a>
   <a href={to('autonomy')} class:on={current === 'autonomy'}>
     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M3 21h18M4 10h16M6 10v8M10 10v8M14 10v8M18 10v8M12 3l9 6H3z"></path></svg>Autonomy</a>
   <a href={to('map')} class:on={current === 'map'}>

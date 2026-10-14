@@ -1,13 +1,15 @@
 <script lang="ts">
   import { route, replace } from './lib/router.svelte';
   import { manifest } from './lib/db/manifest.svelte';
-  import { routeView, routeCountry, DEFAULT_COUNTRY, HOME } from './lib/routeState';
+  import { routeView, routeCountry, routeGeo, viewLevels, DEFAULT_COUNTRY, HOME } from './lib/routeState';
   import { t } from './lib/text/t';
   import TopBar from './lib/components/TopBar.svelte';
   import LeftRail from './lib/components/LeftRail.svelte';
   import OverviewView from './routes/OverviewView.svelte';
   import ProductivityView from './routes/ProductivityView.svelte';
   import AutonomyView from './routes/AutonomyView.svelte';
+  import GrowthView from './routes/GrowthView.svelte';
+  import DispersionView from './routes/DispersionView.svelte';
   import MapView from './routes/MapView.svelte';
   import SourcesView from './routes/SourcesView.svelte';
   import AboutView from './routes/AboutView.svelte';
@@ -22,6 +24,11 @@
     else if (view !== 'about' && !/^[A-Z]{3}$/.test(route.path[1] ?? '')) replace([view, DEFAULT_COUNTRY], route.query);
   });
   $effect(() => { document.title = t('app.title'); });
+  // a geography the view does not offer: Autonomy at FUA level opens national
+  const geo = $derived(routeGeo());
+  $effect(() => {
+    if (view === 'autonomy' && !viewLevels(view).includes(geo)) replace(route.path, { ...route.query, geo: 'national' });
+  });
   // a new view or country starts at the top; the map's year and selection do not scroll
   let main: HTMLElement | undefined = $state();
   $effect(() => { void view; void country; main?.scrollTo({ top: 0 }); });
@@ -38,6 +45,8 @@
       {#key country}
         {#if view === 'overview'}<OverviewView />
         {:else if view === 'productivity'}<ProductivityView />
+        {:else if view === 'growth'}<GrowthView />
+        {:else if view === 'dispersion'}<DispersionView />
         {:else if view === 'autonomy'}<AutonomyView />
         {:else if view === 'map'}<MapView />
         {:else if view === 'sources'}<SourcesView />

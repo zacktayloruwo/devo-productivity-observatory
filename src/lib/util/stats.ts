@@ -53,10 +53,9 @@ export function classOf(v: number | null | undefined, bounds: number[]): number 
   return 0;
 }
 
-export function classColours(ramp: Ramp, n: number): string[] {
+export function classColours(ramp: Ramp, n: number, lo = 0.15): string[] {
   if (n <= 0) return [];
   if (n === 1) return [rampColour(ramp, 1)];
-  const lo = 0.15;
   return Array.from({ length: n }, (_, i) => rampColour(ramp, lo + (1 - lo) * (i / (n - 1))));
 }
 
@@ -67,4 +66,25 @@ export function classLabels(bounds: number[], fmt: (x: number) => string): strin
     out.push(a === b ? a : `${a}–${b}`);
   }
   return out;
+}
+
+// Symmetric classes for values relative to a mean (0 = at the mean): seven
+// classes, the middle one white, with breaks at the quartiles of |x| pooled
+// over the values given. Returns [t1, t2, t3]; classOfRel maps x to 0..6.
+export function relativeBreaks(values: Iterable<number | null | undefined>): number[] {
+  const xs: number[] = [];
+  for (const v of values) if (v != null && Number.isFinite(v)) xs.push(Math.abs(v));
+  if (!xs.length) return [];
+  xs.sort((a, b) => a - b);
+  const t = [0.25, 0.5, 0.75].map((p) => quantileSorted(xs, p));
+  // strictly increasing, and above zero
+  const eps = (xs[xs.length - 1] || 1) * 1e-6;
+  t[0] = Math.max(t[0], eps); t[1] = Math.max(t[1], t[0] + eps); t[2] = Math.max(t[2], t[1] + eps);
+  return t;
+}
+export function classOfRel(x: number | null | undefined, t: number[]): number {
+  if (x == null || !Number.isFinite(x) || t.length < 3) return -1;
+  const a = Math.abs(x);
+  const k = a < t[0] ? 0 : a < t[1] ? 1 : a < t[2] ? 2 : 3;
+  return k === 0 ? 3 : x > 0 ? 3 + k : 3 - k;
 }

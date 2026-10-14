@@ -84,10 +84,11 @@ p { margin: 0 0 10px; }
 .card { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 14px 16px; }
 .caution { background: var(--caution-bg); border: 1px solid var(--caution-line); border-radius: 10px; padding: 10px 14px; font-size: 13px; line-height: 1.5; }
 .err { color: var(--bad); font-size: 12px; }
-/* Running text spans its card and flows into columns as the width allows;
-   a heading inside spans every column. */
-.prose { column-width: 34ch; column-gap: 32px; line-height: 1.55; }
-.prose p { margin: 0 0 10px; break-inside: avoid; }
+/* Running text spans its card and flows into columns when it is long enough
+   for every column to have at least three lines (src/lib/util/columns.ts sets
+   column-count); a heading inside spans every column. */
+.prose { column-count: 1; column-gap: 32px; line-height: 1.55; }
+.prose p { margin: 0 0 10px; orphans: 3; widows: 3; }
 .prose h3, .prose h2 { column-span: all; margin-bottom: 6px; }
 
 /* Page body shared by the chart views */

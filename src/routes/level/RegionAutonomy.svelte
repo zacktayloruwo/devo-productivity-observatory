@@ -60,8 +60,8 @@
   // titles and passages are filled here so text_compile.mjs sees every key
   const INDICES = $derived<{ key: Key; title: string; intro: string; note: string; label: string; digits: number }[]>([
     { key: 'lai_total_reg', title: t('autonomy.reg.lai.title', { level: levelName }), intro: t('autonomy.reg.lai.intro', { level: levelName }), note: t('autonomy.reg.lai.note'), label: 'LAI, region-specific (0–1)', digits: 2 },
-    { key: 'lai_fiscal_reg', title: t('autonomy.reg.lai_fiscal.title', { level: levelName }), intro: t('autonomy.reg.lai_fiscal.intro', { level: levelName }), note: t('autonomy.reg.lai.note'), label: 'LAI fiscal, region-specific (0–1)', digits: 2 },
     { key: 'rai_total_reg', title: t('autonomy.reg.rai.title', { level: levelName }), intro: t('autonomy.reg.rai.intro', { level: levelName }), note: t('autonomy.reg.rai.note'), label: 'RAI, region-specific (points)', digits: 1 },
+    { key: 'lai_fiscal_reg', title: t('autonomy.reg.lai_fiscal.title', { level: levelName }), intro: t('autonomy.reg.lai_fiscal.intro', { level: levelName }), note: t('autonomy.reg.lai.note'), label: 'LAI fiscal, region-specific (0–1)', digits: 2 },
     { key: 'rai_fiscalautonomy_reg', title: t('autonomy.reg.rai_fiscal.title', { level: levelName }), intro: t('autonomy.reg.rai_fiscal.intro', { level: levelName }), note: t('autonomy.reg.rai.note'), label: 'RAI fiscal autonomy, region-specific (points)', digits: 1 }
   ]);
 
@@ -119,14 +119,6 @@
       <div class="sub">{t('autonomy.reg.sub', { level: levelName })}{#if loading} · <Spinner size={12} />{/if}</div>
       {#if error}<div class="err">{error}</div>{/if}
     </div>
-    {#if regions.length}
-      <label class="pick">
-        <span class="muted">{t('autonomy.reg.pick')}</span>
-        <select value={selected} onchange={pick}>
-          {#each regions as r (r.id)}<option value={r.id}>{r.name}</option>{/each}
-        </select>
-      </label>
-    {/if}
   </header>
 
   {#if missing}
@@ -147,7 +139,17 @@
     <div class="two">
       {#each INDICES as ix (ix.key)}
         <ChartCard title={ix.title} columns={colsFor(ix)} rows={summaries[ix.key]} csvName={`${iso3}_${level}_${ix.key}_${selected}`} note={ix.note}>
-          {#snippet extra()}<a class="maplink" href={mapHref(ix.key)}>{t('autonomy.reg.on_map')}</a>{/snippet}
+          {#snippet extra()}
+            {#if regions.length}
+              <label class="pick">
+                <span class="muted">{t('autonomy.reg.pick')}</span>
+                <select value={selected} onchange={pick} aria-label={t('autonomy.reg.pick')}>
+                  {#each regions as r (r.id)}<option value={r.id}>{r.name}</option>{/each}
+                </select>
+              </label>
+            {/if}
+            <a class="maplink" href={mapHref(ix.key)}>{t('autonomy.reg.on_map')}</a>
+          {/snippet}
           {#snippet intro()}<p>{ix.intro}</p>{/snippet}
           {#if summaries[ix.key].length}
             <PlotChart make={makers[ix.key]} height={280} label={ix.title} />
@@ -169,7 +171,8 @@
   .hd { display: flex; align-items: flex-start; gap: 16px; flex-wrap: wrap; }
   .hd > div { flex: 1; }
   .pick { display: flex; align-items: center; gap: 8px; }
-  .pick select { max-width: 280px; }
+  .pick { font-size: 12px; }
+  .pick select { max-width: 220px; min-height: 28px; padding: 2px 6px; font-size: 12px; }
   .two { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
   @media (max-width: 1100px) { .two { grid-template-columns: 1fr; } }
   .pleg { display: flex; flex-wrap: wrap; gap: 4px 16px; font-size: 12px; color: var(--fg-2); }

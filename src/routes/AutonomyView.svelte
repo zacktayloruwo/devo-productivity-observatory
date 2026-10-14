@@ -69,34 +69,39 @@
 
   <div class="strip">
     <div class="card kpi"><div class="lab">{t('autonomy.kpi.lai', { year: laiLast?.year ?? '—' })}</div><div class="big num">{score(laiLast?.lai_total)}</div><div class="sub">{t('autonomy.kpi.lai.sub')}</div></div>
-    <div class="card kpi"><div class="lab">{t('autonomy.kpi.lai_fiscal', { year: laiLast?.year ?? '—' })}</div><div class="big num">{score(laiLast?.lai_fiscal_score)}</div><div class="sub">{t('autonomy.kpi.lai_fiscal.sub')}</div></div>
     <div class="card kpi"><div class="lab">{t('autonomy.kpi.rai', { year: raiLast?.year ?? '—' })}</div><div class="big num">{score(raiLast?.rai_total)}</div><div class="sub">{t('autonomy.kpi.rai.sub')}</div></div>
+    <div class="card kpi"><div class="lab">{t('autonomy.kpi.lai_fiscal', { year: laiLast?.year ?? '—' })}</div><div class="big num">{score(laiLast?.lai_fiscal_score)}</div><div class="sub">{t('autonomy.kpi.lai_fiscal.sub')}</div></div>
     <div class="card kpi"><div class="lab">{t('autonomy.kpi.rai_fiscal', { year: raiLast?.year ?? '—' })}</div><div class="big num">{score(raiLast?.rai_fiscal_score)}</div><div class="sub">{t('autonomy.kpi.rai_fiscal.sub')}</div></div>
   </div>
 
-  <ChartCard title={t('autonomy.lai.title')} columns={laiCols} rows={lai} csvName="lai_national">
-    {#snippet intro()}<p><Text k="autonomy.lai.intro" /></p>{/snippet}
-    <PlotChart make={laiTotal} height={320} label={t('autonomy.lai.title')} />
-    <CountryLegend {countries} {colours} focus={iso3} present={laiPresent} />
-  </ChartCard>
-
-  <ChartCard title={t('autonomy.lai_fiscal.title')} columns={laiCols} rows={lai} csvName="lai_national" note={t('autonomy.lai_fiscal.note')}>
-    {#snippet intro()}<p><Text k="autonomy.lai_fiscal.intro" /></p>{/snippet}
-    <PlotChart make={laiFiscal} height={320} label={t('autonomy.lai_fiscal.title')} />
-    <CountryLegend {countries} {colours} focus={iso3} present={laiPresent} />
-  </ChartCard>
-
-  <ChartCard title={t('autonomy.rai.title')} columns={raiCols} rows={rai} csvName="rai_national" note={t('autonomy.rai.note')}>
-    {#snippet intro()}<p><Text k="autonomy.rai.intro" /></p>{/snippet}
-    <PlotChart make={raiTotal} height={320} label={t('autonomy.rai.title')} />
-    <CountryLegend {countries} {colours} focus={iso3} present={raiPresent} />
-  </ChartCard>
-
-  <ChartCard title={t('autonomy.rai_fiscal.title')} columns={raiCols} rows={rai} csvName="rai_national" note={t('autonomy.rai_fiscal.note')}>
-    {#snippet intro()}<p><Text k="autonomy.rai_fiscal.intro" /></p>{/snippet}
-    <PlotChart make={raiFiscal} height={320} label={t('autonomy.rai_fiscal.title')} />
-    <CountryLegend {countries} {colours} focus={iso3} present={raiPresent} />
-  </ChartCard>
+  <!-- LAI (local) on the left, RAI (regional) on the right -->
+  <div class="pair">
+    <ChartCard title={t('autonomy.lai.title')} columns={laiCols} rows={lai} csvName="lai_national">
+      {#snippet intro()}<p><Text k="autonomy.lai.intro" /></p>{/snippet}
+      <PlotChart make={laiTotal} height={320} label={t('autonomy.lai.title')} />
+      <CountryLegend {countries} {colours} focus={iso3} present={laiPresent} />
+    </ChartCard>
+    <ChartCard title={t('autonomy.rai.title')} columns={raiCols} rows={rai} csvName="rai_national" note={t('autonomy.rai.note')}>
+      {#snippet intro()}<p><Text k="autonomy.rai.intro" /></p>{/snippet}
+      <PlotChart make={raiTotal} height={320} label={t('autonomy.rai.title')} />
+      <CountryLegend {countries} {colours} focus={iso3} present={raiPresent} />
+    </ChartCard>
+    <ChartCard title={t('autonomy.lai_fiscal.title')} columns={laiCols} rows={lai} csvName="lai_national" note={t('autonomy.lai_fiscal.note')}>
+      {#snippet intro()}<p><Text k="autonomy.lai_fiscal.intro" /></p>{/snippet}
+      <PlotChart make={laiFiscal} height={320} label={t('autonomy.lai_fiscal.title')} />
+      <CountryLegend {countries} {colours} focus={iso3} present={laiPresent} />
+    </ChartCard>
+    <ChartCard title={t('autonomy.rai_fiscal.title')} columns={raiCols} rows={rai} csvName="rai_national" note={t('autonomy.rai_fiscal.note')}>
+      {#snippet intro()}<p><Text k="autonomy.rai_fiscal.intro" /></p>{/snippet}
+      <PlotChart make={raiFiscal} height={320} label={t('autonomy.rai_fiscal.title')} />
+      <CountryLegend {countries} {colours} focus={iso3} present={raiPresent} />
+    </ChartCard>
+  </div>
   {#if geo === 'national'}<NationalAutonomyExtra />{/if}
 </div>
 {/if}
+
+<style>
+  .pair { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  @media (max-width: 1100px) { .pair { grid-template-columns: 1fr; } }
+</style>

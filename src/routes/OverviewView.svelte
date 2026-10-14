@@ -17,6 +17,7 @@
   import Spinner from '../lib/components/Spinner.svelte';
   import RegionOverview from './level/RegionOverview.svelte';
   import NationalOverview from './level/NationalOverview.svelte';
+  import NationalLpCard from '../lib/components/cards/NationalLpCard.svelte';
 
   const iso3 = $derived(routeCountry());
   const name = $derived(countryName(iso3));
@@ -156,11 +157,7 @@
     {/if}
   </ChartCard>
 
-  <ChartCard title={t('overview.nat.title')} columns={natCols} rows={natLp} csvName="national_gdp_per_worker" note={t('overview.nat.note')}>
-    {#snippet intro()}<p><Text k="overview.nat.intro" vars={{ country: name }} /></p>{/snippet}
-    <PlotChart make={natMake} height={280} label={t('overview.nat.title')} />
-    <CountryLegend countries={manifest.countries} {colours} focus={iso3} {present} />
-  </ChartCard>
+  <NationalLpCard {iso3} {name} />
 </div>
 {/if}
 

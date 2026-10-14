@@ -11,9 +11,9 @@
   import { regionFeatures, regionFeaturesAll, tl2Mesh, nationalOutline } from '../lib/geo/topo';
   import { landFeatures, type Land } from '../lib/geo/land';
   import { layoutFor } from '../lib/geo/projections';
-  import { fmtBy, fmtShortBy, fmtInt, type Fmt } from '../lib/util/format';
-  import { quantileBounds, classOf, classColours, classLabels } from '../lib/util/stats';
-  import { SEQ_LIGHT, SEQ_DARK } from '../lib/theme/ramps';
+  import { fmtBy, fmtShortBy, fmtInt, fmtNum, type Fmt } from '../lib/util/format';
+  import { quantileBounds, classOf, classColours, classLabels, relativeBreaks, classOfRel, mean } from '../lib/util/stats';
+  import { VIRIDIS, RDBU7 } from '../lib/theme/ramps';
   import { theme } from '../lib/theme/theme.svelte';
   import { liveTokens } from '../lib/theme/liveTokens.svelte';
   import { esc, type TipContent } from '../lib/tooltip';
@@ -100,11 +100,39 @@
 
   // quantile classes pooled over every year of the scope, so a colour keeps
   // its meaning as the year changes
+  // ---- relative to the national mean (?rel=1): each unit against the
+  // unweighted mean of its country's units in the same year, as a percentage
+  // where every value is positive, otherwise as a difference in the
+  // indicator's own units. Not offered on national maps.
+  const relative = $derived(!national && route.query.rel === '1');
+  const relPct = $derived(values.every((r) => r.value == null || r.value > 0));
+  const relValues = $derived.by(() => {
+    if (!relative) return new Map<string, number | null>();
+    const groups = new Map<string, number[]>();
+    for (const r of values) if (r.value != null) { const k = r.cntry_iso3 + '|' + r.year; const a = groups.get(k); if (a) a.push(r.value); else groups.set(k, [r.value]); }
+    const means = new Map([...groups].map(([k, v]) => [k, mean(v)]));
+    const out = new Map<string, number | null>();
+    for (const r of values) {
+      const m = means.get(r.cntry_iso3 + '|' + r.year);
+      out.set(r.id + '|' + r.year, r.value == null || m == null ? null : relPct ? (100 * (r.value - m)) / m : r.value - m);
+    }
+    return out;
+  });
+  const relOf = (id: string, y: number) => relValues.get(id + '|' + y) ?? null;
+  const relT = $derived(relative ? relativeBreaks(relValues.values()) : []);
+
+  // ---- classes: quantiles on viridis, or symmetric classes on red-white-blue
   const bounds = $derived(quantileBounds(values.map((r) => r.value), 6));
-  const colours = $derived(classColours(theme.isDark ? SEQ_DARK : SEQ_LIGHT, Math.max(0, bounds.length - 1)));
+  const colours = $derived(relative ? RDBU7 : classColours(VIRIDIS, Math.max(0, bounds.length - 1), 0));
   const fmt = $derived<Fmt>(variable?.fmt ?? 'num');
-  const labels = $derived(classLabels(bounds, (x) => fmtShortBy(fmt, x)));
-  const fillFor = $derived.by(() => { const b = bounds, cs = colours, m = inYear, neutral = tokens.neutral; return (id: string) => { const k = classOf(m.get(id)?.value, b); return k < 0 ? neutral : cs[k]; }; });
+  const relFmt = (x: number) => relPct ? `${x > 0 ? '+' : x < 0 ? '−' : ''}${fmtNum(Math.abs(x), Math.abs(x) < 10 ? 1 : 0)}%` : `${x > 0 ? '+' : x < 0 ? '−' : ''}${fmtShortBy(fmt, Math.abs(x))}`;
+  const labels = $derived(relative
+    ? (relT.length === 3 ? [`${relFmt(-relT[2])} or lower`, `${relFmt(-relT[2])} to ${relFmt(-relT[1])}`, `${relFmt(-relT[1])} to ${relFmt(-relT[0])}`, `${relFmt(-relT[0])} to ${relFmt(relT[0])}`, `${relFmt(relT[0])} to ${relFmt(relT[1])}`, `${relFmt(relT[1])} to ${relFmt(relT[2])}`, `${relFmt(relT[2])} or higher`] : [])
+    : classLabels(bounds, (x) => fmtShortBy(fmt, x)));
+  const fillFor = $derived.by(() => {
+    const b = bounds, cs = colours, m = inYear, neutral = tokens.neutral, rel = relative, rt = relT, y = year;
+    return (id: string) => { const k = rel ? classOfRel(relOf(id, y), rt) : classOf(m.get(id)?.value, b); return k < 0 ? neutral : cs[k]; };
+  });
   const rankIn = $derived.by(() => { const s = [...inYear.values()].filter((r) => r.value != null).sort((a, b) => b.value! - a.value!); return new Map(s.map((r, i) => [r.id, i + 1])); });
   const unitName = (id: string, r?: MapValue, f?: MapFeature) => national ? countryName(id) : (r?.name ?? f?.properties.name ?? id);
   const tipFor = $derived.by(() => { const m = inYear, v = variable, y = year, rk = rankIn, fsm = new Map(features.map((f) => [f.properties.id, f])); return (id: string): TipContent => {
@@ -112,10 +140,11 @@
     const nm = unitName(id, r, f);
     const cty = national ? '' : ` · ${esc(countryName(r?.cntry_iso3 ?? f?.properties.cntry_iso3 ?? ''))}`;
     if (!r || r.value == null) return { html: `<b>${esc(nm)}</b>${cty}<br><span class="tipdef">${esc(t('map.tip.nodata', { year: y }))}</span>` };
-    return { html: `<b>${esc(nm)}</b>${cty}<br>${esc(t('map.tip.value', { variable: v?.short ?? '', year: y }))} <b>${esc(fmtBy(fmt, r.value))}</b><br><span class="tipdef">${esc(t('map.tip.rank', { rank: rk.get(id), n: rk.size }))}${r.pop != null ? ` · ${esc(t('map.tip.pop', { pop: fmtInt(r.pop) }))}` : ''}</span>` };
+    return { html: `<b>${esc(nm)}</b>${cty}<br>${esc(t('map.tip.value', { variable: v?.short ?? '', year: y }))} <b>${esc(fmtBy(fmt, r.value))}</b>${relative && relOf(id, y) != null ? ` <span class="tipdef">(${esc(t('map.rel.tip', { value: relFmt(relOf(id, y)!) }))})</span>` : ''}<br><span class="tipdef">${esc(t('map.tip.rank', { rank: rk.get(id), n: rk.size }))}${r.pop != null ? ` · ${esc(t('map.tip.pop', { pop: fmtInt(r.pop) }))}` : ''}</span>` };
   }; });
 
   function setYear(y: number) { go(['map', iso3, String(y)], route.query); }
+  function setRel(on: boolean) { setQuery({ rel: on ? '1' : undefined }); }
   function setVar(e: Event) { setQuery({ var: (e.target as HTMLSelectElement).value, sel: undefined }); }
   function select(id: string | null) { setQuery({ sel: id ?? undefined }); }
 
@@ -159,6 +188,10 @@
     <label class="ctl"><span class="muted">{t('map.indicator')}</span>
       <select value={variable?.id} onchange={setVar}>{#each grouped as g (g.g)}<optgroup label={t('map.group.' + g.g)}>{#each g.items as v (v.id)}<option value={v.id}>{v.label}</option>{/each}</optgroup>{/each}</select>
     </label>
+    <div class="seg" role="group" aria-label={t('map.rel.label')}>
+      <button type="button" aria-pressed={!relative} onclick={() => setRel(false)}>{t('map.rel.values')}</button>
+      <button type="button" aria-pressed={relative} disabled={national} title={national ? t('map.rel.national') : t('map.rel.tip_toggle')} onclick={() => setRel(true)}>{t('map.rel.relative')}</button>
+    </div>
     <span class="muted small num">{#if missingLevel}{:else if loading}<Spinner size={12} /> {t('map.loading')}{:else}{t('map.status', { n: nMapped, units: t('geo.units.' + level), year })}{#if nNoGeo} · {t('map.status.nogeo', { n: nNoGeo })}{/if}{/if}</span>
     <span class="sp"></span>
     <button type="button" class="lnk" onclick={exportYear} disabled={!inYear.size}>{t('map.download', { year })}</button>
@@ -168,8 +201,8 @@
   <div class="body">
     <div class="map">
       <MapCanvas bind:this={mapRef} {features} layout={layoutFor(scopeAll ? null : iso3)} land={land.countries} borders={scopeAll ? null : outline} {admin} {mesh} {fillFor} {tipFor} {selected} onselect={select} />
-      {#if bounds.length >= 2}
-        <Legend title={t('map.legend.title', { variable: variable?.short ?? '', year })} {labels} {colours} neutral={tokens.neutral} note={t('map.legend.note', { n_years: years.length, scope: scopeAll ? t('map.legend.scope_all') : name, variable_label: variable?.label ?? '' }) + ((level === 'tl2' || level === 'tl3') && variable?.id.startsWith('lai_') ? ' ' + t('map.legend.regions_note') : '')} />
+      {#if relative ? relT.length === 3 : bounds.length >= 2}
+        <Legend title={relative ? t('map.rel.legend_title', { variable: variable?.short ?? '', year }) : t('map.legend.title', { variable: variable?.short ?? '', year })} {labels} {colours} neutral={tokens.neutral} note={relative ? t(relPct ? 'map.rel.note_pct' : 'map.rel.note_diff', { units: t('geo.units.' + level), variable_label: variable?.label ?? '' }) : t('map.legend.note', { n_years: years.length, scope: scopeAll ? t('map.legend.scope_all') : name, variable_label: variable?.label ?? '' }) + ((level === 'tl2' || level === 'tl3') && variable?.id.startsWith('lai_') ? ' ' + t('map.legend.regions_note') : '')} />
       {/if}
     </div>
     {#if selected}

@@ -23,3 +23,10 @@ export function rampColour(ramp: Ramp, t: number): string {
   const a = hex(ramp[i]), b = hex(ramp[i + 1]);
   return toHex(a[0] + (b[0] - a[0]) * f, a[1] + (b[1] - a[1]) * f, a[2] + (b[2] - a[2]) * f);
 }
+
+// Viridis (matplotlib), low to high: dark purple to yellow. Perceptually
+// uniform and legible to colour-blind readers, in both themes.
+export const VIRIDIS: Ramp = ['#440154', '#482878', '#3e4989', '#31688e', '#26828e', '#1f9e89', '#35b779', '#6ece58', '#b5de2b', '#fde725'];
+
+// Diverging, below the mean to above it: red, white, blue (ColorBrewer RdBu, 7 classes)
+export const RDBU7: string[] = ['#b2182b', '#ef8a62', '#fddbc7', '#f7f7f7', '#d1e5f0', '#67a9cf', '#2166ac'];

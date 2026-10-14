@@ -6,7 +6,15 @@ import { manifest, LEVELS, type Level } from './db/manifest.svelte';
 export const DEFAULT_COUNTRY = 'GBR';
 // a bare visit opens the map of the United Kingdom in the reference year
 export const HOME: string[] = ['map', 'GBR', '2019'];
-export const VIEWS = ['overview', 'productivity', 'autonomy', 'map', 'sources', 'about'] as const;
+export const VIEWS = ['overview', 'productivity', 'growth', 'dispersion', 'autonomy', 'map', 'sources', 'about'] as const;
+
+// the geographies each view offers (the rest are disabled in the top bar):
+// Growth is national series only, Autonomy has no FUA indices
+export function viewLevels(view: View): Level[] {
+  if (view === 'growth') return ['national'];
+  if (view === 'autonomy') return ['national', 'tl2', 'tl3'];
+  return LEVELS;
+}
 export type View = (typeof VIEWS)[number];
 
 export function routeView(): View {

@@ -1,6 +1,7 @@
 <script lang="ts">
-  // The Overview at the national level: the country's national productivity
-  // and growth, and the regional dispersion of productivity in every country.
+  // The Overview at the national level: the country's national productivity,
+  // its growth and regional dispersion in the tiles, and every country's
+  // national productivity.
   // Route: #/overview/<ISO3>?geo=national
   import { routeCountry } from '../../lib/routeState';
   import { manifest, countryName, countryOf } from '../../lib/db/manifest.svelte';
@@ -14,6 +15,7 @@
   import CountryLegend from '../../lib/components/CountryLegend.svelte';
   import Spinner from '../../lib/components/Spinner.svelte';
   import Text from '../../lib/components/Text.svelte';
+  import NationalLpCard from '../../lib/components/cards/NationalLpCard.svelte';
   import { t } from '../../lib/text/t';
 
   const iso3 = $derived(routeCountry());
@@ -40,23 +42,9 @@
   const cv3 = $derived(latestOf(mine, 'rd_tl3_cv'));
   const lpYears = $derived(mine.filter((r) => r.gdp_pw != null).map((r) => r.year));
 
-  // the dispersion summary: every country, its latest value of each measure
-  const disp = $derived(countries.map((c) => {
-    const rs = nat.filter((r) => r.cntry_iso3 === c.iso3);
-    const a = latestOf(rs, 'rd_tl2_cv'), b = latestOf(rs, 'rd_tl3_cv'), f = latestOf(rs, 'rd_tl2_frontier_empsh');
-    return { cntry_iso3: c.iso3, display: c.display, cv2: a ? 100 * a.rd_tl2_cv! : null, cv2_year: a?.year ?? null, cv3: b ? 100 * b.rd_tl3_cv! : null, cv3_year: b?.year ?? null, front: f?.rd_tl2_frontier_empsh ?? null, front_year: f?.year ?? null };
-  }).sort((a, b) => (b.cv2 ?? -1) - (a.cv2 ?? -1)));
-  const yr = (y: number | null) => (y == null ? '' : ` (${y})`);
-  const dispCols = [{ key: 'display', label: 'Country' },
-    { key: 'cv2', label: 'TL2 coefficient of variation (%)', num: true, render: (r: any) => fmtNum(r.cv2, 1) }, { key: 'cv2_year', label: 'TL2 year', num: true },
-    { key: 'cv3', label: 'TL3 coefficient of variation (%)', num: true, render: (r: any) => fmtNum(r.cv3, 1) }, { key: 'cv3_year', label: 'TL3 year', num: true },
-    { key: 'front', label: 'Frontier region share of employment (%)', num: true, render: (r: any) => fmtNum(r.front, 1) }, { key: 'front_year', label: 'Frontier year', num: true }];
 
-  // national GDP per person employed, every country
-  const lpRows = $derived(nat.filter((r) => r.gdp_pw != null));
-  const lpMake = $derived((o: { width: number; tokens: any }) => countryLines<NationalRow>({ rows: lpRows, x: (d) => d.year, y: (d) => d.gdp_pw, iso: (d) => d.cntry_iso3, countries, colours, focus: iso3, tokens: o.tokens, width: o.width, height: 280, yLabel: 'GDP per person employed (USD PPP)', yFormat: (v) => '$' + fmtShort(v), covid: true, title: (d) => `${countryName(d.cntry_iso3)} ${d.year}\n${fmtUsd(d.gdp_pw)} per person employed` }));
-  const lpCols = [{ key: 'cntry', label: 'Country', value: (r: NationalRow) => countryName(r.cntry_iso3) }, { key: 'year', label: 'Year', num: true }, { key: 'gdp_pw', label: 'GDP per person employed (USD PPP)', num: true, render: (r: NationalRow) => fmtUsd(r.gdp_pw) }];
-  const present = $derived(new Set(lpRows.map((r) => r.cntry_iso3)));
+
+
 </script>
 
 <div class="view">
@@ -82,28 +70,7 @@
     <div class="card kpi"><div class="lab">{t('overview.nat2.kpi.cv', { level: 'TL3', year: cv3?.year ?? '—' })}</div><div class="big num">{fmtPct(cv3 ? 100 * cv3.rd_tl3_cv! : null, 1)}</div><div class="sub">{cv3 ? t('overview.nat2.kpi.cv.sub') : t('overview.nat2.kpi.cv.none')}</div></div>
   </div>
 
-  <ChartCard title={t('overview.nat2.disp.title')} columns={dispCols} rows={disp} csvName="regional_dispersion_latest" note={t('overview.nat2.disp.note')}>
-    {#snippet intro()}<p><Text k="overview.nat2.disp.intro" /></p>{/snippet}
-    <div class="wrap">
-      <table class="data">
-        <thead><tr><th>Country</th><th class="num">{t('overview.nat2.disp.cv2')}</th><th class="num">{t('overview.nat2.disp.cv3')}</th><th class="num">{t('overview.nat2.disp.front')}</th></tr></thead>
-        <tbody>
-          {#each disp as d (d.cntry_iso3)}
-            <tr class:focus={d.cntry_iso3 === iso3}><td>{d.display}</td><td class="num">{fmtPct(d.cv2, 1)}<span class="faint">{yr(d.cv2_year)}</span></td><td class="num">{fmtPct(d.cv3, 1)}<span class="faint">{yr(d.cv3_year)}</span></td><td class="num">{fmtPct(d.front, 1)}<span class="faint">{yr(d.front_year)}</span></td></tr>
-          {/each}
-        </tbody>
-      </table>
-    </div>
-  </ChartCard>
 
-  <ChartCard title={t('overview.nat.title')} columns={lpCols} rows={lpRows} csvName="national_gdp_per_worker" note={t('overview.nat.note')}>
-    {#snippet intro()}<p><Text k="overview.nat.intro" vars={{ country: name }} /></p>{/snippet}
-    <PlotChart make={lpMake} height={280} label={t('overview.nat.title')} />
-    <CountryLegend {countries} {colours} focus={iso3} {present} />
-  </ChartCard>
+  <NationalLpCard {iso3} {name} />
 </div>
 
-<style>
-  .wrap { overflow: auto; }
-  tr.focus td { font-weight: 600; color: #c0392b; }
-</style>

@@ -14,6 +14,7 @@
   import CountryLegend from '../../lib/components/CountryLegend.svelte';
   import Spinner from '../../lib/components/Spinner.svelte';
   import Text from '../../lib/components/Text.svelte';
+  import NationalLpCard from '../../lib/components/cards/NationalLpCard.svelte';
   import { t } from '../../lib/text/t';
 
   let { level }: { level: 'tl2' | 'tl3' } = $props();
@@ -113,43 +114,8 @@
       <div class="card kpi"><div class="lab">{t('overview.reg.kpi.spread', { year: kpiYear ?? '—' })}</div><div class="big num">{fmtNum(ref?.ratio, 2)}</div><div class="sub">{t('overview.reg.kpi.spread.sub', { cov: fmtPct(ref?.cov, 1) })}</div></div>
       <div class="card kpi"><div class="lab">{t('overview.reg.kpi.gap', { year: kpiYear ?? '—' })}</div><div class="big num">{fmtPct(ref?.gap, 1)}</div><div class="sub">{t('overview.reg.kpi.gap.sub', { frontier: ref?.frontier?.reg_name ?? '—', value: '$' + fmtShort(ref?.frontier?.lp_lpr) })}</div></div>
     </div>
-
-    <ChartCard title={t('overview.reg.table.title', { level: levelName, country: name })} columns={tableCols} rows={table} csvName={`${iso3}_${level}_overview`}>
-      {#snippet intro()}<p><Text k="overview.reg.table.intro" vars={{ level: levelName, country: name }} /></p>{/snippet}
-      {#if !table.length && !loading}
-        <p class="muted">{t('overview.reg.table.none', { level: levelName, country: name })}</p>
-      {:else}
-        <div class="wrap">
-          <table class="data">
-            <thead><tr><th>{t('overview.table.measure')}</th>{#each table as tr (tr.year)}<th class="num">{tr.label}</th>{/each}</tr></thead>
-            <tbody>
-              {#each measures as m (m.key)}
-                <tr><td>{m.label}</td>{#each table as tr (tr.year)}<td class="num">{m.f((tr as any)[m.key])}</td>{/each}</tr>
-              {/each}
-              <tr><td>{t('overview.reg.measure.frontier')}</td>{#each table as tr (tr.year)}<td class="num">{tr.frontier?.reg_name ?? '—'}</td>{/each}</tr>
-            </tbody>
-          </table>
-        </div>
-      {/if}
-    </ChartCard>
   {/if}
 
-  <div class="two">
-    <ChartCard title={t('overview.reg.gap.title', { level: levelName })} columns={cyCols} rows={gapRows} csvName={`${level}_frontier_gap`} note={t('overview.reg.gap.note')}>
-      {#snippet intro()}<p><Text k="overview.reg.gap.intro" vars={{ level: levelName }} /></p>{/snippet}
-      <PlotChart make={gapMake} height={280} label={t('overview.reg.gap.title', { level: levelName })} />
-      <CountryLegend {countries} {colours} focus={iso3} {present} />
-    </ChartCard>
-    <ChartCard title={t('overview.reg.ratio.title', { level: levelName })} columns={cyCols} rows={ratioRows} csvName={`${level}_p90_p10`} note={t('overview.reg.ratio.note')}>
-      {#snippet intro()}<p><Text k="overview.reg.ratio.intro" vars={{ level: levelName }} /></p>{/snippet}
-      <PlotChart make={ratioMake} height={280} label={t('overview.reg.ratio.title', { level: levelName })} />
-      <CountryLegend {countries} {colours} focus={iso3} {present} />
-    </ChartCard>
-  </div>
+  <NationalLpCard {iso3} {name} />
 </div>
 
-<style>
-  .wrap { overflow: auto; }
-  .two { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
-  @media (max-width: 1100px) { .two { grid-template-columns: 1fr; } }
-</style>

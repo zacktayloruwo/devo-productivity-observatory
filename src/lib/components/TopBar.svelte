@@ -2,7 +2,7 @@
   import { href, go, route } from '../router.svelte';
   import { manifest } from '../db/manifest.svelte';
   import { dbStatus } from '../db/status.svelte';
-  import { routeView, routeCountry, routeGeo } from '../routeState';
+  import { routeView, routeCountry, routeGeo, viewLevels } from '../routeState';
   import { LEVELS, levelHasCountry, type Level } from '../db/manifest.svelte';
   import ThemeToggle from './ThemeToggle.svelte';
   import Spinner from './Spinner.svelte';
@@ -15,7 +15,10 @@
   // The map, Overview, Productivity and Autonomy follow the geography, so
   // choosing one keeps the view; Sources and About open the map at that
   // level. The map's indicator resets when the level has no such indicator.
-  const GEO_VIEWS = ['map', 'overview', 'productivity', 'autonomy'];
+  const GEO_VIEWS = ['map', 'overview', 'productivity', 'growth', 'dispersion', 'autonomy'];
+  const offered = $derived(viewLevels(view));
+  // the geography shown as selected: Growth is always national
+  const shownGeo = $derived(view === 'growth' ? 'national' : geo);
   const followsGeo = $derived(GEO_VIEWS.includes(view));
   function pickGeo(lv: Level) {
     const q = { ...route.query, geo: lv === 'fua' ? undefined : lv, sel: undefined, reg: undefined };
@@ -59,8 +62,8 @@
     <span class="muted">{t('geo.label')}</span>
     <div class="seg">
       {#each LEVELS as lv (lv)}
-        <button type="button" aria-pressed={followsGeo && geo === lv} title={t('geo.tip.' + lv)}
-          disabled={lv === 'tl3' && view === 'map' && route.query.scope !== 'all' && !levelHasCountry('tl3', country)}
+        <button type="button" aria-pressed={followsGeo && shownGeo === lv} title={offered.includes(lv) ? t('geo.tip.' + lv) : t('geo.unavailable.' + view)}
+          disabled={!offered.includes(lv) || (lv === 'tl3' && view === 'map' && route.query.scope !== 'all' && !levelHasCountry('tl3', country))}
           onclick={() => pickGeo(lv)}>{t('geo.' + lv)}</button>
       {/each}
     </div>
