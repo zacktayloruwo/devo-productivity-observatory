@@ -282,13 +282,9 @@ nat_vars <- list(
 reg_ids <- vapply(reg_vars, `[[`, "", "id"); nat_ids <- vapply(nat_vars, `[[`, "", "id")
 
 # TL2b: the NUTS 2 (ITL 2) level between TL2 and TL3 where the OECD's TL2 is
-# NUTS 1 (GBR, DEU, BEL, metropolitan FRA). It has no frontier gap or
-# names in the store: the gap is computed here as for TL2/TL3, the names
-# come from the boundary files below
-tl2b <- from_db("tl2b") |> filter(!grepl("^FRY", reg_id)) |>
-  group_by(iso3, year) |>
-  mutate(ln_lp_gap_frontier = if (any(!is.na(lp_lpr))) log(lp_lpr) - log(max(lp_lpr, na.rm = TRUE)) else NA_real_) |>
-  ungroup()
+# NUTS 1 (GBR, DEU, BEL, metropolitan FRA). The store has no names for it:
+# they come from the boundary files below
+tl2b <- from_db("tl2b") |> filter(!grepl("^FRY", reg_id))
 regp <- bind_rows(from_db("tl2"), tl2b, from_db("tl3")) |>
   filter(iso3 %in% countries$iso3) |>
   mutate(year = as.integer(year), level = tolower(tl),
