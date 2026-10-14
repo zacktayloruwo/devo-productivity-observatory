@@ -68,7 +68,9 @@
     if (latestYear) ys.add(latestYear);
     return [...ys].filter((y) => lpYears.includes(y)).sort((a, b) => a - b);
   });
-  const table = $derived(years.map((y) => ({ label: y === latestYear ? t('overview.table.latest', { year: y }) : String(y), ...stats(y) })));
+  // years that include UK regions filled from ONS and BRES are marked †
+  const filledYears = $derived(new Set(regs.filter((r) => r.filled && r.lp_lpr != null).map((r) => r.year)));
+  const table = $derived(years.map((y) => ({ label: (y === latestYear ? t('overview.table.latest', { year: y }) : String(y)) + (filledYears.has(y) ? ' †' : ''), ...stats(y) })));
   const measures = [
     { key: 'n', label: t('overview.reg.measure.n'), f: fmtInt },
     { key: 'med', label: t('overview.reg.measure.median'), f: fmtUsd },
@@ -104,7 +106,7 @@
     <div class="card prose"><p>{t('level.missing', { level: levelName, country: name })}</p></div>
   {:else}
 
-    <ChartCard title={t('overview.reg.table.title', { level: levelName, country: name })} columns={tableCols} rows={table} csvName={`${iso3}_${level}_overview`}>
+    <ChartCard title={t('overview.reg.table.title', { level: levelName, country: name })} columns={tableCols} rows={table} note={filledYears.size ? t('ukfill.note') : ''} csvName={`${iso3}_${level}_overview`}>
       {#snippet intro()}<p><Text k="overview.reg.table.intro" vars={{ level: levelName, country: name }} /></p>{/snippet}
       {#if !table.length && !loading}
         <p class="muted">{t('overview.reg.table.none', { level: levelName, country: name })}</p>

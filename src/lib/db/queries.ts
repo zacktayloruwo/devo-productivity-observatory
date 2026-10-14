@@ -38,13 +38,20 @@ export async function fuaCountry(iso3: string): Promise<FuaRow[]> {
 // ---- labour productivity by unit (FUA, TL2 or TL3 region), one shape for
 // the Productivity view: id, name, population and productivity
 export type UnitLevel = 'fua' | 'tl2' | 'tl2b' | 'tl3';
-export interface UnitRow { cntry_iso3: string; id: string; name: string; year: number; pop: number | null; lp: number | null }
+export interface UnitRow { cntry_iso3: string; id: string; name: string; year: number; pop: number | null; lp: number | null; filled?: boolean }
 const UNIT_LP: Record<UnitLevel, string> = { fua: 'labprod_usdppp', tl2: 'lp_lpr', tl2b: 'lp_lpr', tl3: 'lp_lpr' };
-function unitCols(level: UnitLevel, prefix = ''): string {
+// The UK's own views read its gap-filled TL3 and TL2b (the OECD's 23 blank
+// units filled from ONS and BRES, 2015-2023, rows marked `filled`); every
+// cross-country view keeps the OECD-published tables
+function regTable(level: Level, iso3: string | null): { table: string; filled: string } {
+  if (iso3 === 'GBR' && (level === 'tl3' || level === 'tl2b') && manifest.value?.files.ukfill?.[level]) return { table: `${level}_uk`, filled: 'filled' };
+  return { table: LEVEL_SQL[level].table, filled: 'false' };
+}
+function unitCols(level: UnitLevel, prefix = '', filled = 'false'): string {
   const L = LEVEL_SQL[level];
   // some recoded TL3 regions carry no name in the panel: show the code
   const name = level === 'fua' ? `${prefix}${L.name}` : `coalesce(${prefix}${L.name}, ${prefix}${L.id})`;
-  return `${prefix}cntry_iso3, ${prefix}${L.id} AS id, ${name} AS name, ${prefix}year, ${prefix}${L.pop} AS pop, ${prefix}${UNIT_LP[level]} AS lp`;
+  return `${prefix}cntry_iso3, ${prefix}${L.id} AS id, ${name} AS name, ${prefix}year, ${prefix}${L.pop} AS pop, ${prefix}${UNIT_LP[level]} AS lp, ${filled} AS filled`;
 }
 function requireUnitLevel(level: string): UnitLevel {
   if (level !== 'fua' && level !== 'tl2' && level !== 'tl2b' && level !== 'tl3') throw new Error(`unknown level ${level}`);
@@ -53,8 +60,8 @@ function requireUnitLevel(level: string): UnitLevel {
 
 // one country, every unit and year (the country's own file only)
 export async function unitsCountry(level: UnitLevel, iso3: string): Promise<UnitRow[]> {
-  const lv = requireUnitLevel(level);
-  return (await query(`SELECT ${unitCols(lv)} FROM ${LEVEL_SQL[lv].table} WHERE cntry_iso3 = ${requireCountry(iso3)} ORDER BY id, year`)) as UnitRow[];
+  const lv = requireUnitLevel(level), T = regTable(lv, iso3);
+  return (await query(`SELECT ${unitCols(lv, '', T.filled)} FROM ${T.table} WHERE cntry_iso3 = ${requireCountry(iso3)} ORDER BY id, year`)) as UnitRow[];
 }
 
 // every country, units with labour productivity in one year (the scatter)
@@ -96,11 +103,12 @@ export interface RegionRow {
   cntry_iso3: string; reg_id: string; reg_name: string; year: number; lp_lpr: number | null; pop_total: number | null; lp_gap_frontier_pct: number | null;
   lai_total_reg: number | null; lai_fiscal_reg: number | null; lai_policy_reg: number | null;
   rai_total_reg: number | null; rai_selfrule_reg: number | null; rai_sharedrule_reg: number | null; rai_fiscalautonomy_reg: number | null;
+  filled: boolean;
 }
 const REGION_COLS = 'cntry_iso3, reg_id, coalesce(reg_name, reg_id) AS reg_name, year, lp_lpr, pop_total, lp_gap_frontier_pct, lai_total_reg, lai_fiscal_reg, lai_policy_reg, rai_total_reg, rai_selfrule_reg, rai_sharedrule_reg, rai_fiscalautonomy_reg';
 export async function regionsCountry(level: 'tl2' | 'tl2b' | 'tl3', iso3: string): Promise<RegionRow[]> {
-  const lv = requireUnitLevel(level);
-  return (await query(`SELECT ${REGION_COLS} FROM ${lv} WHERE cntry_iso3 = ${requireCountry(iso3)} ORDER BY reg_id, year`)) as RegionRow[];
+  const lv = requireUnitLevel(level), T = regTable(lv, iso3);
+  return (await query(`SELECT ${REGION_COLS}, ${T.filled} AS filled FROM ${T.table} WHERE cntry_iso3 = ${requireCountry(iso3)} ORDER BY reg_id, year`)) as RegionRow[];
 }
 
 // TL2/TL3: every country-year, the median and spread of regional
@@ -166,7 +174,7 @@ export async function coverageFor(iso3: string): Promise<Coverage[]> {
 
 // ---- the map: one variable at one level, one country (or all), every
 // year, for the pooled quantile classes and the year shown
-export interface MapValue { cntry_iso3: string; id: string; name: string; year: number; value: number | null; pop: number | null }
+export interface MapValue { cntry_iso3: string; id: string; name: string; year: number; value: number | null; pop: number | null; filled?: boolean }
 const LEVEL_SQL: Record<Level, { table: string; id: string; name: string; pop: string }> = {
   fua: { table: 'fua', id: 'fua_id', name: 'fua_name', pop: 'pop' },
   tl2: { table: 'tl2', id: 'reg_id', name: 'reg_name', pop: 'pop_total' },
@@ -179,16 +187,16 @@ function requireLevelVar(level: Level, v: string): string {
   return v;
 }
 export async function mapValues(level: Level, variable: string, iso3: string | null): Promise<MapValue[]> {
-  const L = LEVEL_SQL[level];
+  const L = LEVEL_SQL[level], T = regTable(level, iso3);
   const v = requireLevelVar(level, variable);
   const where = iso3 ? `WHERE cntry_iso3 = ${requireCountry(iso3)} AND ${v} IS NOT NULL` : `WHERE ${v} IS NOT NULL`;
-  return (await query(`SELECT cntry_iso3, ${L.id} AS id, ${L.name} AS name, year, ${v} AS value, ${L.pop} AS pop
-    FROM ${L.table} ${where} ORDER BY cntry_iso3, id, year`)) as MapValue[];
+  return (await query(`SELECT cntry_iso3, ${L.id} AS id, ${L.name} AS name, year, ${v} AS value, ${L.pop} AS pop, ${T.filled} AS filled
+    FROM ${T.table} ${where} ORDER BY cntry_iso3, id, year`)) as MapValue[];
 }
 
 // ---- one unit, every year and every indicator of its level (the map inspector)
 export async function unitSeries(level: Level, iso3: string, id: string): Promise<Record<string, any>[]> {
-  const L = LEVEL_SQL[level];
+  const L = LEVEL_SQL[level], T = regTable(level, iso3);
   const cols = levelInfo(level).variables.map((x) => x.id).join(', ');
-  return await query(`SELECT year, ${cols} FROM ${L.table} WHERE cntry_iso3 = ${requireCountry(iso3)} AND ${L.id} = ? ORDER BY year`, [id]);
+  return await query(`SELECT year, ${cols}, ${T.filled} AS filled FROM ${T.table} WHERE cntry_iso3 = ${requireCountry(iso3)} AND ${L.id} = ? ORDER BY year`, [id]);
 }

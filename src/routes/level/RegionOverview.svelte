@@ -67,7 +67,9 @@
     if (latestYear) ys.add(latestYear);
     return [...ys].filter((y) => lpYears.includes(y)).sort((a, b) => a - b);
   });
-  const table = $derived(years.map((y) => ({ label: y === latestYear ? t('overview.table.latest', { year: y }) : String(y), ...stats(y) })));
+  // years that include UK regions filled from ONS and BRES are marked †
+  const filledYears = $derived(new Set(regs.filter((r) => r.filled && r.lp_lpr != null).map((r) => r.year)));
+
   const measures = [
     { key: 'n', label: t('overview.reg.measure.n'), f: fmtInt },
     { key: 'med', label: t('overview.reg.measure.median'), f: fmtUsd },
@@ -115,6 +117,7 @@
       <div class="card kpi"><div class="lab">{t('overview.reg.kpi.spread', { year: kpiYear ?? '—' })}</div><div class="big num">{fmtNum(ref?.ratio, 2)}</div><div class="sub">{t('overview.reg.kpi.spread.sub', { cov: fmtPct(ref?.cov, 1) })}</div></div>
       <div class="card kpi"><div class="lab">{t('overview.reg.kpi.gap', { year: kpiYear ?? '—' })}</div><div class="big num">{fmtPct(ref?.gap, 1)}</div><div class="sub">{t('overview.reg.kpi.gap.sub', { frontier: ref?.frontier?.reg_name ?? '—', value: '$' + fmtShort(ref?.frontier?.lp_lpr) })}</div></div>
     </div>
+    {#if kpiYear != null && filledYears.has(kpiYear)}<p class="muted small fillnote">{t('ukfill.note')}</p>{/if}
   {/if}
 
   <NationalLpCard {iso3} {name} />

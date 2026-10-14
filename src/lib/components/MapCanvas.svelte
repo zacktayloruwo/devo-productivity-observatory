@@ -22,12 +22,15 @@
     borders?: Feature<Geometry> | MultiLineString | null;   // the selected country's national boundary
     admin?: AdminFeature[];                  // subnational outlines, drawn over the FUAs
     mesh?: MultiLineString | null;           // interior borders of a higher level (TL2 over TL3)
+    marked?: Set<string>;                    // features hatched over their fill (estimated values)
     fillFor: (id: string) => string;
     tipFor: (id: string) => TipContent;
     selected?: string;
     onselect?: (id: string | null) => void;
   }
-  let { features, layout, land = [], borders = null, admin = [], mesh = null, fillFor, tipFor, selected = '', onselect }: Props = $props();
+  let { features, layout, land = [], borders = null, admin = [], mesh = null, marked = new Set<string>(), fillFor, tipFor, selected = '', onselect }: Props = $props();
+  // one pattern id per map, so two maps on a page do not share it
+  const hatchId = `hatch-${Math.random().toString(36).slice(2, 8)}`;
 
   let host: HTMLDivElement | undefined = $state();
   let svgEl: SVGSVGElement | undefined = $state();
@@ -103,6 +106,11 @@
 
 <div class="mc" bind:this={host}>
   <svg bind:this={svgEl} {width} {height} role="img" aria-label="Map of functional urban areas">
+    <defs>
+      <pattern id={hatchId} patternUnits="userSpaceOnUse" width="5" height="5" patternTransform="rotate(45)">
+        <line x1="0" y1="0" x2="0" y2="5" stroke={tokens.fg} stroke-width="1.4" stroke-opacity="0.6" />
+      </pattern>
+    </defs>
     <rect class="bg" width={width} height={height} fill={tokens.water} onclick={() => onselect?.(null)} role="presentation" />
     <g transform={transform.toString()}>
       {#if landPath}<path d={landPath} fill={tokens.land} stroke={tokens.line} stroke-width={0.5 * sw} />{/if}
@@ -111,6 +119,7 @@
         <path d={fuaPaths.get(id)} fill={fillFor(id)} stroke={strokeOf(id)} stroke-width={widthOf(id) * sw}
           onmousemove={(e) => over(e, id)} onmouseleave={out} onclick={() => onselect?.(id)} onkeydown={(e) => { if (e.key === 'Enter') onselect?.(id); }} role="button" tabindex="-1" aria-label={f.properties.name} />
       {/each}
+      {#each split.main as f (f.properties.id)}{#if marked.has(f.properties.id)}<path class="hatch" d={fuaPaths.get(f.properties.id)} fill={`url(#${hatchId})`} />{/if}{/each}
       <!-- outlines over the FUAs, never catching the pointer -->
       {#each adminPaths as a (a.id)}<path class="adm" d={a.d} stroke={tokens['fg-2']} stroke-width={0.8 * sw} />{/each}
       {#if meshPath}<path class="adm" d={meshPath} stroke={tokens['fg-2']} stroke-width={0.9 * sw} />{/if}
@@ -128,6 +137,7 @@
               <path d={f.d} fill={fillFor(f.id)} stroke={strokeOf(f.id)} stroke-width={widthOf(f.id)}
                 onmousemove={(e) => over(e, f.id)} onmouseleave={out} onclick={() => onselect?.(f.id)} onkeydown={(e) => { if (e.key === 'Enter') onselect?.(f.id); }} role="button" tabindex="-1" aria-label={f.name} />
             {/each}
+            {#each p.paths as f (f.id)}{#if marked.has(f.id)}<path class="hatch" d={f.d} fill={`url(#${hatchId})`} />{/if}{/each}
             {#if p.admin}<path class="adm" d={p.admin} stroke={tokens['fg-2']} stroke-width="0.8" />{/if}
             {#if p.borders}<path class="adm" d={p.borders} stroke={tokens.fg} stroke-width="1.1" />{/if}
           </svg>
@@ -149,6 +159,7 @@
   path { cursor: pointer; }
   path:focus { outline: none; }
   .adm { fill: none; pointer-events: none; stroke-linejoin: round; }
+  .hatch { pointer-events: none; stroke: none; }
   .fit { position: absolute; top: 12px; right: 12px; width: 32px; height: 32px; padding: 0; display: inline-flex; align-items: center; justify-content: center; min-height: 0; }
   .insets { position: absolute; right: 16px; bottom: 16px; display: grid; gap: 10px; z-index: 2; }
   .inset { position: relative; border: 1px solid var(--line); border-radius: 6px; overflow: hidden; background: var(--panel); box-shadow: 0 2px 10px rgba(0,0,0,.12); }

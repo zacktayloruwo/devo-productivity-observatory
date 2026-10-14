@@ -1373,6 +1373,10 @@
       "SWE": "tl3/cntry_iso3=SWE/part.parquet"
     },
     "national": "national.parquet",
+    "ukfill": {
+      "tl3": "ukfill/tl3/part.parquet",
+      "tl2b": "ukfill/tl2b/part.parquet"
+    },
     "regions": {
       "CAN": "geo/regions/CAN.topo.json",
       "FRA": "geo/regions/FRA.topo.json",

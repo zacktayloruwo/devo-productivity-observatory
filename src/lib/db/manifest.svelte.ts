@@ -21,7 +21,7 @@ export interface Manifest {
   bboxes: Record<string, [number, number, number, number]>;   // xmin, ymin, xmax, ymax (lon/lat)
   no_geo: string[];
   files: { fua: Record<string, string>; geo: Record<string, string>; admin?: Record<string, string>; nat: string; lai: string; rai: string; sources: string; countries: string;
-    tl2?: Record<string, string>; tl2b?: Record<string, string>; tl3?: Record<string, string>; national?: string; regions?: Record<string, string>; regions_all?: string };
+    tl2?: Record<string, string>; tl2b?: Record<string, string>; tl3?: Record<string, string>; ukfill?: Record<string, string>; national?: string; regions?: Record<string, string>; regions_all?: string };
   levels?: Record<Level, LevelInfo>;
   eras?: Record<string, Record<string, { from: number; to: number }[]>>;
   geo_sources?: {

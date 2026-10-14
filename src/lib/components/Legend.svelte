@@ -1,8 +1,8 @@
 <script lang="ts">
   import { t } from '../text/t';
   // The map legend: quantile classes with their ranges, and the no-data fill.
-  interface Props { title: string; labels: string[]; colours: string[]; note?: string; neutral: string }
-  let { title, labels, colours, note = '', neutral }: Props = $props();
+  interface Props { title: string; labels: string[]; colours: string[]; note?: string; neutral: string; hatched?: string }
+  let { title, labels, colours, note = '', neutral, hatched = '' }: Props = $props();
   const KEY = 'devo-obs.legend.collapsed';
   let collapsed = $state((() => { try { return localStorage.getItem(KEY) === '1'; } catch { return false; } })());
   function toggle() { collapsed = !collapsed; try { localStorage.setItem(KEY, collapsed ? '1' : '0'); } catch { /* not remembered */ } }
@@ -18,6 +18,7 @@
       <div class="row"><span class="sw" style:background={colours[i]}></span><span class="num">{l}</span></div>
     {/each}
     <div class="row"><span class="sw neutral" style:background={neutral}></span><span>{t('map.legend.nodata')}</span></div>
+    {#if hatched}<div class="row"><span class="sw hatched"></span><span>{hatched}</span></div>{/if}
     {#if note}<div class="note">{note}</div>{/if}
   {/if}
 </div>
@@ -33,4 +34,5 @@
   .sw { width: 14px; height: 14px; border-radius: 3px; flex: none; }
   .sw.neutral { border: 1.5px dashed var(--neutral-line); }
   .note { font-size: 11px; color: var(--fg-3); line-height: 1.4; }
+  .sw.hatched { background: repeating-linear-gradient(45deg, var(--fg-2) 0 1.5px, transparent 1.5px 4px); border: 1px solid var(--line); }
 </style>

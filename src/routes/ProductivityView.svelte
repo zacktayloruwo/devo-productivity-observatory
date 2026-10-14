@@ -67,9 +67,12 @@
   });
 
   // ---- 1. ranks in the snapshot year
-  const ranked = $derived(snapshot.filter((r) => r.cntry_iso3 === iso3).slice().sort((a, b) => (b.lp ?? 0) - (a.lp ?? 0)));
+  // the country's own rows (for the UK, with the regions filled from ONS and BRES, marked †)
+  const ranked = $derived(focusAll.filter((r) => r.year === year && r.lp != null).slice().sort((a, b) => (b.lp ?? 0) - (a.lp ?? 0)));
+  const anyFilled = $derived(focusAll.some((r) => r.filled && r.lp != null));
+  const dag = (r: { filled?: boolean }) => (r.filled ? ' †' : '');
   const rankCols = $derived([
-    { key: 'name', label: unit, render: (r: UnitRow) => r.name },
+    { key: 'name', label: unit, render: (r: UnitRow) => r.name + dag(r) },
     { key: 'pop', label: 'Population', num: true, render: (r: UnitRow) => fmtInt(r.pop) },
     { key: 'lp', label: 'Labour productivity (USD PPP/worker)', num: true, render: (r: UnitRow) => fmtUsd(r.lp) }
   ]);
@@ -155,7 +158,8 @@
     if (growthStart == null) return [];
     const start = new Map(focusLp.filter((r) => r.year === growthStart).map((r) => [r.id, r.lp!]));
     const n = year - growthStart;
-    return focusLp.filter((r) => r.year === year && start.has(r.id)).map((r) => ({ id: r.id, name: r.name, lp_start: start.get(r.id)!, lp_end: r.lp!, cagr: (Math.pow(r.lp! / start.get(r.id)!, 1 / n) - 1) * 100 }))
+    const filledStart = new Set(focusLp.filter((r) => r.year === growthStart && r.filled).map((r) => r.id));
+    return focusLp.filter((r) => r.year === year && start.has(r.id)).map((r) => ({ id: r.id, name: r.name + (r.filled || filledStart.has(r.id) ? ' †' : ''), lp_start: start.get(r.id)!, lp_end: r.lp!, cagr: (Math.pow(r.lp! / start.get(r.id)!, 1 / n) - 1) * 100 }))
       .sort((a, b) => b.cagr - a.cagr);
   });
   const growthCols = $derived([
@@ -216,7 +220,7 @@
   {#if missing}
     <div class="card prose"><p>{t('level.missing', { level: levelName, country: name })}</p></div>
   {:else}
-  <ChartCard title={t(fua ? 'productivity.ranks.title' : 'productivity.reg.ranks.title', { level: levelName, year })}>
+  <ChartCard title={t(fua ? 'productivity.ranks.title' : 'productivity.reg.ranks.title', { level: levelName, year })} note={ranked.some((r) => r.filled) ? t('ukfill.note') : ''}>
     {#snippet intro()}
       <p><Text k={fua ? 'productivity.ranks.intro' : 'productivity.reg.ranks.intro'} vars={{ level: levelName, country: name, year, ref_clause: year === refYear ? t('productivity.ref_clause') : '' }} /></p>
     {/snippet}
@@ -244,7 +248,7 @@
   </ChartCard>
 
   {#if !missing}
-  <ChartCard title={t(fua ? 'productivity.growth.title' : 'productivity.reg.growth.title', { level: levelName, start: growthStart ?? 2004, year })}>
+  <ChartCard title={t(fua ? 'productivity.growth.title' : 'productivity.reg.growth.title', { level: levelName, start: growthStart ?? 2004, year })} note={growth.some((r) => r.name.endsWith(' †')) ? t('ukfill.note') : ''}>
     {#snippet intro()}
       <p><Text k={fua ? 'productivity.growth.intro' : 'productivity.reg.growth.intro'} vars={{ level: levelName, start: growthStart ?? 2004, year }} />{#if year === refYear}{' '}<Text k="productivity.growth.ends" vars={{ ref_year: refYear }} />{/if}{#if growthStart != null && growthStart > 2004}{' '}<Text k="productivity.growth.begins" vars={{ start: growthStart, country: name }} />{/if}</p>
     {/snippet}
@@ -255,7 +259,7 @@
     {/if}
   </ChartCard>
 
-  <ChartCard title={t(fua ? 'productivity.spread.title' : 'productivity.reg.spread.title', { level: levelName, country: name })} columns={pctCols} rows={pctRows} csvName={`${iso3}_productivity_percentiles${csvLv}`} note={t('productivity.spread.note')}>
+  <ChartCard title={t(fua ? 'productivity.spread.title' : 'productivity.reg.spread.title', { level: levelName, country: name })} columns={pctCols} rows={pctRows} csvName={`${iso3}_productivity_percentiles${csvLv}`} note={t('productivity.spread.note') + (anyFilled ? ' ' + t('ukfill.note') : '')}>
     {#snippet intro()}
       <p><Text k={fua ? 'productivity.spread.intro' : 'productivity.reg.spread.intro'} vars={{ level: levelName, possessive: poss(name) }} />{#if pctRows.length >= 2}{' '}<Text k="productivity.spread.covers" vars={{ n: pctRows.length, country: name, first: pctRows[0].year, last: pctRows[pctRows.length - 1].year }} />
         {:else}{' '}<Text k="productivity.spread.few" vars={{ how_many: t(pctRows.length ? 'productivity.spread.single' : 'productivity.spread.none'), country: name }} />{/if}</p>

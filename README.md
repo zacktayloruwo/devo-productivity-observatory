@@ -54,6 +54,13 @@ Every chart has a table twin and a CSV download. Light and dark themes.
   table; its polygons are TL3 dissolved by the code's first four characters,
   in the same topology, and its names come from Eurostat GISCO NUTS 2024 and
   the ONS ITL 2 (January 2025) names and codes.
+- **UK regions without OECD data.** The OECD publishes no employment or
+  productivity for the 23 UK TL3 regions whose boundaries changed in ITL 2025
+  (nor for their TL2b regions). The UK's own views and maps read the common
+  database's `uk_gapfill` table (`data/ukfill/`), which estimates them for
+  2015–2023 from ONS GVA and BRES employment; those values are hatched on
+  the map and marked † in tables. Cross-country views, and the all-countries
+  map, keep the OECD-published values.
 - **FUA boundaries** are one simplified GeoJSON per country (`data/geo/<ISO3>.geojson`),
   fetched only when the map is opened for that country. Each country is drawn
   on its own projection (Lambert conformal conic with the country's customary

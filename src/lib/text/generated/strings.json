@@ -348,5 +348,10 @@
   "map.rel.tip": "{value} against the national mean",
   "map.rel.legend_title": "{variable}, {year}, relative to the national mean",
   "map.rel.note_pct": "Each unit's value as a percentage above or below the unweighted mean of its country's {units} in the same year: red below, blue above, white near the mean. The classes are the quartiles of the distance from the mean, pooled over every year. {variable_label}.",
-  "map.rel.note_diff": "Each unit's value minus the unweighted mean of its country's {units} in the same year, in the indicator's units: red below, blue above, white near the mean. The classes are the quartiles of the distance from the mean, pooled over every year. {variable_label}."
+  "map.rel.note_diff": "Each unit's value minus the unweighted mean of its country's {units} in the same year, in the indicator's units: red below, blue above, white near the mean. The classes are the quartiles of the distance from the mean, pooled over every year. {variable_label}.",
+  "ukfill.note": "† United Kingdom, 2015–2023: the OECD publishes no employment or productivity for the 23 small regions whose boundaries changed in 2025 (and so none for their TL2b regions). These are estimated from ONS regional GVA and BRES employment and marked †. Comparisons across countries use the OECD's published values only.",
+  "map.filled.legend": "Estimated, filled from ONS and BRES",
+  "map.filled.tip": "Estimated: the OECD publishes no value for this region; filled from ONS GVA and BRES employment",
+  "map.filled.insp": "Open dots: estimated years, filled from ONS and BRES",
+  "sources.cite.ukfill": "**United Kingdom, regions without OECD data.** For the 23 TL3 regions whose boundaries changed in ITL 2025, and their TL2b regions, 2015–2023: employment is the OECD's ITL 1 total less its unchanged regions, shared out by BRES (Business Register and Employment Survey) employment; GVA is ONS regional GVA (balanced) converted with the OECD's own deflator and PPP factor. Built by the Devo Analysis pipeline (common database table `uk_gapfill`); validated on published regions with a median error of 1.6% in log productivity. Office for National Statistics, *Regional gross domestic product: all ITL regions*; ONS/Nomis, *Business Register and Employment Survey*; ONS, *Local Authority District to ITL (January 2025) lookup*."
 }

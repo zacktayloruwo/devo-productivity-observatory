@@ -66,6 +66,9 @@ async function createViews(): Promise<void> {
     const files = Object.values(m.files[lv] ?? {});
     if (files.length) await conn!.query(`CREATE OR REPLACE VIEW ${lv} AS SELECT * FROM read_parquet([${files.map(q).join(', ')}], hive_partitioning = true, union_by_name = true)`);
   }
+  // the UK's gap-filled TL3 and TL2b (its own views; cross-country views keep tl3/tl2b)
+  for (const [lv, f] of Object.entries(m.files.ukfill ?? {}))
+    await conn!.query(`CREATE OR REPLACE VIEW ${lv}_uk AS SELECT *, 'GBR' AS cntry_iso3 FROM read_parquet(${q(f)})`);
   if (m.files.national) await conn!.query(`CREATE OR REPLACE VIEW national AS SELECT * FROM read_parquet(${q(m.files.national)})`);
   await conn!.query(`CREATE OR REPLACE VIEW lai AS SELECT * FROM read_parquet(${q(m.files.lai)})`);
   await conn!.query(`CREATE OR REPLACE VIEW rai AS SELECT * FROM read_parquet(${q(m.files.rai)})`);

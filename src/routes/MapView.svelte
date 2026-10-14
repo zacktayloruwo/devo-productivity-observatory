@@ -133,6 +133,8 @@
     const b = bounds, cs = colours, m = inYear, neutral = tokens.neutral, rel = relative, rt = relT, y = year;
     return (id: string) => { const k = rel ? classOfRel(relOf(id, y), rt) : classOf(m.get(id)?.value, b); return k < 0 ? neutral : cs[k]; };
   });
+  // UK regions the OECD leaves blank, filled from ONS and BRES: hatched
+  const marked = $derived(new Set([...inYear.values()].filter((r) => r.filled).map((r) => r.id)));
   const rankIn = $derived.by(() => { const s = [...inYear.values()].filter((r) => r.value != null).sort((a, b) => b.value! - a.value!); return new Map(s.map((r, i) => [r.id, i + 1])); });
   const unitName = (id: string, r?: MapValue, f?: MapFeature) => national ? countryName(id) : (r?.name ?? f?.properties.name ?? id);
   const tipFor = $derived.by(() => { const m = inYear, v = variable, y = year, rk = rankIn, fsm = new Map(features.map((f) => [f.properties.id, f])); return (id: string): TipContent => {
@@ -140,7 +142,7 @@
     const nm = unitName(id, r, f);
     const cty = national ? '' : ` · ${esc(countryName(r?.cntry_iso3 ?? f?.properties.cntry_iso3 ?? ''))}`;
     if (!r || r.value == null) return { html: `<b>${esc(nm)}</b>${cty}<br><span class="tipdef">${esc(t('map.tip.nodata', { year: y }))}</span>` };
-    return { html: `<b>${esc(nm)}</b>${cty}<br>${esc(t('map.tip.value', { variable: v?.short ?? '', year: y }))} <b>${esc(fmtBy(fmt, r.value))}</b>${relative && relOf(id, y) != null ? ` <span class="tipdef">(${esc(t('map.rel.tip', { value: relFmt(relOf(id, y)!) }))})</span>` : ''}<br><span class="tipdef">${esc(t('map.tip.rank', { rank: rk.get(id), n: rk.size }))}${r.pop != null ? ` · ${esc(t('map.tip.pop', { pop: fmtInt(r.pop) }))}` : ''}</span>` };
+    return { html: `<b>${esc(nm)}</b>${cty}<br>${esc(t('map.tip.value', { variable: v?.short ?? '', year: y }))} <b>${esc(fmtBy(fmt, r.value))}</b>${relative && relOf(id, y) != null ? ` <span class="tipdef">(${esc(t('map.rel.tip', { value: relFmt(relOf(id, y)!) }))})</span>` : ''}<br><span class="tipdef">${esc(t('map.tip.rank', { rank: rk.get(id), n: rk.size }))}${r.pop != null ? ` · ${esc(t('map.tip.pop', { pop: fmtInt(r.pop) }))}` : ''}</span>${r.filled ? `<br><span class="tipdef">${esc(t('map.filled.tip'))}</span>` : ''}` };
   }; });
 
   function setYear(y: number) { go(['map', iso3, String(y)], route.query); }
@@ -169,6 +171,7 @@
     return Plot.plot({ width: o.width, height: 170, marginLeft: 52, marginRight: 16, style: plotStyle(o.tokens),
       x: yearAxis([lo, hi], yearTicks(lo, hi, hi - lo > 20 ? 10 : 5)), y: { label: v.short, grid: true, tickFormat: (d: number) => fmtShortBy(fmt, d) },
       marks: [...covidRect(ys, o.tokens), Plot.line(rows, { x: 'year', y: v.id, stroke: o.tokens.accent, strokeWidth: 2 }), Plot.dot(cur, { x: 'year', y: v.id, r: 4, fill: o.tokens.accent }),
+        Plot.dot(rows.filter((r) => r.filled), { x: 'year', y: v.id, r: 3, fill: o.tokens.panel, stroke: o.tokens.accent, strokeWidth: 1.5 }),
         Plot.tip(rows, Plot.pointerX({ x: 'year', y: v.id, title: (d: any) => `${d.year}: ${fmtBy(fmt, d[v.id])}` }))] });
   });
   const selOthers = $derived(variables.filter((v) => v.id !== variable?.id).map((v) => ({ v, val: series.find((r) => r.year === year)?.[v.id] as number | null })).filter((x) => x.val != null));
@@ -178,7 +181,8 @@
     downloadCsv(`map_${level}_${variable?.id}_${year}${scopeAll ? '_all' : '_' + iso3}`, [
       { key: 'cntry', label: 'Country', value: (r: MapValue) => countryName(r.cntry_iso3) },
       { key: 'id', label: `${levelName} code` }, { key: 'name', label: levelName, value: (r: MapValue) => unitName(r.id, r) },
-      { key: 'year', label: 'Year' }, { key: 'value', label: variable?.label ?? 'Value' }, { key: 'pop', label: 'Population' }], rows);
+      { key: 'year', label: 'Year' }, { key: 'value', label: variable?.label ?? 'Value' }, { key: 'pop', label: 'Population' },
+      { key: 'filled', label: 'Estimated (filled from ONS and BRES)', value: (r: MapValue) => (r.filled ? 'yes' : '') }], rows);
   }
   let mapRef: MapCanvas | undefined = $state();
 </script>
@@ -200,9 +204,9 @@
   {#if missingLevel}<div class="caution pad-box">{t('map.level_missing', { level: levelName, country: name })}</div>{/if}
   <div class="body">
     <div class="map">
-      <MapCanvas bind:this={mapRef} {features} layout={layoutFor(scopeAll ? null : iso3)} land={land.countries} borders={scopeAll ? null : outline} {admin} {mesh} {fillFor} {tipFor} {selected} onselect={select} />
+      <MapCanvas bind:this={mapRef} {features} layout={layoutFor(scopeAll ? null : iso3)} land={land.countries} borders={scopeAll ? null : outline} {admin} {mesh} {marked} {fillFor} {tipFor} {selected} onselect={select} />
       {#if relative ? relT.length === 3 : bounds.length >= 2}
-        <Legend title={relative ? t('map.rel.legend_title', { variable: variable?.short ?? '', year }) : t('map.legend.title', { variable: variable?.short ?? '', year })} {labels} {colours} neutral={tokens.neutral} note={relative ? t(relPct ? 'map.rel.note_pct' : 'map.rel.note_diff', { units: t('geo.units.' + level), variable_label: variable?.label ?? '' }) : t('map.legend.note', { n_years: years.length, scope: scopeAll ? t('map.legend.scope_all') : name, variable_label: variable?.label ?? '' }) + ((level === 'tl2' || level === 'tl2b' || level === 'tl3') && variable?.id.startsWith('lai_') ? ' ' + t('map.legend.regions_note') : '')} />
+        <Legend title={relative ? t('map.rel.legend_title', { variable: variable?.short ?? '', year }) : t('map.legend.title', { variable: variable?.short ?? '', year })} {labels} {colours} neutral={tokens.neutral} hatched={marked.size ? t('map.filled.legend') : ''} note={relative ? t(relPct ? 'map.rel.note_pct' : 'map.rel.note_diff', { units: t('geo.units.' + level), variable_label: variable?.label ?? '' }) : t('map.legend.note', { n_years: years.length, scope: scopeAll ? t('map.legend.scope_all') : name, variable_label: variable?.label ?? '' }) + ((level === 'tl2' || level === 'tl2b' || level === 'tl3') && variable?.id.startsWith('lai_') ? ' ' + t('map.legend.regions_note') : '')} />
       {/if}
     </div>
     {#if selected}
@@ -214,6 +218,7 @@
         <div class="big num">{fmtBy(fmt, selRow?.year === year ? selRow?.value : null)}</div>
         <div class="muted small">{t('map.insp.sub', { variable_label: variable?.label ?? '', year })}{#if rankIn.get(selected)} · {t('map.insp.rank', { rank: rankIn.get(selected), n: rankIn.size })}{/if}</div>
         <PlotChart make={seriesMake} height={170} label={`${selName}: ${variable?.short} over time`} />
+        {#if series.some((r) => r.filled && variable && r[variable.id] != null)}<div class="muted small">{t('map.filled.insp')}</div>{/if}
         {#if selOthers.length}
           <table class="data">
             <tbody>{#each selOthers as o (o.v.id)}<tr><td>{o.v.short}</td><td class="num">{fmtBy(o.v.fmt, o.val)}</td></tr>{/each}</tbody>

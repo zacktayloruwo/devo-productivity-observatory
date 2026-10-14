@@ -347,6 +347,36 @@ for (lv in c("tl2", "tl2b", "tl3")) for (iso in countries$iso3) {
   cat(sprintf("%s  %5d rows  %3d regions  %4.0f KB\n", reg_files[[lv]][[iso]], nrow(d), n_distinct(d$reg_id), file.info(f)$size / 1024))
 }
 
+# ── UK gap-filled TL3 and TL2b (common database table uk_gapfill) ─────────────
+# The OECD publishes no employment (so no productivity) for the 23 UK TL3
+# units whose boundaries changed in ITL 2025, nor for their TL2b parents.
+# uk_gapfill fills them for 2015-2023 from ONS GVA and BRES employment; every
+# other value equals the OECD's, and its frontier gap is recomputed within the
+# UK. These files serve the UK's own views and maps, with filled rows marked;
+# the cross-country views keep the OECD-published tl3 and tl2b tables.
+ukf <- from_db("uk_gapfill") |>
+  mutate(year = as.integer(year), level = tolower(tl), filled = uk_fill == "filled",
+         lp_gap_frontier_pct = 100 * (exp(ln_lp_gap_frontier) - 1)) |>
+  left_join(geo_index |> transmute(level, reg_id = id, geo_name = name), by = c("level", "reg_id")) |>
+  mutate(reg_name = coalesce(reg_name, geo_name)) |> select(-geo_name)
+for (v in setdiff(reg_ids, names(ukf))) ukf[[v]] <- NA_real_
+ukf <- ukf[rowSums(!is.na(ukf[reg_ids])) > 0, ]
+if (any(is.na(ukf$reg_name))) stop("UK gap-filled regions without a name: ", paste(unique(ukf$reg_id[is.na(ukf$reg_name)]), collapse = " "))
+uk_files <- list()
+for (lv in c("tl3", "tl2b")) {
+  d <- ukf |> filter(level == lv)
+  gi <- geo_index |> filter(iso3 == "GBR", level == lv)
+  for (y in unique(d$year)) {
+    miss <- setdiff(d$reg_id[d$year == y], gi$id[gi$from <= y & gi$to >= y])
+    if (length(miss)) stop(sprintf("UK gap-fill %s %d: data without a polygon: %s", lv, y, paste(miss, collapse = " ")))
+  }
+  d <- d |> transmute(reg_id, reg_name, year, !!!rlang::syms(reg_ids), filled) |> arrange(reg_id, year)
+  dir <- file.path(out, "ukfill", lv); dir.create(dir, recursive = TRUE, showWarnings = FALSE)
+  f <- file.path(dir, "part.parquet"); write_parquet(d, f, compression = "zstd")
+  uk_files[[lv]] <- sub(paste0("^", out, "/"), "", f)
+  cat(sprintf("%s  %5d rows  %3d regions  %d filled region-years\n", uk_files[[lv]], nrow(d), n_distinct(d$reg_id), sum(d$filled)))
+}
+
 natp <- from_db("national") |>
   filter(iso3 %in% countries$iso3) |>
   mutate(year = as.integer(year),
@@ -421,6 +451,7 @@ manifest <- list(
     geo = setNames(as.list(paste0("geo/", names(bboxes), ".geojson")), names(bboxes)),
     admin = as.list(admin_files),
     tl2 = reg_files$tl2, tl2b = reg_files$tl2b, tl3 = reg_files$tl3, national = "national.parquet",
+    ukfill = uk_files,
     regions = setNames(as.list(paste0("geo/regions/", countries$iso3, ".topo.json")), countries$iso3),
     regions_all = "geo/regions/national.topo.json",
     nat = "nat.parquet", lai = "lai.parquet", rai = "rai.parquet",
