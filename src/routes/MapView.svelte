@@ -18,6 +18,7 @@
   import { liveTokens } from '../lib/theme/liveTokens.svelte';
   import { esc, type TipContent } from '../lib/tooltip';
   import { plotStyle, yearAxis, yearTicks, covidRect, FIRST_YEAR } from '../lib/charts/plot';
+  import { seriesBreak, breakRule } from '../lib/charts/breaks';
   import { downloadCsv } from '../lib/util/csv';
   import { t } from '../lib/text/t';
   import type { MultiLineString } from 'geojson';
@@ -168,11 +169,20 @@
     if (rows.length < 2) return null;
     const ys = rows.map((r) => r.year); const lo = Math.min(...ys), hi = Math.max(...ys);
     const cur = rows.filter((r) => r.year === year);
+    const brk = seriesBreak(selIso, level);
+    const brkMarks = brk != null && lo < brk && hi >= brk ? [breakRule(brk, o.tokens)] : [];
     return Plot.plot({ width: o.width, height: 170, marginLeft: 52, marginRight: 16, style: plotStyle(o.tokens),
       x: yearAxis([lo, hi], yearTicks(lo, hi, hi - lo > 20 ? 10 : 5)), y: { label: v.short, grid: true, tickFormat: (d: number) => fmtShortBy(fmt, d) },
-      marks: [...covidRect(ys, o.tokens), Plot.line(rows, { x: 'year', y: v.id, stroke: o.tokens.accent, strokeWidth: 2 }), Plot.dot(cur, { x: 'year', y: v.id, r: 4, fill: o.tokens.accent }),
+      marks: [...covidRect(ys, o.tokens), ...brkMarks, Plot.line(rows, { x: 'year', y: v.id, stroke: o.tokens.accent, strokeWidth: 2 }), Plot.dot(cur, { x: 'year', y: v.id, r: 4, fill: o.tokens.accent }),
         Plot.dot(rows.filter((r) => r.filled), { x: 'year', y: v.id, r: 3, fill: o.tokens.panel, stroke: o.tokens.accent, strokeWidth: 1.5 }),
         Plot.tip(rows, Plot.pointerX({ x: 'year', y: v.id, title: (d: any) => `${d.year}: ${fmtBy(fmt, d[v.id])}` }))] });
+  });
+  // whether the selected unit's series spans a known break (the dashed line is drawn)
+  const seriesCrossesBreak = $derived.by(() => {
+    const b = seriesBreak(selIso, level), v = variable;
+    if (b == null || !v) return false;
+    const ys = series.filter((r) => r[v.id] != null && r.year >= FIRST_YEAR).map((r) => r.year);
+    return ys.some((y) => y < b) && ys.some((y) => y >= b);
   });
   const selOthers = $derived(variables.filter((v) => v.id !== variable?.id).map((v) => ({ v, val: series.find((r) => r.year === year)?.[v.id] as number | null })).filter((x) => x.val != null));
 
@@ -219,6 +229,7 @@
         <div class="muted small">{t('map.insp.sub', { variable_label: variable?.label ?? '', year })}{#if rankIn.get(selected)} · {t('map.insp.rank', { rank: rankIn.get(selected), n: rankIn.size })}{/if}</div>
         <PlotChart make={seriesMake} height={170} label={`${selName}: ${variable?.short} over time`} />
         {#if series.some((r) => r.filled && variable && r[variable.id] != null)}<div class="muted small">{t('map.filled.insp')}</div>{/if}
+        {#if seriesCrossesBreak}<div class="muted small">{t('map.break.insp')}</div>{/if}
         {#if selOthers.length}
           <table class="data">
             <tbody>{#each selOthers as o (o.v.id)}<tr><td>{o.v.short}</td><td class="num">{fmtBy(o.v.fmt, o.val)}</td></tr>{/each}</tbody>

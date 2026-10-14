@@ -4,6 +4,7 @@
   // frontier region and P90/P10 in every country, and the distribution.
   // Route: #/dispersion/<ISO3>?geo=tl2|tl3
   import { fromFirstYear } from '../../lib/charts/plot';
+  import { seriesBreak } from '../../lib/charts/breaks';
   import { routeCountry } from '../../lib/routeState';
   import { manifest, countryName, countryOf, levelHasCountry } from '../../lib/db/manifest.svelte';
   import { regionsCountry, regionsByCountryYear, type RegionRow, type RegionCountryYear } from '../../lib/db/queries';
@@ -69,6 +70,8 @@
     return [...ys].filter((y) => lpYears.includes(y)).sort((a, b) => a - b);
   });
   // years that include UK regions filled from ONS and BRES are marked †
+  // a known break in the country's series at this level (UK TL3 and TL2b, 2014-2015)
+  const brk = $derived(seriesBreak(iso3, level));
   const filledYears = $derived(new Set(regs.filter((r) => r.filled && r.lp_lpr != null).map((r) => r.year)));
   const table = $derived(years.map((y) => ({ label: (y === latestYear ? t('overview.table.latest', { year: y }) : String(y)) + (filledYears.has(y) ? ' †' : ''), ...stats(y) })));
   const measures = [
@@ -86,8 +89,8 @@
   // across countries: the median gap to the frontier region, and P90/P10
   const gapRows = $derived(fromFirstYear(byCY).filter((r) => r.gap_med != null));
   const ratioRows = $derived(fromFirstYear(byCY).filter((r) => r.p10 != null && r.p10 > 0 && r.n >= 3).map((r) => ({ ...r, ratio: r.p90! / r.p10! })));
-  const gapMake = $derived((o: { width: number; tokens: any }) => countryLines<RegionCountryYear>({ rows: gapRows, x: (d) => d.year, y: (d) => d.gap_med, iso: (d) => d.cntry_iso3, countries, colours, focus: iso3, tokens: o.tokens, width: o.width, height: 280, yLabel: 'Median gap to the frontier region (%)', yFormat: (v) => fmtNum(v, 0) + '%', covid: true, title: (d) => `${countryName(d.cntry_iso3)} ${d.year}\nMedian gap ${fmtPct(d.gap_med, 1)} over ${d.n} regions` }));
-  const ratioMake = $derived((o: { width: number; tokens: any }) => countryLines<any>({ rows: ratioRows, x: (d) => d.year, y: (d) => d.ratio, iso: (d) => d.cntry_iso3, countries, colours, focus: iso3, tokens: o.tokens, width: o.width, height: 280, yLabel: 'P90/P10 ratio of regional productivity', yFormat: (v) => fmtNum(v, 1), covid: true, title: (d) => `${countryName(d.cntry_iso3)} ${d.year}\nP90 ${fmtUsd(d.p90)} / P10 ${fmtUsd(d.p10)} = ${fmtNum(d.ratio, 2)}` }));
+  const gapMake = $derived((o: { width: number; tokens: any }) => countryLines<RegionCountryYear>({ rows: gapRows, x: (d) => d.year, y: (d) => d.gap_med, iso: (d) => d.cntry_iso3, countries, colours, focus: iso3, breakAt: brk, tokens: o.tokens, width: o.width, height: 280, yLabel: 'Median gap to the frontier region (%)', yFormat: (v) => fmtNum(v, 0) + '%', covid: true, title: (d) => `${countryName(d.cntry_iso3)} ${d.year}\nMedian gap ${fmtPct(d.gap_med, 1)} over ${d.n} regions` }));
+  const ratioMake = $derived((o: { width: number; tokens: any }) => countryLines<any>({ rows: ratioRows, x: (d) => d.year, y: (d) => d.ratio, iso: (d) => d.cntry_iso3, countries, colours, focus: iso3, breakAt: brk, tokens: o.tokens, width: o.width, height: 280, yLabel: 'P90/P10 ratio of regional productivity', yFormat: (v) => fmtNum(v, 1), covid: true, title: (d) => `${countryName(d.cntry_iso3)} ${d.year}\nP90 ${fmtUsd(d.p90)} / P10 ${fmtUsd(d.p10)} = ${fmtNum(d.ratio, 2)}` }));
   const cyCols = [{ key: 'cntry', label: 'Country', value: (r: any) => countryName(r.cntry_iso3) }, { key: 'year', label: 'Year', num: true }, { key: 'n', label: 'Regions', num: true },
     { key: 'p10', label: '10th percentile', num: true, render: (r: any) => fmtUsd(r.p10) }, { key: 'p50', label: 'Median', num: true, render: (r: any) => fmtUsd(r.p50) }, { key: 'p90', label: '90th percentile', num: true, render: (r: any) => fmtUsd(r.p90) },
     { key: 'gap_med', label: 'Median gap to frontier (%)', num: true, render: (r: any) => fmtNum(r.gap_med, 1) }];
@@ -106,7 +109,7 @@
     <div class="card prose"><p>{t('level.missing', { level: levelName, country: name })}</p></div>
   {:else}
 
-    <ChartCard title={t('overview.reg.table.title', { level: levelName, country: name })} columns={tableCols} rows={table} note={filledYears.size ? t('ukfill.note') : ''} csvName={`${iso3}_${level}_overview`}>
+    <ChartCard title={t('overview.reg.table.title', { level: levelName, country: name })} columns={tableCols} rows={table} note={[brk ? t('break.gbr') : '', filledYears.size ? t('ukfill.note') : ''].filter(Boolean).join(' ')} csvName={`${iso3}_${level}_overview`}>
       {#snippet intro()}<p><Text k="overview.reg.table.intro" vars={{ level: levelName, country: name }} /></p>{/snippet}
       {#if !table.length && !loading}
         <p class="muted">{t('overview.reg.table.none', { level: levelName, country: name })}</p>
@@ -127,12 +130,12 @@
   {/if}
 
   <div class="two">
-    <ChartCard title={t('overview.reg.gap.title', { level: levelName })} columns={cyCols} rows={gapRows} csvName={`${level}_frontier_gap`} note={t('overview.reg.gap.note')}>
+    <ChartCard title={t('overview.reg.gap.title', { level: levelName })} columns={cyCols} rows={gapRows} csvName={`${level}_frontier_gap`} note={t('overview.reg.gap.note') + (brk ? ' ' + t('break.gbr') : '')}>
       {#snippet intro()}<p><Text k="overview.reg.gap.intro" vars={{ level: levelName }} /></p>{/snippet}
       <PlotChart make={gapMake} height={280} label={t('overview.reg.gap.title', { level: levelName })} />
       <CountryLegend {countries} {colours} focus={iso3} {present} />
     </ChartCard>
-    <ChartCard title={t('overview.reg.ratio.title', { level: levelName })} columns={cyCols} rows={ratioRows} csvName={`${level}_p90_p10`} note={t('overview.reg.ratio.note')}>
+    <ChartCard title={t('overview.reg.ratio.title', { level: levelName })} columns={cyCols} rows={ratioRows} csvName={`${level}_p90_p10`} note={t('overview.reg.ratio.note') + (brk ? ' ' + t('break.gbr') : '')}>
       {#snippet intro()}<p><Text k="overview.reg.ratio.intro" vars={{ level: levelName }} /></p>{/snippet}
       <PlotChart make={ratioMake} height={280} label={t('overview.reg.ratio.title', { level: levelName })} />
       <CountryLegend {countries} {colours} focus={iso3} {present} />

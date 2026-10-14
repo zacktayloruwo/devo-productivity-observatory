@@ -6,6 +6,7 @@ import type { Tokens } from '../theme/tokens';
 import type { Country } from '../db/manifest.svelte';
 import { byRegion, REGION_DASH } from '../countries';
 import { plotStyle, yearAxis, yearTicks, MARGIN, covidRect, FIRST_YEAR } from './plot';
+import { breakRule } from './breaks';
 
 export interface CountryLinesOpts<T> {
   rows: T[];
@@ -24,6 +25,7 @@ export interface CountryLinesOpts<T> {
   step?: boolean;          // step-after, for the autonomy indices
   covid?: boolean;
   tickStep?: number;
+  breakAt?: number | null;  // a series break before this year (dashed line)
   title: (d: T) => string;
 }
 
@@ -33,6 +35,7 @@ export function countryLines<T>(o: CountryLinesOpts<T>): Element | null {
   const ys = rows.map(o.x);
   const lo = Math.min(...ys), hi = Math.max(...ys);
   const marks: any[] = o.covid ? covidRect(ys, o.tokens) : [];
+  if (o.breakAt != null && o.breakAt > lo && o.breakAt <= hi) marks.push(breakRule(o.breakAt, o.tokens as any));
   // the focus country last, so it draws on top
   for (const g of byRegion(o.countries)) {
     const others = rows.filter((d) => o.iso(d) !== o.focus && g.items.some((c) => c.iso3 === o.iso(d)));
