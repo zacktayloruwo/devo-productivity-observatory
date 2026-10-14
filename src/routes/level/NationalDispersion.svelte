@@ -9,7 +9,7 @@
   import { fmtUsd, fmtNum, fmtPct, fmtShort, poss } from '../../lib/util/format';
   import { mean } from '../../lib/util/stats';
   import { countryColours } from '../../lib/countries';
-  import { plotStyle, MARGIN, covidRect, yearAxis, yearTicks } from '../../lib/charts/plot';
+  import { plotStyle, MARGIN, covidRect, yearAxis, yearTicks, fromFirstYear } from '../../lib/charts/plot';
   import { countryLines } from '../../lib/charts/countryLines';
   import ChartCard from '../../lib/components/ChartCard.svelte';
   import PlotChart from '../../lib/components/PlotChart.svelte';
@@ -29,7 +29,7 @@
   let error = $state('');
   $effect(() => {
     if (!countries.length) return;
-    nationalAll().then((n) => { nat = n; loading = false; }).catch((e) => { error = e?.message ?? String(e); loading = false; });
+    nationalAll().then((n) => { nat = fromFirstYear(n); loading = false; }).catch((e) => { error = e?.message ?? String(e); loading = false; });
   });
   const latestOf = (rows: NationalRow[], key: string) => { const r = rows.filter((x) => x[key] != null); return r.length ? r[r.length - 1] : null; };
 

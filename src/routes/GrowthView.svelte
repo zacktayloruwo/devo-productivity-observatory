@@ -10,7 +10,7 @@
   import { fmtUsd, fmtNum, fmtPct, fmtShort, poss } from '../lib/util/format';
   import { mean } from '../lib/util/stats';
   import { countryColours } from '../lib/countries';
-  import { plotStyle, MARGIN, covidRect, yearAxis, yearTicks } from '../lib/charts/plot';
+  import { plotStyle, MARGIN, covidRect, yearAxis, yearTicks, fromFirstYear } from '../lib/charts/plot';
   import { countryLines } from '../lib/charts/countryLines';
   import ChartCard from '../lib/components/ChartCard.svelte';
   import PlotChart from '../lib/components/PlotChart.svelte';
@@ -38,7 +38,7 @@
   // growth of GDP per person employed + growth of persons employed per head
   const PARTS = [{ k: 'g_pw', label: 'GDP per person employed' }, { k: 'g_emp', label: 'Persons employed per head' }] as const;
   const PART_FILL = ['#4e79a7', '#f28e2b'];
-  const decomp = $derived(nat.filter((r) => r.growth_gdp_pc != null && r.growth_gdp_pw != null)
+  const decomp = $derived(fromFirstYear(nat).filter((r) => r.growth_gdp_pc != null && r.growth_gdp_pw != null)
     .map((r) => ({ cntry_iso3: r.cntry_iso3, year: r.year, g_pc: r.growth_gdp_pc!, g_pw: r.growth_gdp_pw!, g_emp: r.growth_gdp_pc! - r.growth_gdp_pw! })));
   const focusDecomp = $derived(decomp.filter((r) => r.cntry_iso3 === iso3));
   const decompLong = $derived(focusDecomp.flatMap((r) => PARTS.map((p) => ({ year: r.year, part: p.label, v: (r as any)[p.k] as number }))));
@@ -105,6 +105,7 @@
   <ChartCard title={t('productivity.nat.avg.title', { first: PERIOD[0], last: PERIOD[1] })} columns={avgCols} rows={decompAvg} csvName={`growth_decomposition_${PERIOD[0]}_${PERIOD[1]}`}>
     {#snippet intro()}<p><Text k="productivity.nat.avg.intro" vars={{ first: PERIOD[0], last: PERIOD[1], country: name }} /></p>{/snippet}
     <PlotChart make={avgMake} height={34 * Math.max(1, decompAvg.length) + 60} label={t('productivity.nat.avg.title', { first: PERIOD[0], last: PERIOD[1] })} />
+    <div class="pleg">{#each PARTS as p, i (p.k)}<span class="it"><span class="sw" style:background={PART_FILL[i]}></span>{p.label}</span>{/each}<span class="it"><svg width="10" height="10"><circle cx="5" cy="5" r="3.5" fill="currentColor" /></svg>{t('productivity.nat.avg.total')}</span><span class="it"><span class="sw" style:background={PART_FILL[0]}></span><span class="sw faded" style:background={PART_FILL[0]}></span>{t('productivity.nat.avg.focus', { country: name })}</span></div>
   </ChartCard>
 
 </div>
@@ -113,4 +114,5 @@
   .pleg { display: flex; flex-wrap: wrap; gap: 4px 16px; font-size: 12px; color: var(--fg-2); }
   .it { display: inline-flex; align-items: center; gap: 6px; }
   .sw { width: 12px; height: 12px; border-radius: 2px; display: inline-block; }
+  .sw.faded { opacity: 0.55; margin-left: -4px; }
 </style>

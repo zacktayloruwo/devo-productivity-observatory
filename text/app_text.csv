@@ -243,6 +243,8 @@ productivity.nat.decomp.total,GDP per capita,"Productivity at national level, gr
 productivity.nat.decomp.none,No growth series is available for {country}.,"Productivity at national level, growth decomposition card, when empty",
 productivity.nat.avg.title,"Sources of growth in GDP per capita, {first}–{last}, by country","Productivity at national level, average decomposition card",
 productivity.nat.avg.intro,"The same decomposition as the mean annual growth over {first}–{last}, countries ordered by GDP per capita growth (the dot); {country} is drawn at full strength.","Productivity at national level, average decomposition card",
+productivity.nat.avg.total,"GDP per capita growth, the sum of the two","Growth, sources-of-growth-by-country legend: the dot",
+productivity.nat.avg.focus,"{country} at full strength, other countries lighter","Growth, sources-of-growth-by-country legend: bar shading",
 productivity.nat.rd.title,"Dispersion of productivity across {level} regions, by country","Productivity at national level, regional dispersion card",{level} is TL2 or TL3
 productivity.nat.rd.intro,"The coefficient of variation of labour productivity across each country's {level} regions, year by year: a falling line means the country's regions are converging.","Productivity at national level, regional dispersion card",
 productivity.nat.rd.note,Computed in the devo_data_pack national panel from OECD DF_LPR regional productivity. The shaded band is the WHO pandemic emergency.,"Productivity at national level, regional dispersion card footnote",

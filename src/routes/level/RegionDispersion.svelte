@@ -3,6 +3,7 @@
   // country's regions over time (the summary table), the median gap to the
   // frontier region and P90/P10 in every country, and the distribution.
   // Route: #/dispersion/<ISO3>?geo=tl2|tl3
+  import { fromFirstYear } from '../../lib/charts/plot';
   import { routeCountry } from '../../lib/routeState';
   import { manifest, countryName, countryOf, levelHasCountry } from '../../lib/db/manifest.svelte';
   import { regionsCountry, regionsByCountryYear, type RegionRow, type RegionCountryYear } from '../../lib/db/queries';
@@ -81,8 +82,8 @@
     { key: 'frontier', label: t('overview.reg.measure.frontier'), value: (r: any) => r.frontier?.reg_name ?? r.frontier?.reg_id ?? '' }];
 
   // across countries: the median gap to the frontier region, and P90/P10
-  const gapRows = $derived(byCY.filter((r) => r.gap_med != null));
-  const ratioRows = $derived(byCY.filter((r) => r.p10 != null && r.p10 > 0 && r.n >= 3).map((r) => ({ ...r, ratio: r.p90! / r.p10! })));
+  const gapRows = $derived(fromFirstYear(byCY).filter((r) => r.gap_med != null));
+  const ratioRows = $derived(fromFirstYear(byCY).filter((r) => r.p10 != null && r.p10 > 0 && r.n >= 3).map((r) => ({ ...r, ratio: r.p90! / r.p10! })));
   const gapMake = $derived((o: { width: number; tokens: any }) => countryLines<RegionCountryYear>({ rows: gapRows, x: (d) => d.year, y: (d) => d.gap_med, iso: (d) => d.cntry_iso3, countries, colours, focus: iso3, tokens: o.tokens, width: o.width, height: 280, yLabel: 'Median gap to the frontier region (%)', yFormat: (v) => fmtNum(v, 0) + '%', covid: true, title: (d) => `${countryName(d.cntry_iso3)} ${d.year}\nMedian gap ${fmtPct(d.gap_med, 1)} over ${d.n} regions` }));
   const ratioMake = $derived((o: { width: number; tokens: any }) => countryLines<any>({ rows: ratioRows, x: (d) => d.year, y: (d) => d.ratio, iso: (d) => d.cntry_iso3, countries, colours, focus: iso3, tokens: o.tokens, width: o.width, height: 280, yLabel: 'P90/P10 ratio of regional productivity', yFormat: (v) => fmtNum(v, 1), covid: true, title: (d) => `${countryName(d.cntry_iso3)} ${d.year}\nP90 ${fmtUsd(d.p90)} / P10 ${fmtUsd(d.p10)} = ${fmtNum(d.ratio, 2)}` }));
   const cyCols = [{ key: 'cntry', label: 'Country', value: (r: any) => countryName(r.cntry_iso3) }, { key: 'year', label: 'Year', num: true }, { key: 'n', label: 'Regions', num: true },

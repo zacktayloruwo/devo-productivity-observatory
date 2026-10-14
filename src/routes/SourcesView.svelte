@@ -39,7 +39,7 @@
     for (const s of sources) {
       const key = `${s.agency},${s.flow},${s.version}`;
       const e = m.get(key) ?? { flow_name: s.flow_name, collection: s.collection, description: s.description, agency: s.agency, flow: s.flow, version: s.version, retrieved_on: s.retrieved_on, url: s.url, labels: [], cols: [] };
-      e.labels.push(s.label.replace(/^FUA (.)/, (_, c) => c.toUpperCase())); e.cols.push(s.value_col);
+      e.labels.push((s.label ?? s.series).replace(/^FUA (.)/, (_, c) => c.toUpperCase())); e.cols.push(s.value_col);
       m.set(key, e);
     }
     return [...m.values()].sort((a, b) => a.flow_name.localeCompare(b.flow_name)).map((f) => {

@@ -133,10 +133,12 @@ write_parquet(rai, file.path(out, "rai.parquet"), compression = "zstd")
 cat(sprintf("rai.parquet  %d rows\n", nrow(rai)))
 
 # ── Sources ───────────────────────────────────────────────────────────────────
-# the series behind the tables the app shows (not the analysis-only FUA panel
-# or crisis dates)
+# the series behind the FUA and national tables the app shows (not the
+# analysis-only FUA panel or crisis dates)
+# (the store also lists the panels' sources, which carry no label or value
+# column; the Sources view cites those in its own text)
 src <- read_parquet(file.path(db, "sources.parquet")) |>
-  filter(!grepl("^(fua_panel|analysis)", used_by))
+  filter(!grepl("^(fua_panel|analysis)", used_by), !is.na(label), !is.na(value_col))
 write_parquet(src, file.path(out, "sources.parquet"), compression = "zstd")
 
 # ── Countries table ───────────────────────────────────────────────────────────

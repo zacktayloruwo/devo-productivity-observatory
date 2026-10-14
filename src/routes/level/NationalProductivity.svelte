@@ -10,7 +10,7 @@
   import { fmtUsd, fmtNum, fmtShort, poss } from '../../lib/util/format';
   import { mean } from '../../lib/util/stats';
   import { countryColours } from '../../lib/countries';
-  import { plotStyle, MARGIN, covidRect, yearAxis, yearTicks } from '../../lib/charts/plot';
+  import { plotStyle, MARGIN, covidRect, yearAxis, yearTicks, FIRST_YEAR } from '../../lib/charts/plot';
   import { countryLines } from '../../lib/charts/countryLines';
   import ChartCard from '../../lib/components/ChartCard.svelte';
   import PlotChart from '../../lib/components/PlotChart.svelte';
@@ -37,7 +37,7 @@
   let measure = $state<'gdp_pw' | 'gdp_ph'>('gdp_pw');
   const MEASURES = { gdp_pw: { label: 'GDP per person employed (USD PPP)', unit: 'per person employed', f: fmtUsd }, gdp_ph: { label: 'GDP per hour worked (USD PPP)', unit: 'per hour worked', f: (v: number | null) => (v == null ? '—' : '$' + fmtNum(v, 2)) } };
   // the Productivity view starts in 2000
-  const lpRows = $derived(nat.filter((r) => r[measure] != null && r.year >= 2000));
+  const lpRows = $derived(nat.filter((r) => r[measure] != null && r.year >= FIRST_YEAR));
   const lpMake = $derived((o: { width: number; tokens: any }) => {
     const m = MEASURES[measure];
     return countryLines<NationalRow>({ rows: lpRows, x: (d) => d.year, y: (d) => d[measure], iso: (d) => d.cntry_iso3, countries, colours, focus: iso3, tokens: o.tokens, width: o.width, height: 300, yLabel: m.label, yFormat: (v) => '$' + fmtShort(v), covid: true, title: (d) => `${countryName(d.cntry_iso3)} ${d.year}\n${m.f(d[measure])} ${m.unit}` });

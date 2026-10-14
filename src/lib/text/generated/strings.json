@@ -243,6 +243,8 @@
   "productivity.nat.decomp.none": "No growth series is available for {country}.",
   "productivity.nat.avg.title": "Sources of growth in GDP per capita, {first}–{last}, by country",
   "productivity.nat.avg.intro": "The same decomposition as the mean annual growth over {first}–{last}, countries ordered by GDP per capita growth (the dot); {country} is drawn at full strength.",
+  "productivity.nat.avg.total": "GDP per capita growth, the sum of the two",
+  "productivity.nat.avg.focus": "{country} at full strength, other countries lighter",
   "productivity.nat.rd.title": "Dispersion of productivity across {level} regions, by country",
   "productivity.nat.rd.intro": "The coefficient of variation of labour productivity across each country's {level} regions, year by year: a falling line means the country's regions are converging.",
   "productivity.nat.rd.note": "Computed in the devo_data_pack national panel from OECD DF_LPR regional productivity. The shaded band is the WHO pandemic emergency.",

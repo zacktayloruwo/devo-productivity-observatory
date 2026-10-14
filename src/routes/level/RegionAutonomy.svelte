@@ -11,7 +11,7 @@
   import { fmtNum } from '../../lib/util/format';
   import { median } from '../../lib/util/stats';
   import { downloadCsv } from '../../lib/util/csv';
-  import { plotStyle, MARGIN, yearAxis, yearTicks } from '../../lib/charts/plot';
+  import { plotStyle, MARGIN, yearAxis, yearTicks, fromFirstYear } from '../../lib/charts/plot';
   import ChartCard from '../../lib/components/ChartCard.svelte';
   import PlotChart from '../../lib/components/PlotChart.svelte';
   import Spinner from '../../lib/components/Spinner.svelte';
@@ -38,7 +38,7 @@
   });
 
   // the index rows: years with LAI or RAI
-  const rows = $derived(regs.filter((r) => r.lai_total_reg != null || r.rai_total_reg != null));
+  const rows = $derived(fromFirstYear(regs.filter((r) => r.lai_total_reg != null || r.rai_total_reg != null)));
   // regions by name; the selected region is ?reg=, else the most populous
   const regions = $derived.by(() => {
     const m = new Map<string, { id: string; name: string; pop: number }>();

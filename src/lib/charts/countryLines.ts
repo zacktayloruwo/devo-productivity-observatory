@@ -5,7 +5,7 @@ import * as Plot from '@observablehq/plot';
 import type { Tokens } from '../theme/tokens';
 import type { Country } from '../db/manifest.svelte';
 import { byRegion, REGION_DASH } from '../countries';
-import { plotStyle, yearAxis, yearTicks, MARGIN, covidRect } from './plot';
+import { plotStyle, yearAxis, yearTicks, MARGIN, covidRect, FIRST_YEAR } from './plot';
 
 export interface CountryLinesOpts<T> {
   rows: T[];
@@ -28,7 +28,7 @@ export interface CountryLinesOpts<T> {
 }
 
 export function countryLines<T>(o: CountryLinesOpts<T>): Element | null {
-  const rows = o.rows.filter((d) => o.y(d) != null);
+  const rows = o.rows.filter((d) => o.y(d) != null && o.x(d) >= FIRST_YEAR);
   if (!rows.length) return null;
   const ys = rows.map(o.x);
   const lo = Math.min(...ys), hi = Math.max(...ys);

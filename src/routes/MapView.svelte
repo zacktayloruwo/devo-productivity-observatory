@@ -17,7 +17,7 @@
   import { theme } from '../lib/theme/theme.svelte';
   import { liveTokens } from '../lib/theme/liveTokens.svelte';
   import { esc, type TipContent } from '../lib/tooltip';
-  import { plotStyle, yearAxis, yearTicks, covidRect } from '../lib/charts/plot';
+  import { plotStyle, yearAxis, yearTicks, covidRect, FIRST_YEAR } from '../lib/charts/plot';
   import { downloadCsv } from '../lib/util/csv';
   import { t } from '../lib/text/t';
   import type { MultiLineString } from 'geojson';
@@ -162,7 +162,7 @@
   });
   const seriesMake = $derived((o: { width: number; tokens: any }) => {
     const v = variable; if (!v) return null;
-    const rows = series.filter((r) => r[v.id] != null);
+    const rows = series.filter((r) => r[v.id] != null && r.year >= FIRST_YEAR);
     if (rows.length < 2) return null;
     const ys = rows.map((r) => r.year); const lo = Math.min(...ys), hi = Math.max(...ys);
     const cur = rows.filter((r) => r.year === year);

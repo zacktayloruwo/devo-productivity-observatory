@@ -3,6 +3,7 @@
   // Index, total and fiscal, every country; at the national level also the
   // dimension indices and fiscal ratios, and region-specific indices at TL2
   // and TL3. Route: #/autonomy/<ISO3>?geo=<level>
+  import { fromFirstYear } from '../lib/charts/plot';
   import { routeCountry, routeGeo } from '../lib/routeState';
   import { manifest, countryName } from '../lib/db/manifest.svelte';
   import { laiAll, raiAll, type LaiRow, type RaiRow } from '../lib/db/queries';
@@ -28,7 +29,7 @@
   let error = $state('');
   $effect(() => {
     if (!countries.length || geo === 'tl2' || geo === 'tl3') return;
-    Promise.all([laiAll(), raiAll()]).then(([l, r]) => { lai = l; rai = r; loading = false; }).catch((e) => { error = e?.message ?? String(e); loading = false; });
+    Promise.all([laiAll(), raiAll()]).then(([l, r]) => { lai = fromFirstYear(l); rai = fromFirstYear(r); loading = false; }).catch((e) => { error = e?.message ?? String(e); loading = false; });
   });
 
   const score = (v: number | null) => fmtNum(v, 2);

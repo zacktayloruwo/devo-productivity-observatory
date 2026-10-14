@@ -11,6 +11,12 @@ export function plotStyle(tokens: Tokens): Record<string, string> {
 
 export const MARGIN = { left: 60, right: 40 };
 
+// Every chart over time starts in this year (its table and CSV too)
+export const FIRST_YEAR = 2000;
+export function fromFirstYear<T extends { year: number }>(rows: T[]): T[] {
+  return rows.filter((r) => r.year >= FIRST_YEAR);
+}
+
 // Year ticks every `step` years inside [lo, hi]
 export function yearTicks(lo: number, hi: number, step = 5): number[] {
   const out: number[] = [];

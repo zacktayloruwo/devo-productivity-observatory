@@ -2,6 +2,7 @@
   // Autonomy at the national level, below the LAI and RAI charts: the three
   // decentralization dimension indices and the IMF and OECD fiscal ratios,
   // every country, from national.parquet.
+  import { fromFirstYear } from '../../lib/charts/plot';
   import { routeCountry } from '../../lib/routeState';
   import { manifest, countryName } from '../../lib/db/manifest.svelte';
   import { nationalAll, type NationalRow } from '../../lib/db/queries';
@@ -22,7 +23,7 @@
   let error = $state('');
   $effect(() => {
     if (!countries.length) return;
-    nationalAll().then((n) => { nat = n; }).catch((e) => { error = e?.message ?? String(e); });
+    nationalAll().then((n) => { nat = fromFirstYear(n); }).catch((e) => { error = e?.message ?? String(e); });
   });
 
   type Series = { key: string; short: string; label: string; pct: boolean };

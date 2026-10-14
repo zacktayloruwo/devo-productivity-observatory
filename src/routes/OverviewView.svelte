@@ -10,7 +10,7 @@
   import { fmtInt, fmtPct, fmtUsd, fmtShort, poss } from '../lib/util/format';
   import { median, mean } from '../lib/util/stats';
   import { countryColours, REGION_DASH, byRegion } from '../lib/countries';
-  import { plotStyle, yearAxis, yearTicks, MARGIN, covidRect } from '../lib/charts/plot';
+  import { plotStyle, yearAxis, yearTicks, MARGIN, covidRect, fromFirstYear } from '../lib/charts/plot';
   import ChartCard from '../lib/components/ChartCard.svelte';
   import PlotChart from '../lib/components/PlotChart.svelte';
   import CountryLegend from '../lib/components/CountryLegend.svelte';
@@ -83,7 +83,7 @@
   const lpYears = $derived([...new Set(fua.filter((r) => r.labprod_usdppp != null).map((r) => r.year))].sort((a, b) => a - b));
 
   // national GDP per person employed, every country
-  const natLp = $derived(nat.filter((n) => n.gdp_pw != null));
+  const natLp = $derived(fromFirstYear(nat.filter((n) => n.gdp_pw != null)));
   const colours = $derived(countryColours(manifest.countries, iso3, '#c0392b'));
   const present = $derived(new Set(natLp.map((n) => n.cntry_iso3)));
   const natMake = $derived((o: { width: number; tokens: any }) => {

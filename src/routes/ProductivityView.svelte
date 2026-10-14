@@ -10,7 +10,7 @@
   import { fmtInt, fmtUsd, fmtNum, fmtPct, fmtShort, poss } from '../lib/util/format';
   import { mean, median, quantile, ols } from '../lib/util/stats';
   import { countryColours } from '../lib/countries';
-  import { plotStyle, MARGIN, covidRect, yearAxis, yearTicks } from '../lib/charts/plot';
+  import { plotStyle, MARGIN, covidRect, yearAxis, yearTicks, FIRST_YEAR } from '../lib/charts/plot';
   import { countryLines } from '../lib/charts/countryLines';
   import ChartCard from '../lib/components/ChartCard.svelte';
   import PlotChart from '../lib/components/PlotChart.svelte';
@@ -25,7 +25,6 @@
   const countries = $derived(manifest.countries);
   const colours = $derived(countryColours(countries, iso3, '#c0392b'));
   const FOCAL = '#c0392b';
-  const FIRST_YEAR = 2000;
   const geo = $derived(routeGeo());
   const level = $derived<UnitLevel | null>(geo === 'national' ? null : geo);
   const fua = $derived(geo === 'fua');
