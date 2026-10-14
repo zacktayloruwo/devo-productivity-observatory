@@ -18,8 +18,14 @@
 #   geo/<ISO3>.geojson     simplified FUA boundaries for one country
 #
 # Segmenting the FUA table by country lets the app fetch only the focus
-# country's file for country-specific views, and union all nine for the
+# country's file for country-specific views, and union them all for the
 # cross-country comparisons.
+#
+# Every table comes from the common database the Devo Analysis pipeline
+# writes at devo_data_pack/_data/db/ (one Parquet dataset per table,
+# partitioned by country; see the README there). The app selects its countries
+# and columns and fetches nothing itself, so analysis and app share one
+# download and one vintage of each series.
 
 suppressPackageStartupMessages({
   library(dplyr)
@@ -34,13 +40,16 @@ suppressPackageStartupMessages({
 args     <- commandArgs(trailingOnly = TRUE)
 datapack <- if (length(args)) args[1] else
   "/Users/zack/My Drive/Fiscal Observatory/devo_data_pack"
-dp       <- file.path(datapack, "_data/_datapack")
+db       <- file.path(datapack, "_data/db")
+if (!dir.exists(db)) stop("no common database at ", db)
+# one table of the store, all countries (the partition column is cntry_iso3)
+from_db <- function(table) arrow::open_dataset(file.path(db, table)) |> dplyr::collect() |> tibble::as_tibble()
 out      <- "public/data"
 dir.create(file.path(out, "fua"), recursive = TRUE, showWarnings = FALSE)
 dir.create(file.path(out, "geo"), recursive = TRUE, showWarnings = FALSE)
 
 # ── Countries ─────────────────────────────────────────────────────────────────
-# Mirrors country_map / country_group in profile.qmd
+# The nine of profile.qmd (country_map / country_group) and seven more
 countries <- tibble::tribble(
   ~iso3,  ~iso2, ~display,         ~data_name,                                             ~region,
   "CAN",  "CA",  "Canada",         "Canada",                                               "Anglo",
@@ -51,12 +60,18 @@ countries <- tibble::tribble(
   "KOR",  "KR",  "South Korea",    "Republic of Korea",                                    "Asia",
   "ESP",  "ES",  "Spain",          "Spain",                                                "Continental Europe",
   "GBR",  "GB",  "United Kingdom", "United Kingdom of Great Britain and Northern Ireland", "Anglo",
-  "USA",  "US",  "United States",  "United States of America",                             "Anglo"
+  "USA",  "US",  "United States",  "United States of America",                             "Anglo",
+  "AUS",  "AU",  "Australia",      "Australia",                                            "Anglo",
+  "NZL",  "NZ",  "New Zealand",    "New Zealand",                                          "Anglo",
+  "BEL",  "BE",  "Belgium",        "Belgium",                                              "Continental Europe",
+  "NLD",  "NL",  "Netherlands",    "Netherlands (Kingdom of the)",                         "Continental Europe",
+  "FIN",  "FI",  "Finland",        "Finland",                                              "Nordic",
+  "NOR",  "NO",  "Norway",         "Norway",                                               "Nordic",
+  "SWE",  "SE",  "Sweden",         "Sweden",                                               "Nordic"
 )
 
 # ── FUA data ──────────────────────────────────────────────────────────────────
-fua <- read_dta(file.path(dp, "fua_data.dta")) |>
-  zap_labels() |>
+fua <- from_db("fua") |>
   as_tibble() |>
   filter(!is.na(cntry_name), nzchar(cntry_name), cntry_iso3 %in% countries$iso3) |>
   transmute(
@@ -83,8 +98,7 @@ for (iso in countries$iso3) {
 }
 
 # ── National ──────────────────────────────────────────────────────────────────
-nat <- read_dta(file.path(dp, "nat_data.dta")) |>
-  zap_labels() |> as_tibble() |>
+nat <- from_db("nat") |>
   filter(cntry_iso3 %in% countries$iso3) |>
   transmute(cntry_iso3, year = as.integer(year),
             gdp_pw, pop_nat, localexppct, lgexp_per_person) |>
@@ -93,7 +107,7 @@ write_parquet(nat, file.path(out, "nat.parquet"), compression = "zstd")
 cat(sprintf("nat.parquet  %d rows\n", nrow(nat)))
 
 # ── LAI ───────────────────────────────────────────────────────────────────────
-lai <- readRDS(file.path(dp, "lai_national.rds")) |>
+lai <- from_db("lai") |>
   as_tibble() |>
   filter(cntry_iso3 %in% countries$iso3) |>
   mutate(year = as.integer(year),
@@ -107,7 +121,7 @@ write_parquet(lai, file.path(out, "lai.parquet"), compression = "zstd")
 cat(sprintf("lai.parquet  %d rows\n", nrow(lai)))
 
 # ── RAI ───────────────────────────────────────────────────────────────────────
-rai <- readRDS(file.path(dp, "rai_national.rds")) |>
+rai <- from_db("rai") |>
   as_tibble() |>
   filter(cntry_iso3 %in% countries$iso3) |>
   mutate(year = as.integer(year),
@@ -119,7 +133,10 @@ write_parquet(rai, file.path(out, "rai.parquet"), compression = "zstd")
 cat(sprintf("rai.parquet  %d rows\n", nrow(rai)))
 
 # ── Sources ───────────────────────────────────────────────────────────────────
-src <- read.csv(file.path(dp, "oecd_sources.csv"), stringsAsFactors = FALSE) |> as_tibble()
+# the series behind the tables the app shows (not the analysis-only FUA panel
+# or crisis dates)
+src <- read_parquet(file.path(db, "sources.parquet")) |>
+  filter(!grepl("^(fua_panel|analysis)", used_by))
 write_parquet(src, file.path(out, "sources.parquet"), compression = "zstd")
 
 # ── Countries table ───────────────────────────────────────────────────────────
@@ -171,7 +188,7 @@ for (iso in countries$iso3) {
 # OECD TL2 regions are the first-tier subnational governments: provinces and
 # territories, states, Länder. Written for the federal countries, drawn on the
 # map as outlines over the FUAs. Add a country here to overlay its regions.
-admin_countries <- c("CAN", "USA", "DEU", "ESP", "ITA", "FRA", "GBR")
+admin_countries <- c("CAN", "USA", "DEU", "ESP", "ITA", "FRA", "GBR", "AUS", "BEL")
 dir.create(file.path(out, "geo", "admin"), showWarnings = FALSE)
 tl2 <- st_read(file.path(datapack, "_data/oecd_boundaries/OECD_TL2_shapefile"),
                quiet = TRUE, options = "ENCODING=LATIN1") |>
@@ -205,9 +222,8 @@ no_geo <- setdiff(fua$fua_id, b$fua_id)
 
 
 # ── National, TL2 and TL3 (devo_data_pack analysis panels) ───────────────────
-# Regional rows come from _data/processed/regional_panel_tl.csv.gz, national
-# rows from national_panel.csv.gz (both built by the Devo Analysis pipeline,
-# scripts 09 and 12). The polygons are built first by build_geography.R,
+# Regional rows come from the store's tl2 and tl3 tables, national rows from
+# its national table (the Devo Analysis regional and national panels). The polygons are built first by build_geography.R,
 # which writes data-prep/cache/geo_index.csv; every region-year with data
 # must have exactly one polygon valid in that year, or the build stops.
 geo_index <- read.csv("data-prep/cache/geo_index.csv", stringsAsFactors = FALSE) |> as_tibble()
@@ -263,8 +279,7 @@ nat_vars <- list(
 )
 reg_ids <- vapply(reg_vars, `[[`, "", "id"); nat_ids <- vapply(nat_vars, `[[`, "", "id")
 
-regp <- readr::read_csv(file.path(datapack, "_data/processed/regional_panel_tl.csv.gz"),
-                        show_col_types = FALSE, guess_max = 1e5) |>
+regp <- bind_rows(from_db("tl2"), from_db("tl3")) |>
   filter(iso3 %in% countries$iso3) |>
   mutate(year = as.integer(year), level = tolower(tl),
          lp_gap_frontier_pct = 100 * (exp(ln_lp_gap_frontier) - 1))
@@ -325,8 +340,7 @@ for (lv in c("tl2", "tl3")) for (iso in countries$iso3) {
   cat(sprintf("%s  %5d rows  %3d regions  %4.0f KB\n", reg_files[[lv]][[iso]], nrow(d), n_distinct(d$reg_id), file.info(f)$size / 1024))
 }
 
-natp <- readr::read_csv(file.path(datapack, "_data/processed/national_panel.csv.gz"),
-                        show_col_types = FALSE, guess_max = 1e5) |>
+natp <- from_db("national") |>
   filter(iso3 %in% countries$iso3) |>
   mutate(year = as.integer(year),
          growth_gdp_pc = 100 * dln_gdp_pc, growth_gdp_pw = 100 * dln_gdp_pw,

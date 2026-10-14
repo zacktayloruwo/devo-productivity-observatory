@@ -11,11 +11,12 @@
 # share their borders exactly:
 #   GBR       ONS, International Territorial Level 3 (January 2025),
 #             generalised 20 m, clipped (BGC V2). ONS code TLxxx = OECD UKxxx.
-#   DEU, ITA  Eurostat GISCO, NUTS 2024 level 3, 1:1 million, EPSG:4326.
+#   DEU, ITA, BEL, NLD, FIN, NOR, SWE
+#             Eurostat GISCO, NUTS 2024 level 3, 1:1 million, EPSG:4326.
 #   others    OECD regional boundaries 2020 (TL3 shapefile, from the
 #             devo_data_pack), the latest the OECD has released.
 # OECD publishes no TL2021 or TL2024 polygons; the panel (devo_data_pack
-# _data/processed/regional_panel_tl.csv.gz) is on the OECD's current grid,
+# _data/db tl2 and tl3) is on the OECD's current grid,
 # which these three sources reproduce code for code.
 #
 # TL2 and the national outline are dissolved from TL3, so the levels nest
@@ -48,7 +49,21 @@ out_dir  <- "public/data/geo/regions"
 dir.create(src_dir, recursive = TRUE, showWarnings = FALSE)
 dir.create(out_dir, recursive = TRUE, showWarnings = FALSE)
 
-COUNTRIES <- c("CAN", "FRA", "DEU", "ITA", "JPN", "KOR", "ESP", "GBR", "USA")
+COUNTRIES <- c("CAN", "FRA", "DEU", "ITA", "JPN", "KOR", "ESP", "GBR", "USA",
+               "AUS", "BEL", "FIN", "NLD", "NZL", "NOR", "SWE")
+# Countries drawn from GISCO NUTS 2024: ISO2 (the NUTS prefix) to ISO3, and
+# the NUTS level the OECD uses as TL2 there (NUTS 1 in Germany and Belgium,
+# NUTS 2 elsewhere), given as the length of the TL2 code
+GISCO <- tibble::tribble(
+  ~cc,  ~iso3, ~tl2_len,
+  "DE", "DEU", 3,
+  "IT", "ITA", 4,
+  "BE", "BEL", 3,
+  "NL", "NLD", 4,
+  "FI", "FIN", 4,
+  "NO", "NOR", 4,
+  "SE", "SWE", 4
+)
 
 # Citation wording lives in text/app_text.csv (sources.cite.geo.<id>); this
 # list records where each file comes from and the grid it represents.
@@ -64,6 +79,11 @@ SOURCES <- list(
     page = "https://ec.europa.eu/eurostat/web/gisco/geodata/statistical-units/territorial-units-statistics",
     file = "gisco_nuts_2024_l3_01m.geojson",
     grid = "NUTS 2024"
+  ),
+  # level 2, for the names of TL2 units the OECD has not named yet (NL35, NL36)
+  gisco2 = list(
+    url  = "https://gisco-services.ec.europa.eu/distribution/v2/nuts/geojson/NUTS_RG_60M_2024_4326_LEVL_2.geojson",
+    file = "gisco_nuts_2024_l2_60m.geojson"
   )
 )
 fetch <- function(s) {
@@ -76,8 +96,9 @@ fetch <- function(s) {
 }
 
 # ── The panel: which codes carry data, at which level, in which years ───────
-panel <- read_csv(file.path(datapack, "_data/processed/regional_panel_tl.csv.gz"),
-                  show_col_types = FALSE, guess_max = 1e5) |>
+# the regional panel, from the common database (devo_data_pack/_data/db)
+panel <- bind_rows(lapply(c("tl2", "tl3"), function(t)
+  arrow::open_dataset(file.path(datapack, "_data/db", t)) |> collect())) |>
   filter(iso3 %in% COUNTRIES)
 DATA_VARS <- c("lp_lpr", "lp_gdp_q", "gdppc_q_usdppp", "pop_total", "emp")
 panel <- panel[rowSums(!is.na(panel[DATA_VARS])) > 0, ]
@@ -97,18 +118,19 @@ ons <- st_read(fetch(SOURCES$ons), quiet = TRUE) |>
   transmute(iso3 = "GBR", id = sub("^TL", "UK", ITL325CD), name = ITL325NM,
             parent = substr(id, 1, 3))
 gisco <- st_read(fetch(SOURCES$gisco), quiet = TRUE) |>
-  filter(CNTR_CODE %in% c("DE", "IT"), !grepl("ZZ", NUTS_ID)) |>
-  transmute(iso3 = ifelse(CNTR_CODE == "DE", "DEU", "ITA"), id = NUTS_ID,
-            name = NAME_LATN,
-            # OECD TL2 is NUTS 1 in Germany, NUTS 2 in Italy
-            parent = ifelse(CNTR_CODE == "DE", substr(id, 1, 3), substr(id, 1, 4)))
+  filter(CNTR_CODE %in% GISCO$cc, !grepl("ZZ", NUTS_ID)) |>
+  inner_join(GISCO, by = c("CNTR_CODE" = "cc")) |>
+  transmute(iso3, id = NUTS_ID, name = NAME_LATN, parent = substr(id, 1, tl2_len))
+
+gisco2_names <- st_read(fetch(SOURCES$gisco2), quiet = TRUE) |> st_drop_geometry() |>
+  transmute(id = NUTS_ID, name = NAME_LATN)
 
 tl3_all <- bind_rows(
-  oecd3 |> filter(!iso3 %in% c("GBR", "DEU", "ITA")),
+  oecd3 |> filter(!iso3 %in% c("GBR", GISCO$iso3)),
   ons, gisco
 ) |> st_make_valid()
 
-source_of <- function(iso) switch(iso, GBR = "ons", DEU = "gisco", ITA = "gisco", "oecd2020")
+source_of <- function(iso) if (iso == "GBR") "ons" else if (iso %in% GISCO$iso3) "gisco" else "oecd2020"
 
 # Panel names are the OECD's (UTF-8); fall back to the source's
 tl3_all <- tl3_all |>
@@ -138,7 +160,8 @@ for (iso in COUNTRIES) {
     base <- tl3_all |> filter(iso3 == iso)
     t2 <- base |> group_by(id = parent) |> summarise(.groups = "drop")
     n2 <- bind_rows(names_panel |> rename(id = reg_id, name = reg_name),
-                    st_drop_geometry(oecd2) |> select(id, name)) |>
+                    st_drop_geometry(oecd2) |> select(id, name),
+                    gisco2_names) |>
       distinct(id, .keep_all = TRUE)
     t2 <- t2 |> left_join(n2, by = "id")
   }

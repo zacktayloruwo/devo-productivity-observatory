@@ -1,12 +1,13 @@
 // Map projections chosen per country, and the fixed insets for parts far
 // from the mainland (Alaska and Hawaii; the French overseas departments;
-// the Canary Islands; Okinawa). Each inset is a small panel with its own
+// the Canary Islands; Okinawa; Svalbard and Jan Mayen). Each inset is a small panel with its own
 // projection that does not pan or zoom with the main map.
 //
 // Conic conformal projections with each country's customary parallels
 // (Lambert-93 for France, the Statistics Canada Lambert, the CONUS Lambert,
-// ...); Great Britain on its transverse Mercator (the National Grid's
-// central meridian); every country at once on Equal Earth.
+// ...); Great Britain, the Nordic countries and New Zealand on transverse
+// Mercator (the National Grid, SWEREF 99 TM, ETRS-TM35FIN, NZTM meridians);
+// Australia on the GDA Albers parallels; every country at once on Equal Earth.
 import { geoConicConformal, geoTransverseMercator, geoEqualEarth, geoMercator, geoCentroid, type GeoProjection } from 'd3-geo';
 import type { Feature, Geometry } from 'geojson';
 
@@ -43,7 +44,17 @@ const LAYOUTS: Record<string, Layout> = {
   JPN: { make: conic(135, 33, 42), insets: [
     { id: 'OKI', label: 'Okinawa', test: inBox(122, 24, 131, 27.5), make: conic(127.5, 25, 27) }
   ] },
-  KOR: { make: conic(127.5, 34, 38), insets: [] }
+  KOR: { make: conic(127.5, 34, 38), insets: [] },
+  AUS: { make: conic(132, -18, -36), insets: [] },
+  NZL: { make: () => geoTransverseMercator().rotate([-173, 0]), insets: [] },
+  BEL: { make: conic(4.36, 49.83, 51.17), insets: [] },
+  NLD: { make: conic(5.4, 51, 53), insets: [] },
+  FIN: { make: () => geoTransverseMercator().rotate([-27, 0]), insets: [] },
+  SWE: { make: () => geoTransverseMercator().rotate([-15, 0]), insets: [] },
+  NOR: { make: () => geoTransverseMercator().rotate([-15, 0]), insets: [
+    // Svalbard and Jan Mayen are one TL2 region; its centroid is on Svalbard
+    { id: 'SJM', label: 'Svalbard and Jan Mayen', test: inBox(-10, 73.5, 35, 81.5), make: () => geoTransverseMercator().rotate([-15, 0]) }
+  ] }
 };
 
 export const WORLD: Layout = { make: () => geoEqualEarth(), insets: [] };

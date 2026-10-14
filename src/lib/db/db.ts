@@ -10,7 +10,7 @@
 // (fua/cntry_iso3=USA/part.parquet). The `fua` view reads the whole list with
 // hive_partitioning on, so a `WHERE cntry_iso3 = ?` filter is pushed down to
 // the partition column and only that country's file is fetched; the
-// cross-country views read all nine (about 400 KB in total).
+// cross-country views read them all (about 400 KB in total).
 //
 // All SQL lives in src/lib/db/queries.ts. Components never build SQL.
 

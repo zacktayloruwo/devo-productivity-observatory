@@ -1,6 +1,6 @@
 key,text,context,notes
 app.title,The Devolution-Productivity Observatory,Top bar and browser tab,
-overview.sub,{region} · {n_fua} functional urban areas in the OECD data,"Overview, under the country name",{region}: Anglo / Continental Europe / Asia
+overview.sub,{region} · {n_fua} functional urban areas in the OECD data,"Overview, under the country name",{region}: Anglo / Continental Europe / Nordic / Asia
 overview.sub.years,labour productivity {first}–{last},"Overview, appended to the line above when productivity exists",
 overview.reading.title,Reading the Observatory,"Overview, note card",
 overview.reading.1,"[Productivity](view:productivity) ranks {possessive} FUAs or regions by labour productivity and compares them with every other country's. [Growth](view:growth) splits the growth of GDP per capita into productivity and employment. [Dispersion](view:dispersion) shows how unequal productivity is across a country's FUAs and regions. [Autonomy](view:autonomy) traces the Local Autonomy Index and the Regional Authority Index. [Map](view:map) draws productivity, population and autonomy indicators for any year at national, TL2, TL3 or FUA level; the geography is chosen in the top bar.","Overview, note card, paragraph 1",[label](view:name) links to a view for the current country
@@ -129,7 +129,7 @@ sources.cite.m49,"**Country and region classification.** United Nations Statisti
 sources.cite.boundaries,"**FUA boundaries.** OECD, *Functional Urban Areas* boundary files (GeoPackage), simplified for display. [OECD definition of cities and functional urban areas](https://www.oecd.org/en/data/datasets/oecd-definition-of-cities-and-functional-urban-areas.html)","Sources, citation",
 sources.retrieved,OECD series were retrieved from the OECD Data Explorer SDMX API ([https://sdmx.oecd.org/public/rest](https://sdmx.oecd.org/public/rest)) on {date}. Coverage shown is the span of years with non-missing data for {country}; other countries in the comparison sets may span different years.,"Sources, closing note",
 about.title,About the Observatory,"About, page heading",
-about.tagline,Labour productivity of functional urban areas and the autonomy of local and regional government in nine countries.,"About, under the heading",
+about.tagline,Labour productivity of functional urban areas and the autonomy of local and regional government in sixteen OECD countries.,"About, under the heading",
 about.what.title,What it shows,"About, card",
 about.what.1,"The Devolution-Productivity Observatory presents, for Canada, France, Germany, Italy, Japan, South Korea, Spain, the United Kingdom and the United States, the labour productivity of OECD functional urban areas (a city and its commuting zone) alongside two expert-coded measures of subnational autonomy: the Local Autonomy Index and the Regional Authority Index. It is the interactive counterpart of the country profile documents produced for the Devolution project, and draws every figure from the same data pack.","About, card, paragraph 1",
 about.what.2,"Each view follows the profile: an [Overview](view:overview) of a country's FUAs; [Productivity](view:productivity) rankings, the relationship with population size, the distribution and spread of productivity across FUAs and its change over time; the [Autonomy](view:autonomy) indices; and a [Map](view:map) of any indicator in any year at four geographies: countries, large regions (TL2), small regions (TL3) and functional urban areas, chosen in the top bar. The country is chosen in the top bar; the URL carries every selection, so any view can be linked.","About, card, paragraph 2",
@@ -137,7 +137,7 @@ about.method.title,Method,"About, card",
 about.method.1,"OECD series are retrieved from the OECD Data Explorer SDMX API and joined on functional urban area and year. Population is interpolated between census observations and carried by at most three years beyond them, as described under [Sources](view:sources). Dollar figures are nominal USD at purchasing power parity: comparable across countries within a year, not across years. The reference year for the snapshot views is {ref_year}, the last full year before the Covid-19 pandemic, and the pandemic emergency as defined by the World Health Organization (March 2020 to May 2023) is shaded on every time series.","About, card, paragraph 1",
 about.method.2,"Means across FUAs are unweighted: each FUA counts once, regardless of population. The fiscal dimensions of the LAI and RAI are sums of their sub-indicators using the indices' own point weights, rescaled to 0–1. The map classes each indicator into quantiles pooled over every year shown for the scope chosen, so a colour keeps its meaning as the year changes.","About, card, paragraph 2",
 about.how.title,How it works,"About, card",
-about.how.1,"The site is static. The data are Parquet files segmented by country (one file per country for the FUA series, plus small national, LAI, RAI and source tables) and simplified boundaries (a TopoJSON per country holding its national outline, TL2 and TL3 regions, which share their borders, plus GeoJSON for FUAs), read in the browser by DuckDB-WASM. A country view fetches only that country's file; the cross-country comparisons read all nine. Everything the site shows can be downloaded as CSV from each chart, or read directly from the `data/` folder of the repository with any Parquet tool.","About, card",
+about.how.1,"The site is static. The data are Parquet files segmented by country (one file per country for the FUA series, plus small national, LAI, RAI and source tables) and simplified boundaries (a TopoJSON per country holding its national outline, TL2 and TL3 regions, which share their borders, plus GeoJSON for FUAs), read in the browser by DuckDB-WASM. A country view fetches only that country's file; the cross-country comparisons read them all. Everything the site shows can be downloaded as CSV from each chart, or read directly from the `data/` folder of the repository with any Parquet tool.","About, card",
 about.build.title,Build,"About, build card",
 about.build.data,Data built,"About, build card",
 about.build.ref,Reference year,"About, build card",
@@ -163,7 +163,7 @@ map.group.dispersion,Regional dispersion,"Map, indicator list group",
 map.group.autonomy,Autonomy and decentralization,"Map, indicator list group",
 map.group.fiscal,Fiscal decentralization,"Map, indicator list group",
 map.group.governance,Quality of government,"Map, indicator list group",
-map.level_missing,"The OECD publishes no {level} data for {country}. Choose another geography, or All nine countries.","Map, when the country has no data at the chosen geography",Canada at TL3
+map.level_missing,"The OECD publishes no {level} data for {country}. Choose another geography, or All countries.","Map, when the country has no data at the chosen geography",Canada at TL3
 map.legend.regions_note,"Region-specific LAI is a population-weighted mix of municipal types in Spain, Japan and France, and the national value elsewhere in unitary countries.","Map legend, TL2 and TL3 maps",
 geo.units.national,countries,"Map toolbar, after the count",
 geo.units.tl2,regions,"Map toolbar, after the count",
@@ -231,7 +231,7 @@ productivity.reg.mean.title,"Mean {level} labour productivity, by country","Prod
 productivity.reg.mean.note,"Mean values are unweighted: each region counts once, regardless of population or employment. The shaded band is the WHO pandemic emergency.","Productivity at TL2/TL3, mean productivity card footnote",
 productivity.nat.sub,"National series: productivity, its growth, and its dispersion across regions","Productivity at national level, under the heading",
 productivity.nat.lp.title,"National labour productivity, by country","Productivity at national level, productivity card",
-productivity.nat.lp.intro,"GDP per person employed or per hour worked, at constant prices and purchasing power parity, for the nine countries: {country} in red.","Productivity at national level, productivity card",
+productivity.nat.lp.intro,"GDP per person employed or per hour worked, at constant prices and purchasing power parity, for every country: {country} in red.","Productivity at national level, productivity card",
 productivity.nat.lp.note,"OECD Productivity Database, as carried in the devo_data_pack national panel. The shaded band is the WHO pandemic emergency (March 2020 to May 2023).","Productivity at national level, productivity card footnote",
 productivity.nat.lp.measure,Productivity measure,"Productivity at national level, measure switch (screen readers)",
 productivity.nat.lp.pw,Per person employed,"Productivity at national level, measure switch",
@@ -275,10 +275,10 @@ autonomy.reg.rai.note,"RAI mapped to regions in the devo_data_pack crosswalk (ra
 autonomy.reg.rai_fiscal.title,"Regional Authority Index, fiscal autonomy, by {level} region","Autonomy at TL2/TL3, RAI fiscal card",
 autonomy.reg.rai_fiscal.intro,"The independent power of the regional governments over each {level} region to tax, summed over tiers in raw points.","Autonomy at TL2/TL3, RAI fiscal card",
 country.label,Country,"Top bar, country selector",
-country.all,All nine countries,"Top bar, country selector option on the map",
+country.all,All countries,"Top bar, country selector option on the map",
 country.all.national,National maps show every country,"Top bar, hover box on the country selector at national level",
 sources.geo.name.ons,"ONS, International Territorial Level 3 (January 2025)","Sources table, regional boundaries row (United Kingdom)",
-sources.geo.name.gisco,"Eurostat GISCO, NUTS 2024","Sources table, regional boundaries row (Germany, Italy)",
+sources.geo.name.gisco,"Eurostat GISCO, NUTS 2024","Sources table, regional boundaries row (Germany, Italy, Belgium, the Netherlands, the Nordic countries)",
 sources.geo.name.oecd2020,OECD regional boundaries (2020 release),"Sources table, regional boundaries row (other countries)",
 sources.geo.provides,Boundaries of {n3} TL3 and {n2} TL2 regions and the national outline,"Sources table, regional boundaries row","TL2 and the outline are merged from TL3, except in the United States"
 sources.geo.provides_tl2,Boundaries of {n2} TL2 regions and the national outline,"Sources table, regional boundaries row where the country has no TL3 data (Canada)",

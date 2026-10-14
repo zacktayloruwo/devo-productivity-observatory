@@ -2,7 +2,7 @@
 // renders before the query engine has loaded. Written by data-prep/build_data.R.
 
 export interface Country { iso3: string; iso2: string; display: string; data_name: string; region: Region }
-export type Region = 'Anglo' | 'Continental Europe' | 'Asia';
+export type Region = 'Anglo' | 'Continental Europe' | 'Nordic' | 'Asia';
 export interface Variable { id: string; label: string; short: string; fmt: 'usd' | 'usd2' | 'num' | 'pct' | 'ratio' | 'score'; source?: string; group?: string }
 export type Level = 'national' | 'tl2' | 'tl3' | 'fua';
 export const LEVELS: Level[] = ['national', 'tl2', 'tl3', 'fua'];

@@ -1,11 +1,13 @@
 # The Devolution-Productivity Observatory
 
 A static web app presenting the labour productivity of OECD functional urban
-areas (FUAs) and the autonomy of local and regional government in nine
-countries: Canada, France, Germany, Italy, Japan, South Korea, Spain, the
-United Kingdom and the United States. It is the interactive counterpart of the
-country profile documents (`profile.qmd` in the `devo_data_pack` project) and
-draws every figure from the same data pack.
+areas (FUAs) and regions, and the autonomy of local and regional government,
+in sixteen OECD countries: Australia, Belgium, Canada, Finland, France,
+Germany, Italy, Japan, the Netherlands, New Zealand, Norway, South Korea,
+Spain, Sweden, the United Kingdom and the United States. It is the interactive
+counterpart of the country profile documents (`profile.qmd` in the
+`devo_data_pack` project) and reads the same common database as the Devo
+Analysis pipeline.
 
 **Site:** https://zacktayloruwo.github.io/devo-productivity-observatory/
 
@@ -31,7 +33,7 @@ Every chart has a table twin and a CSV download. Light and dark themes.
   by country in Hive layout (`data/fua/cntry_iso3=USA/part.parquet`, 17–128 KB
   each) and read through one view with `hive_partitioning = true`, so a
   country-scoped query touches only that country's file and the cross-country
-  comparisons read all nine. National, LAI, RAI and source tables are small
+  comparisons read them all. National, LAI, RAI and source tables are small
   single files. All SQL lives in `src/lib/db/queries.ts`.
 - **Regional boundaries** are one TopoJSON per country
   (`data/geo/regions/<ISO3>.topo.json`, objects `national`, `tl2`, `tl3`) plus
@@ -40,8 +42,9 @@ Every chart has a table twin and a CSV download. Light and dark themes.
   TL3 economic areas cross state lines, keeps separate state polygons). The
   OECD publishes no polygons for its current grid, so each country's TL3
   comes from one official source that reproduces the panel's codes exactly:
-  ONS ITL3 January 2025 (United Kingdom), Eurostat GISCO NUTS 2024 (Germany,
-  Italy) and the OECD 2020 regional boundaries (the other six). Every polygon
+  ONS ITL3 January 2025 (United Kingdom), Eurostat GISCO NUTS 2024 (Belgium,
+  Finland, Germany, Italy, the Netherlands, Norway, Sweden) and the OECD 2020
+  regional boundaries (the other eight). Every polygon
   carries its validity years; the data build fails unless every region-year
   with data has exactly one polygon valid that year, and a later grid change
   adds a new era whose unchanged units reuse the existing arcs.
@@ -66,7 +69,7 @@ Every chart has a table twin and a CSV download. Light and dark themes.
 
 ```
 data-prep/build_geography.R  regional boundaries: sources, eras, TopoJSON (via tools/topology.mjs)
-data-prep/build_data.R   converts the devo_data_pack datapack and analysis panels into public/data/;
+data-prep/build_data.R   selects the app's tables from the devo_data_pack common database (_data/db) into public/data/;
                          checks every region-year against the polygons
 public/data/             manifest.json, countries/nat/lai/rai/sources/national.parquet,
                          fua|tl2|tl3/cntry_iso3=<ISO3>/part.parquet,
@@ -115,11 +118,14 @@ npm run preview    # serve dist/
 
 Needs R with `dplyr`, `haven`, `arrow`, `sf`, `rmapshaper`, `geojsonsf` and
 `jsonlite`, Node with the dev dependencies (`mapshaper`, `topojson-server`),
-and the `devo_data_pack` project: its `_data/_datapack/` files, the analysis
-panels in `_data/processed/` (`regional_panel_tl.csv.gz`,
-`national_panel.csv.gz`) and the OECD boundaries under `_data/oecd_boundaries/`.
-The ONS and GISCO files are downloaded into `data-prep/cache/` (not committed)
-on first run.
+and the `devo_data_pack` project: its common database `_data/db/` and the
+OECD boundaries under `_data/oecd_boundaries/`. The common database is written
+by the Devo Analysis pipeline (`00 PREP DATA.R`, then `31 build common
+database.R`), which does all OECD fetching with one shared cache; this build
+only selects the app's countries and columns and downloads no data. To add a
+country or refresh a series, rebuild the database there first. The ONS and
+GISCO boundary files are downloaded into `data-prep/cache/` (not committed) on
+first run.
 
 ```bash
 npm run data        # build_geography.R, then build_data.R

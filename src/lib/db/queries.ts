@@ -128,7 +128,12 @@ export async function nationalAll(): Promise<NationalRow[]> {
 
 // ---- national series
 export async function natAll(): Promise<NatRow[]> {
-  return (await query(`SELECT cntry_iso3, year, gdp_pw, pop_nat, localexppct, lgexp_per_person FROM nat ORDER BY cntry_iso3, year`)) as NatRow[];
+  // GDP per worker from the national panel (PDB levels), the series the
+  // Devo Analysis treats as canonical; the rest from the datapack's nat file
+  return (await query(`SELECT coalesce(n.cntry_iso3, p.cntry_iso3) AS cntry_iso3, coalesce(n.year, p.year) AS year,
+    p.gdp_pw, n.pop_nat, n.localexppct, n.lgexp_per_person
+    FROM nat n FULL OUTER JOIN national p ON n.cntry_iso3 = p.cntry_iso3 AND n.year = p.year
+    ORDER BY 1, 2`)) as NatRow[];
 }
 
 // ---- autonomy indices

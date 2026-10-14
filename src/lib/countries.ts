@@ -1,13 +1,15 @@
 // Country colours and line styles, as in profile.qmd: the selected country is
 // always red, the others take the palette in alphabetical order of display
 // name; the line style follows the region (Anglo solid, Continental Europe
-// dashed, Asia dotted).
+// dashed, Nordic dash-dot, Asia dotted).
 import type { Country, Region } from './db/manifest.svelte';
 
-export const PALETTE = ['#4e79a7', '#f28e2b', '#59a14f', '#9c755f', '#76b7b2', '#edc948', '#b07aa1', '#ff9da7'];
-export const REGIONS: Region[] = ['Anglo', 'Continental Europe', 'Asia'];
+// Fifteen colours, one per country other than the focus (Tableau 20, reds left out)
+export const PALETTE = ['#4e79a7', '#f28e2b', '#59a14f', '#9c755f', '#76b7b2', '#edc948', '#b07aa1', '#ff9da7',
+  '#a0cbe8', '#8cd17d', '#b6992d', '#499894', '#d37295', '#79706e', '#ffbe7d'];
+export const REGIONS: Region[] = ['Anglo', 'Continental Europe', 'Nordic', 'Asia'];
 // SVG dash arrays per region
-export const REGION_DASH: Record<Region, string> = { Anglo: '', 'Continental Europe': '7 3', Asia: '2 3' };
+export const REGION_DASH: Record<Region, string> = { Anglo: '', 'Continental Europe': '7 3', Nordic: '9 3 2 3', Asia: '2 3' };
 
 // iso3 -> colour, the focus country red
 export function countryColours(countries: Country[], focus: string, focal: string): Map<string, string> {
