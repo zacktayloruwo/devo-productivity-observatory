@@ -7,6 +7,9 @@
   import { routeCountry, routeGeo } from '../lib/routeState';
   import { manifest, countryName, levelHasCountry } from '../lib/db/manifest.svelte';
   import { unitsCountry, unitsYearAll, unitsLatestAll, productivityByCountryYear, productivityYears, natAll, type UnitRow, type UnitLevel, type CountryYear, type NatRow } from '../lib/db/queries';
+  import { mapValues, type MapValue } from '../lib/db/queries';
+  import { rankModeData, changeMethodFor, chgPref, setChgPref, CH0, CH1, type RankMode } from '../lib/util/rankModes';
+  import { classOfRank, changes, ordinal, SCHEME_COLOURS, type ClassScheme, type Rank } from '../lib/util/ranks';
   import { fmtInt, fmtUsd, fmtNum, fmtPct, fmtShort, poss } from '../lib/util/format';
   import { mean, median, quantile, ols } from '../lib/util/stats';
   import { countryColours } from '../lib/countries';
@@ -69,15 +72,54 @@
     unitsYearAll(lv, y).then((s) => { if (my === snapToken) snapshot = s; }).catch((e) => { if (my === snapToken) error = e?.message ?? String(e); });
   });
 
+  // ---- every country's productivity, every year (the sample for the rank
+  // and change readings, as on the map; the UK with its gap-filled regions)
+  const LP_VAR = $derived(fua ? 'labprod_usdppp' : 'lp_lpr');
+  let pool = $state<MapValue[]>([]);
+  let poolToken = 0;
+  $effect(() => {
+    const lv = level, v = LP_VAR; const my = ++poolToken;
+    if (!countries.length || !lv) { pool = []; return; }
+    mapValues(lv, v, null).then((p) => { if (my === poolToken) pool = p; }).catch(() => {});
+  });
+  // the reading the ranked table is coloured (and, for change, sorted) by;
+  // shared with the map through the route (?mode, ?cls, ?chg)
+  const RANK_MODES: RankMode[] = ['values', 'srank', 'crank', 'change'];
+  const rankMode = $derived<RankMode>(RANK_MODES.includes(route.query.mode as RankMode) ? (route.query.mode as RankMode) : 'values');
+  const scheme = $derived<ClassScheme>(route.query.cls === 'quint' ? 'quint' : 'bands');
+  const chgMethod = $derived(changeMethodFor(geo, 'usd', chgPref()));
+  const md = $derived(rankModeData(pool, geo, year, chgMethod));
+  const rankText = (r: Rank | undefined) => (r ? `${ordinal(r.rank)} of ${r.n}` : '—');
+  const pctDesc = (r: Rank | undefined) => !r ? '' : r.p >= 0.5 ? t('map.pct.top', { pct: Math.max(1, Math.round((1 - r.p) * 100)) }) : t('map.pct.bottom', { pct: Math.max(1, Math.round(r.p * 100)) });
+  const fmtChg = (x: number | null | undefined) => x == null ? '—' : `${x > 0 ? '+' : x < 0 ? '−' : ''}${fmtNum(Math.abs(x), Math.abs(x) < 10 ? 1 : 0)}%${chgMethod === 'growth' ? ' a year' : ''}`;
+  function setRankMode(e: Event) { const m = (e.target as HTMLSelectElement).value; setQuery({ mode: m === 'values' ? undefined : m, rel: undefined }); }
+  function setScheme(c: ClassScheme) { setQuery({ cls: c === 'bands' ? undefined : c }); }
+
   // ---- 1. ranks in the snapshot year
   // the country's own rows (for the UK, with the regions filled from ONS and BRES, marked †)
   const ranked = $derived(focusAll.filter((r) => r.year === year && r.lp != null).slice().sort((a, b) => (b.lp ?? 0) - (a.lp ?? 0)));
   const anyFilled = $derived(focusAll.some((r) => r.filled && r.lp != null));
   const dag = (r: { filled?: boolean }) => (r.filled ? ' †' : '');
+  // the ranked rows with both ranks and the change; sorted by change in that mode
+  type RankedRow = UnitRow & { s?: Rank; c?: Rank; ch?: number; srank: number | null; spct: number | null; crank: number | null; change: number | null };
+  const rankedRows = $derived.by<RankedRow[]>(() => {
+    const rows = ranked.map((r) => { const s = md.sRank.get(r.id), c = md.cRank.get(r.id), ch = md.chg.get(r.id);
+      return { ...r, s, c, srank: s?.rank ?? null, spct: s ? Math.round(s.p * 1000) / 10 : null, crank: c?.rank ?? null, change: ch ? Math.round(ch.change * 1000) / 1000 : null }; });
+    return rankMode === 'change' ? rows.sort((a, b) => (b.change ?? -Infinity) - (a.change ?? -Infinity)) : rows;
+  });
+  const rankSwatch = $derived.by(() => {
+    const m = rankMode, d = md, sc = scheme;
+    if (m === 'values') return undefined;
+    return (r: RankedRow) => { const k = classOfRank(m === 'srank' ? d.sRank.get(r.id) : m === 'crank' ? d.cRank.get(r.id) : d.chgRank.get(r.id), sc); return k < 0 ? null : SCHEME_COLOURS[sc][k]; };
+  });
+  const changeLabel = $derived(t('map.col.change.' + chgMethod, { first: CH0, last: CH1 }));
   const rankCols = $derived([
     { key: 'name', label: unit, render: (r: UnitRow) => r.name + dag(r) },
     { key: 'pop', label: 'Population', num: true, render: (r: UnitRow) => fmtInt(r.pop) },
-    { key: 'lp', label: 'Labour productivity (USD PPP/worker)', num: true, render: (r: UnitRow) => fmtUsd(r.lp) }
+    { key: 'lp', label: 'Labour productivity (USD PPP/worker)', num: true, render: (r: UnitRow) => fmtUsd(r.lp) },
+    { key: 'srank', label: t('map.col.srank'), num: true, render: (r: RankedRow) => (r.s ? `${rankText(r.s)} · ${pctDesc(r.s)}` : '—') },
+    { key: 'crank', label: t('map.col.crank'), num: true, render: (r: RankedRow) => rankText(r.c) },
+    { key: 'change', label: changeLabel, num: true, render: (r: RankedRow) => fmtChg(r.change) }
   ]);
 
   // ---- 2. scatter: productivity vs population, every country, the snapshot year
@@ -165,12 +207,17 @@
     return focusLp.filter((r) => r.year === year && start.has(r.id)).map((r) => ({ id: r.id, name: r.name + (r.filled || filledStart.has(r.id) ? ' †' : ''), lp_start: start.get(r.id)!, lp_end: r.lp!, cagr: (Math.pow(r.lp! / start.get(r.id)!, 1 / n) - 1) * 100 }))
       .sort((a, b) => b.cagr - a.cagr);
   });
+  // FUA dollars are current prices: the same window as the change in relative
+  // position against the average of every FUA with data in both years
+  const growthRel = $derived(fua && growthStart != null ? changes(pool, growthStart, year, 'relpos') : new Map());
   const growthCols = $derived([
     { key: 'name', label: unit, render: (r: any) => r.name },
     { key: 'lp_start', label: `Productivity (${growthStart ?? ''})`, num: true, render: (r: any) => fmtUsd(r.lp_start) },
     { key: 'lp_end', label: `Productivity (${year})`, num: true, render: (r: any) => fmtUsd(r.lp_end) },
-    { key: 'cagr', label: 'CAGR (%)', num: true, render: (r: any) => fmtPct(r.cagr, 2) }
+    { key: 'cagr', label: fua ? 'Nominal CAGR (%)' : 'CAGR (%)', num: true, render: (r: any) => fmtPct(r.cagr, 2) },
+    ...(fua ? [{ key: 'relpos', label: 'Change against the sample average (%)', num: true, render: (r: any) => (r.relpos == null ? '—' : `${r.relpos > 0 ? '+' : r.relpos < 0 ? '−' : ''}${fmtNum(Math.abs(r.relpos), 1)}%`) }] : [])
   ]);
+  const growthRows = $derived(growth.map((r) => ({ ...r, relpos: growthRel.get(r.id)?.change ?? null })));
 
   // ---- 6. spread: percentiles within the country, coefficient of variation across countries
   const pctRows = $derived.by(() => {
@@ -229,7 +276,25 @@
       <p><Text k={fua ? 'productivity.ranks.intro' : 'productivity.reg.ranks.intro'} vars={{ level: levelName, country: name, year, ref_clause: year === refYear ? t('productivity.ref_clause') : '' }} /></p>
     {/snippet}
     {#if ranked.length}
-      <RankTable rows={ranked} columns={rankCols} csvName={`${iso3}_productivity_ranks${csvLv}_${year}`} />
+      <div class="modes">
+        <label class="ctl"><span class="muted">{t('map.mode.label')}</span>
+          <select value={rankMode} onchange={setRankMode}>{#each RANK_MODES as m (m)}<option value={m}>{t('map.mode.' + m)}</option>{/each}</select>
+        </label>
+        {#if rankMode !== 'values'}
+          <div class="seg" role="group" aria-label={t('map.cls.label')}>
+            <button type="button" aria-pressed={scheme === 'bands'} title={t('map.cls.bands.tip')} onclick={() => setScheme('bands')}>{t('map.cls.bands')}</button>
+            <button type="button" aria-pressed={scheme === 'quint'} onclick={() => setScheme('quint')}>{t('map.cls.quint')}</button>
+          </div>
+        {/if}
+        {#if fua}
+          <div class="seg" role="group" aria-label={t('map.chg.label')}>
+            <button type="button" aria-pressed={chgPref() === 'relpos'} title={t('map.chg.relpos.tip')} onclick={() => setChgPref('relpos')}>{t('map.chg.relpos')}</button>
+            <button type="button" aria-pressed={chgPref() === 'nominal'} title={t('map.chg.nominal.tip')} onclick={() => setChgPref('nominal')}>{t('map.chg.nominal')}</button>
+          </div>
+        {/if}
+      </div>
+      <RankTable rows={rankedRows} columns={rankCols} swatch={rankSwatch} csvName={`${iso3}_productivity_ranks${csvLv}_${year}`} />
+      <p class="muted small">{t('productivity.ranks.modes', { n: md.nSample, k: md.nCountries, units: unitsWord, year, first: CH0, last: CH1 })}{chgMethod === 'relpos' ? ' ' + t('productivity.ranks.relpos') : chgMethod === 'growth' && fua ? ' ' + t('productivity.ranks.nominal') : ''}{brk != null ? ' ' + t('map.change.ukbreak') : ''}</p>
     {:else if !loading}
       <p class="muted">{t('productivity.ranks.none', { country: name, year })}</p>
     {/if}
@@ -257,7 +322,7 @@
       <p><Text k={fua ? 'productivity.growth.intro' : 'productivity.reg.growth.intro'} vars={{ level: levelName, start: growthStart ?? 2004, year }} />{#if year === refYear}{' '}<Text k="productivity.growth.ends" vars={{ ref_year: refYear }} />{/if}{#if growthStart != null && growthStart > 2004}{' '}<Text k="productivity.growth.begins" vars={{ start: growthStart, country: name }} />{/if}</p>
     {/snippet}
     {#if growth.length}
-      <RankTable rows={growth} columns={growthCols} csvName={`${iso3}_productivity_growth${csvLv}_${growthStart}_${year}`} />
+      <RankTable rows={growthRows} columns={growthCols} csvName={`${iso3}_productivity_growth${csvLv}_${growthStart}_${year}`} />
     {:else if !loading}
       <p class="muted">{t('productivity.growth.none', { country: name, year })}</p>
     {/if}
@@ -294,4 +359,7 @@
   .yr { display: flex; align-items: center; gap: 8px; }
   .pleg { display: flex; flex-wrap: wrap; gap: 4px 16px; font-size: 12px; color: var(--fg-2); }
   .it { display: inline-flex; align-items: center; gap: 6px; }
+  .modes { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 14px; margin-bottom: 6px; }
+  .modes .ctl { display: flex; align-items: center; gap: 8px; }
+  .modes select { min-height: 30px; padding: 2px 8px; }
 </style>

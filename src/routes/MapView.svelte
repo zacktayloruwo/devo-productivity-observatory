@@ -285,6 +285,31 @@
     return rows.sort((a, b) => key(b) - key(a));
   });
   const changeTitle = $derived(t('map.col.change.' + changeMethod, { first: CH0, last: CH1 }));
+  // a header click sorts by that column (again: the other way); until then
+  // the rows keep the colour mode's own order. Missing values sort last.
+  type SortKey = 'name' | 'country' | 'value' | 'srank' | 'crank' | 'change';
+  let sortKey = $state<SortKey | null>(null);
+  let sortAsc = $state(true);
+  $effect(() => { void mode; void level; sortKey = null; });
+  function sortBy(k: SortKey) {
+    if (sortKey === k) sortAsc = !sortAsc;
+    // text and ranks read naturally top-down ascending; values and change highest first
+    else { sortKey = k; sortAsc = k === 'name' || k === 'country' || k === 'srank' || k === 'crank'; }
+  }
+  const sortVal = (r: TRow, k: SortKey): string | number | null =>
+    k === 'name' ? r.name : k === 'country' ? countryName(r.cntry_iso3) : k === 'value' ? r.value
+    : k === 'srank' ? r.s?.rank ?? null : k === 'crank' ? r.c ? r.c.rank / r.c.n : null : r.ch?.change ?? null;
+  const shownRows = $derived.by(() => {
+    const k = sortKey; if (!k) return tableRows;
+    const dir = sortAsc ? 1 : -1;
+    return [...tableRows].sort((a, b) => {
+      const x = sortVal(a, k), y = sortVal(b, k);
+      if (x == null || y == null) return x == null && y == null ? 0 : x == null ? 1 : -1;
+      return (typeof x === 'string' ? x.localeCompare(y as string) : x - (y as number)) * dir;
+    });
+  });
+  const ariaSort = (k: SortKey) => (sortKey === k ? (sortAsc ? 'ascending' : 'descending') : 'none');
+  const arrow = (k: SortKey) => (sortKey === k ? (sortAsc ? ' ▲' : ' ▼') : '');
   function exportYear() {
     downloadCsv(`map_${level}_${variable?.id}_${mode}_${year}${scopeAll ? '_all' : '_' + iso3}`, [
       { key: 'cntry', label: 'Country', value: (r: TRow) => countryName(r.cntry_iso3) },
@@ -350,14 +375,21 @@
     <div class="map">
       <MapCanvas bind:this={mapRef} {features} layout={layoutFor(scopeAll ? null : iso3)} land={land.countries} borders={scopeAll ? null : outline} {admin} {mesh} {marked} {fillFor} {tipFor} {selected} onselect={select} />
       {#if showLegend}
-        <Legend title={legendTitle} {labels} {colours} neutral={tokens.neutral} hatched={marked.size && mode !== 'change' ? t('map.filled.legend') : ''} note={legendNote} />
+        <Legend title={legendTitle} {labels} {colours} highFirst={rankMode} neutral={tokens.neutral} hatched={marked.size && mode !== 'change' ? t('map.filled.legend') : ''} note={legendNote} />
       {/if}
       {#if tableView}
         <div class="tbl">
           <table class="data">
-            <thead><tr><th>{levelName}</th>{#if scopeAll || national}<th>{t('map.col.country')}</th>{/if}<th class="num">{variable?.short}, {year}</th><th class="num">{t('map.col.srank')}</th>{#if !national}<th class="num">{t('map.col.crank')}</th>{/if}<th class="num">{changeTitle}</th></tr></thead>
+            <thead><tr>
+              <th aria-sort={ariaSort('name')}><button type="button" class="sort" onclick={() => sortBy('name')}>{levelName}{arrow('name')}</button></th>
+              {#if scopeAll || national}<th aria-sort={ariaSort('country')}><button type="button" class="sort" onclick={() => sortBy('country')}>{t('map.col.country')}{arrow('country')}</button></th>{/if}
+              <th class="num" aria-sort={ariaSort('value')}><button type="button" class="sort" onclick={() => sortBy('value')}>{variable?.short}, {year}{arrow('value')}</button></th>
+              <th class="num" aria-sort={ariaSort('srank')}><button type="button" class="sort" onclick={() => sortBy('srank')}>{t('map.col.srank')}{arrow('srank')}</button></th>
+              {#if !national}<th class="num" aria-sort={ariaSort('crank')}><button type="button" class="sort" title={t('map.col.crank.sort')} onclick={() => sortBy('crank')}>{t('map.col.crank')}{arrow('crank')}</button></th>{/if}
+              <th class="num" aria-sort={ariaSort('change')}><button type="button" class="sort" onclick={() => sortBy('change')}>{changeTitle}{arrow('change')}</button></th>
+            </tr></thead>
             <tbody>
-              {#each tableRows as r (r.id)}
+              {#each shownRows as r (r.id)}
                 <tr class:sel={r.id === selected} onclick={() => select(r.id)}>
                   <td><span class="sw" style:background={fillFor(r.id)}></span>{r.name}{r.filled ? ' †' : ''}</td>
                   {#if scopeAll || national}<td>{countryName(r.cntry_iso3)}</td>{/if}
@@ -418,6 +450,9 @@
   .tbl { position: absolute; inset: 0; overflow: auto; background: var(--panel); padding: 12px 20px; z-index: 3; }
   .tbl table { width: 100%; }
   .tbl tr { cursor: pointer; }
+  .tbl thead th { position: sticky; top: -12px; background: var(--panel); z-index: 1; }
+  .sort { border: 0; background: none; padding: 0; min-height: 0; font: inherit; font-weight: 600; color: inherit; cursor: pointer; text-align: inherit; }
+  .sort:hover { color: var(--accent); background: none; }
   .tbl tr.sel td { background: var(--panel-2); font-weight: 600; }
   .tbl .sw { display: inline-block; width: 10px; height: 10px; border-radius: 2px; margin-right: 8px; vertical-align: -1px; border: 1px solid var(--line); }
   .ranks { margin: 8px 0; }

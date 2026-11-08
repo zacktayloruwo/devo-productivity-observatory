@@ -2,8 +2,9 @@
   // The report's ranked tables: the top ten, middle ten and bottom ten rows,
   // with "…" separators only where rows are hidden, and a switch to show all.
   interface Col { key: string; label: string; num?: boolean; render: (row: any) => string }
-  interface Props { rows: any[]; columns: Col[]; k?: number; csvName?: string }
-  let { rows, columns, k = 10, csvName = '' }: Props = $props();
+  interface Props { rows: any[]; columns: Col[]; k?: number; csvName?: string; swatch?: (row: any) => string | null }
+  // swatch: an optional colour square before the first column (the colour mode)
+  let { rows, columns, k = 10, csvName = '', swatch }: Props = $props();
   import { downloadCsv } from '../util/csv';
   let all = $state(false);
 
@@ -43,7 +44,7 @@
           {#if p.kind === 'sep'}
             <tr class="sep"><td colspan={columns.length + 1}>…</td></tr>
           {:else}
-            <tr><td class="num">{p.rank}</td>{#each columns as c (c.key)}<td class:num={c.num}>{c.render(p.row)}</td>{/each}</tr>
+            <tr><td class="num">{p.rank}</td>{#each columns as c, ci (c.key)}<td class:num={c.num}>{#if ci === 0 && swatch && swatch(p.row)}<span class="nw"><span class="swc" style:background={swatch(p.row)}></span>{c.render(p.row)}</span>{:else}{c.render(p.row)}{/if}</td>{/each}</tr>
           {/if}
         {/each}
       </tbody>
@@ -58,5 +59,7 @@
   .lnk { border: 0; background: transparent; padding: 0; min-height: 0; font-size: 12px; color: var(--accent); }
   .lnk:hover { text-decoration: underline; background: transparent; }
   .wrap { overflow: auto; }
+  .nw { white-space: nowrap; }
+  .swc { display: inline-block; width: 10px; height: 10px; border-radius: 2px; margin-right: 8px; vertical-align: -1px; border: 1px solid var(--line); }
   .wrap.tall { max-height: 560px; }
 </style>

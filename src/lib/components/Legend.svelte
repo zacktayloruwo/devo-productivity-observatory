@@ -1,8 +1,10 @@
 <script lang="ts">
   import { t } from '../text/t';
   // The map legend: quantile classes with their ranges, and the no-data fill.
-  interface Props { title: string; labels: string[]; colours: string[]; note?: string; neutral: string; hatched?: string }
-  let { title, labels, colours, note = '', neutral, hatched = '' }: Props = $props();
+  interface Props { title: string; labels: string[]; colours: string[]; note?: string; neutral: string; hatched?: string; highFirst?: boolean }
+  // highFirst: the classes listed high to low (top to bottom), as for ranks
+  let { title, labels, colours, note = '', neutral, hatched = '', highFirst = false }: Props = $props();
+  const order = $derived(highFirst ? labels.map((_, i) => labels.length - 1 - i) : labels.map((_, i) => i));
   const KEY = 'devo-obs.legend.collapsed';
   let collapsed = $state((() => { try { return localStorage.getItem(KEY) === '1'; } catch { return false; } })());
   function toggle() { collapsed = !collapsed; try { localStorage.setItem(KEY, collapsed ? '1' : '0'); } catch { /* not remembered */ } }
@@ -14,8 +16,8 @@
     <svg class="chev" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><path d="M6 9l6 6 6-6"></path></svg>
   </button>
   {#if !collapsed}
-    {#each labels as l, i (i)}
-      <div class="row"><span class="sw" style:background={colours[i]}></span><span class="num">{l}</span></div>
+    {#each order as i (i)}
+      <div class="row"><span class="sw" style:background={colours[i]}></span><span class="num">{labels[i]}</span></div>
     {/each}
     <div class="row"><span class="sw neutral" style:background={neutral}></span><span>{t('map.legend.nodata')}</span></div>
     {#if hatched}<div class="row"><span class="sw hatched"></span><span>{hatched}</span></div>{/if}
