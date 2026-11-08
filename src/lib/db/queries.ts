@@ -44,8 +44,17 @@ const UNIT_LP: Record<UnitLevel, string> = { fua: 'labprod_usdppp', tl2: 'lp_lpr
 // units filled from ONS and BRES, 2015-2023, rows marked `filled`); every
 // cross-country view keeps the OECD-published tables
 function regTable(level: Level, iso3: string | null): { table: string; filled: string } {
-  if (iso3 === 'GBR' && (level === 'tl3' || level === 'tl2b') && manifest.value?.files.ukfill?.[level]) return { table: `${level}_uk`, filled: 'filled' };
+  const uk = (level === 'tl3' || level === 'tl2b') && !!manifest.value?.files.ukfill?.[level];
+  if (uk && iso3 === 'GBR') return { table: `${level}_uk`, filled: 'filled' };
   return { table: LEVEL_SQL[level].table, filled: 'false' };
+}
+// The map's every-country table: the OECD's for every country but the UK,
+// whose rows come from its gap-filled table (the user's choice for the map's
+// cross-country ranks; the other cross-country views keep the OECD's)
+function mapTable(level: Level): { table: string; filled: string } {
+  const uk = (level === 'tl3' || level === 'tl2b') && !!manifest.value?.files.ukfill?.[level];
+  if (!uk) return { table: LEVEL_SQL[level].table, filled: 'false' };
+  return { table: `(SELECT * FROM ${level} WHERE cntry_iso3 <> 'GBR' UNION ALL BY NAME SELECT * FROM ${level}_uk)`, filled: 'coalesce(filled, false)' };
 }
 function unitCols(level: UnitLevel, prefix = '', filled = 'false'): string {
   const L = LEVEL_SQL[level];
@@ -187,7 +196,7 @@ function requireLevelVar(level: Level, v: string): string {
   return v;
 }
 export async function mapValues(level: Level, variable: string, iso3: string | null): Promise<MapValue[]> {
-  const L = LEVEL_SQL[level], T = regTable(level, iso3);
+  const L = LEVEL_SQL[level], T = iso3 ? regTable(level, iso3) : mapTable(level);
   const v = requireLevelVar(level, variable);
   const where = iso3 ? `WHERE cntry_iso3 = ${requireCountry(iso3)} AND ${v} IS NOT NULL` : `WHERE ${v} IS NOT NULL`;
   return (await query(`SELECT cntry_iso3, ${L.id} AS id, ${L.name} AS name, year, ${v} AS value, ${L.pop} AS pop, ${T.filled} AS filled
