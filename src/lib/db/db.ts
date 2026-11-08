@@ -6,11 +6,15 @@
 // bundles are offered: GitHub Pages cannot send the cross-origin isolation
 // headers the threaded bundle needs.
 //
-// The FUA table is segmented by country in Hive layout
-// (fua/cntry_iso3=USA/part.parquet). The `fua` view reads the whole list with
-// hive_partitioning on, so a `WHERE cntry_iso3 = ?` filter is pushed down to
-// the partition column and only that country's file is fetched; the
-// cross-country views read them all (about 400 KB in total).
+// Data: the FUA and regional tables are segmented by country
+// (fua/cntry_iso3=USA/part.parquet). A table's files are fetched whole, in
+// parallel, the first time a query names the table (with the engine still
+// booting, the first time), registered in the engine's memory, and the
+// table's view built over them with the country as a column. Reading the
+// files over HTTP range requests instead cost several sequential round trips
+// per file, about a second for a level's 16 files; a level is at most 1.8 MB.
+// Once the first query has returned, the remaining tables load in the
+// background, so later views and levels need no network at all.
 //
 // All SQL lives in src/lib/db/queries.ts. Components never build SQL.
 
@@ -54,31 +58,64 @@ async function startEngine(): Promise<void> {
   conn = await db.connect();
 }
 
-async function createViews(): Promise<void> {
-  const m = manifest.value;
-  if (!m) throw new Error('no data build (manifest.json missing)');
-  const q = (f: string) => `'${versionedDataUrl(f)}'`;
-  const fuaList = Object.values(m.files.fua).map(q).join(', ');
-  await conn!.query(`CREATE OR REPLACE VIEW fua AS SELECT * FROM read_parquet([${fuaList}], hive_partitioning = true, union_by_name = true)`);
-  await conn!.query(`CREATE OR REPLACE VIEW nat AS SELECT * FROM read_parquet(${q(m.files.nat)})`);
-  // regional levels: segmented by country like the FUA table
-  for (const lv of ['tl2', 'tl2b', 'tl3'] as const) {
-    const files = Object.values(m.files[lv] ?? {});
-    if (files.length) await conn!.query(`CREATE OR REPLACE VIEW ${lv} AS SELECT * FROM read_parquet([${files.map(q).join(', ')}], hive_partitioning = true, union_by_name = true)`);
+// ---- tables
+const TABLES = ['national', 'tl2', 'fua', 'tl3', 'tl2b', 'tl3_uk', 'tl2b_uk', 'nat', 'lai', 'rai', 'sources', 'countries'] as const;
+type TableName = (typeof TABLES)[number];
+interface Part { file: string; iso3?: string }
+
+// a table's files, with the country of each segmented file
+function tableParts(name: TableName): Part[] {
+  const f = manifest.value?.files as Record<string, any> | undefined;
+  if (!f) throw new Error('no data build (manifest.json missing)');
+  const seg = (o: Record<string, string> | undefined) => Object.entries(o ?? {}).filter(([iso]) => /^[A-Z]{3}$/.test(iso)).map(([iso3, file]) => ({ file, iso3 }));
+  switch (name) {
+    case 'fua': case 'tl2': case 'tl2b': case 'tl3': return seg(f[name]);
+    // the UK's gap-filled TL3 and TL2b (its own views; cross-country views keep tl3/tl2b)
+    case 'tl3_uk': case 'tl2b_uk': { const file = f.ukfill?.[name.replace('_uk', '')]; return file ? [{ file, iso3: 'GBR' }] : []; }
+    default: return f[name] ? [{ file: f[name] }] : [];
   }
-  // the UK's gap-filled TL3 and TL2b (its own views; cross-country views keep tl3/tl2b)
-  for (const [lv, f] of Object.entries(m.files.ukfill ?? {}))
-    await conn!.query(`CREATE OR REPLACE VIEW ${lv}_uk AS SELECT *, 'GBR' AS cntry_iso3 FROM read_parquet(${q(f)})`);
-  if (m.files.national) await conn!.query(`CREATE OR REPLACE VIEW national AS SELECT * FROM read_parquet(${q(m.files.national)})`);
-  await conn!.query(`CREATE OR REPLACE VIEW lai AS SELECT * FROM read_parquet(${q(m.files.lai)})`);
-  await conn!.query(`CREATE OR REPLACE VIEW rai AS SELECT * FROM read_parquet(${q(m.files.rai)})`);
-  await conn!.query(`CREATE OR REPLACE VIEW sources AS SELECT * FROM read_parquet(${q(m.files.sources)})`);
-  await conn!.query(`CREATE OR REPLACE VIEW countries AS SELECT * FROM read_parquet(${q(m.files.countries)})`);
+}
+
+const tableReady = new Map<TableName, Promise<void>>();
+function ensureTable(name: TableName): Promise<void> {
+  const hit = tableReady.get(name); if (hit) return hit;
+  const p = (async () => {
+    if (!manifest.value) await loadManifest();
+    const parts = tableParts(name);
+    // the download starts at once, in parallel with the engine's boot
+    const bufs = await Promise.all(parts.map(async (pt) => {
+      const r = await fetch(versionedDataUrl(pt.file));
+      if (!r.ok) throw new Error(`HTTP ${r.status} for ${pt.file}`);
+      return new Uint8Array(await r.arrayBuffer());
+    }));
+    await ensureDb();
+    if (!parts.length) return;
+    const regs = parts.map((_, i) => `${name}__${i}.parquet`);
+    for (let i = 0; i < parts.length; i++) await db!.registerFileBuffer(regs[i], bufs[i]);
+    const body = parts.map((pt, i) => pt.iso3 ? `SELECT *, '${pt.iso3}' AS cntry_iso3 FROM read_parquet('${regs[i]}')` : `SELECT * FROM read_parquet('${regs[i]}')`).join(' UNION ALL BY NAME ');
+    await conn!.query(`CREATE OR REPLACE VIEW ${name} AS ${body}`);
+  })();
+  tableReady.set(name, p);
+  p.catch(() => tableReady.delete(name));
+  return p;
+}
+// the tables a statement names (whole words: tl2b_uk does not name tl2b)
+const TABLE_RE = new RegExp(`\\b(${[...TABLES].sort((a, b) => b.length - a.length).join('|')})\\b`, 'g');
+function tablesIn(sql: string): TableName[] {
+  return [...new Set([...sql.matchAll(TABLE_RE)].map((m) => m[1] as TableName))];
+}
+
+// after the first view: every other table, one at a time, when the browser is idle
+let prefetching = false;
+function schedulePrefetch(): void {
+  if (prefetching || typeof window === 'undefined') return;
+  prefetching = true;
+  const idle: (f: () => void) => void = (window as any).requestIdleCallback ?? ((f: () => void) => setTimeout(f, 200));
+  setTimeout(() => idle(async () => { for (const t of TABLES) { try { await ensureTable(t); } catch { /* fetched on demand instead */ } } }), 1500);
 }
 
 async function boot(): Promise<void> {
   await Promise.all([startEngine(), loadManifest()]);
-  await createViews();
 }
 
 export function ensureDb(): Promise<void> {
@@ -116,7 +153,7 @@ export async function query(sql: string, params: any[] = []): Promise<Row[]> {
   if (hit) { cache.delete(key); cache.set(key, hit); return hit; }
   inflight++; dbStatus.pending = inflight;
   try {
-    await ensureDb();
+    await Promise.all([ensureDb(), ...tablesIn(sql).map(ensureTable)]);
     let rows: Row[];
     if (params.length) {
       const stmt = await conn!.prepare(sql);
@@ -126,6 +163,7 @@ export async function query(sql: string, params: any[] = []): Promise<Row[]> {
     }
     cache.set(key, rows);
     if (cache.size > CACHE_MAX) cache.delete(cache.keys().next().value!);
+    schedulePrefetch();
     return rows;
   } finally { inflight--; dbStatus.pending = inflight; }
 }

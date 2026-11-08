@@ -365,7 +365,7 @@
       <button type="button" aria-pressed={!tableView} onclick={() => setView('map')}>{t('map.view.map')}</button>
       <button type="button" aria-pressed={tableView} onclick={() => setView('table')}>{t('map.view.table')}</button>
     </div>
-    <span class="muted small num">{#if missingLevel}{:else if loading}<Spinner size={12} /> {t('map.loading')}{:else}{mode === 'change' ? t('map.status.change', { n: nMapped, units: unitsWord, first: CH0, last: CH1 }) : t('map.status', { n: nMapped, units: unitsWord, year })}{#if nNoGeo} · {t('map.status.nogeo', { n: nNoGeo })}{/if}{/if}</span>
+    <span class="muted small num">{#if missingLevel}{:else if loading || !features.length}<Spinner size={12} /> {t('map.loading')}{:else}{mode === 'change' ? t('map.status.change', { n: nMapped, units: unitsWord, first: CH0, last: CH1 }) : t('map.status', { n: nMapped, units: unitsWord, year })}{#if nNoGeo} · {t('map.status.nogeo', { n: nNoGeo })}{/if}{/if}</span>
     <span class="sp"></span>
     <button type="button" class="lnk" onclick={exportYear} disabled={!inYear.size}>{t('map.download', { year })}</button>
   </div>
