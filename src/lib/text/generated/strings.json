@@ -435,5 +435,6 @@
   "map.qy.year": "This year",
   "map.qy.year.tip": "Classes from the year shown only: each year uses its full range of colours",
   "map.legend.note_year": "Quantile classes from {year} only, {scope}. {variable_label}.",
-  "autonomy.reg.rai.range": "The axis runs from zero to the most a region can score: {per} points for each tier of regional government governing it (twice that where two tiers do)."
+  "autonomy.reg.rai.range": "The axis runs from zero to the most a region can score: {per} points for each tier of regional government governing it (twice that where two tiers do).",
+  "growth.logpoints": "Why log points: GDP per capita is GDP per person employed times persons employed per head, so in logarithms the two parts add up exactly to the whole, and the bars sum to the GDP per capita growth. A log point is 100 times the change in the natural log: close to a percentage for small changes (+2% is +1.98), further from it for large ones (−10% is −10.5, +10% is +9.5)."
 }

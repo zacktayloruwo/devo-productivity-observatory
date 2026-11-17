@@ -100,7 +100,7 @@
     {#if error}<div class="err">{error}</div>{/if}
   </header>
 
-  <ChartCard title={t('productivity.nat.decomp.title', { country: name, first: PERIOD[0], last: PERIOD[1] })} columns={decompCols} rows={focusDecomp} csvName={`${iso3}_growth_decomposition_${PERIOD[0]}_${PERIOD[1]}`} note={t('productivity.nat.decomp.note')}>
+  <ChartCard title={t('productivity.nat.decomp.title', { country: name, first: PERIOD[0], last: PERIOD[1] })} columns={decompCols} rows={focusDecomp} csvName={`${iso3}_growth_decomposition_${PERIOD[0]}_${PERIOD[1]}`} note={t('productivity.nat.decomp.note') + ' ' + t('growth.logpoints')}>
     {#snippet intro()}<p><Text k="productivity.nat.decomp.intro" vars={{ possessive: poss(name) }} /></p>{/snippet}
     {#if focusDecomp.length}
       <PlotChart make={decompMake} height={300} label={t('productivity.nat.decomp.title', { country: name, first: PERIOD[0], last: PERIOD[1] })} />
@@ -110,7 +110,7 @@
     {/if}
   </ChartCard>
 
-  <ChartCard title={t('productivity.nat.avg.title', { first: PERIOD[0], last: PERIOD[1] })} columns={avgCols} rows={decompAvg} csvName={`growth_decomposition_${PERIOD[0]}_${PERIOD[1]}`}>
+  <ChartCard title={t('productivity.nat.avg.title', { first: PERIOD[0], last: PERIOD[1] })} columns={avgCols} rows={decompAvg} csvName={`growth_decomposition_${PERIOD[0]}_${PERIOD[1]}`} note={t('growth.logpoints')}>
     {#snippet intro()}<p><Text k="productivity.nat.avg.intro" vars={{ first: PERIOD[0], last: PERIOD[1], country: name }} /></p>{/snippet}
     <PlotChart make={avgMake} height={34 * Math.max(1, decompAvg.length) + 60} label={t('productivity.nat.avg.title', { first: PERIOD[0], last: PERIOD[1] })} />
     <div class="pleg">{#each PARTS as p, i (p.k)}<span class="it"><span class="sw" style:background={PART_FILL[i]}></span>{p.label}</span>{/each}<span class="it"><svg width="10" height="10"><circle cx="5" cy="5" r="3.5" fill="currentColor" /></svg>{t('productivity.nat.avg.total')}</span><span class="it"><span class="sw" style:background={PART_FILL[0]}></span><span class="sw faded" style:background={PART_FILL[0]}></span>{t('productivity.nat.avg.focus', { country: name })}</span></div>
