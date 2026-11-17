@@ -54,13 +54,17 @@ Every chart has a table twin and a CSV download. Light and dark themes.
   table; its polygons are TL3 dissolved by the code's first four characters,
   in the same topology, and its names come from Eurostat GISCO NUTS 2024 and
   the ONS ITL 2 (January 2025) names and codes.
-- **UK regions without OECD data.** The OECD publishes no employment or
-  productivity for the 23 UK TL3 regions whose boundaries changed in ITL 2025
-  (nor for their TL2b regions). The UK's own views and maps read the common
-  database's `uk_gapfill` table (`data/ukfill/`), which estimates them for
-  2015–2023 from ONS GVA and BRES employment; those values are hatched on
-  the map and marked † in tables. Cross-country views, and the all-countries
-  map, keep the OECD-published values.
+- **UK regional data.** The UK's own views and maps at TL3 and TL2b read
+  `data/ukfill/`, built from two common-database tables: `uk_gapfill`, which
+  fills the 23 TL3 regions the OECD leaves blank (boundaries changed in ITL
+  2025) for 2015–2023 from ONS GVA and BRES employment (marked †, hatched on
+  the map), and `uk_consistent`, which makes employment and productivity
+  comparable across the OECD's 2014/2015 change of UK employment source,
+  back-cast for 2004–2014 from ONS GVA per filled job (marked ‡). Cross-country
+  views keep the OECD's published tables and mark the break with a dashed
+  line; UK TL2 also breaks in 2015 (in level) and has no comparable series
+  yet, so it carries the dashed line and is left out of change across it. The
+  UK Sources page documents all of this.
 - **FUA boundaries** are one simplified GeoJSON per country (`data/geo/<ISO3>.geojson`),
   fetched only when the map is opened for that country. Each country is drawn
   on its own projection (Lambert conformal conic with the country's customary
@@ -142,6 +146,12 @@ first run.
 
 ```bash
 npm run data        # build_geography.R, then build_data.R
+```
+
+`build_data.R` simplifies the FUA and subnational boundary files with `rmapshaper`; without it, or with `--reuse-boundaries`, it keeps the files already in `public/data/geo` and their manifest entries.
+
+```bash
+Rscript data-prep/build_data.R --reuse-boundaries
 ```
 
 The build drops region codes outside the grid and lists them: extra-regio

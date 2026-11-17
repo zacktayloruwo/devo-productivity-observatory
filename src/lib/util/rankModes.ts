@@ -22,7 +22,8 @@ export function setChgPref(c: 'nominal' | 'relpos') { setQuery({ chg: c === 'nom
 
 // a known series break inside the window leaves a country's units out (UK TL3, TL2b)
 export function breaksWindow(iso3: string | undefined, level: string, range: [number, number]): boolean {
-  const b = iso3 ? seriesBreak(iso3, level) : null;
+  // the sample is the UK's own (consistent) series at TL3 and TL2b
+  const b = iso3 ? seriesBreak(iso3, level, true) : null;
   return b != null && b > range[0] && b <= range[1];
 }
 

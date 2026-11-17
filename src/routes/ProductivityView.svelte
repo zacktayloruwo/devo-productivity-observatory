@@ -35,7 +35,10 @@
   const geo = $derived(routeGeo());
   const level = $derived<UnitLevel | null>(geo === 'national' ? null : geo);
   // a known break in the country's series at this level (UK TL3 and TL2b, 2014-2015)
+  // breaks: the cross-country charts show the OECD's published series; the
+  // country's own charts, for the UK at TL3 and TL2b, its consistent series
   const brk = $derived(seriesBreak(iso3, level));
+  const brkOwn = $derived(seriesBreak(iso3, level, true));
   const fua = $derived(geo === 'fua');
   const levelName = $derived(t('geo.' + geo));
   const unit = $derived(fua ? 'FUA' : 'Region');
@@ -105,7 +108,9 @@
   // the country's own rows (for the UK, with the regions filled from ONS and BRES, marked †)
   const ranked = $derived(focusAll.filter((r) => r.year === year && r.lp != null).slice().sort((a, b) => (b.lp ?? 0) - (a.lp ?? 0)));
   const anyFilled = $derived(focusAll.some((r) => r.filled && r.lp != null));
-  const dag = (r: { filled?: boolean }) => (r.filled ? ' †' : '');
+  const anyBackcast = $derived(focusAll.some((r) => r.backcast && r.lp != null));
+  // † filled (2015-2023, 23 UK regions); ‡ back-cast (UK, 2004-2014)
+  const dag = (r: { filled?: boolean; backcast?: boolean }) => (r.filled ? ' †' : r.backcast ? ' ‡' : '');
   // the ranked rows with both ranks and the change; sorted by change in that mode
   type RankedRow = UnitRow & { s?: Rank; c?: Rank; ch?: number; srank: number | null; spct: number | null; crank: number | null; change: number | null };
   const rankedRows = $derived.by<RankedRow[]>(() => {
@@ -214,7 +219,8 @@
     const start = new Map(focusLp.filter((r) => r.year === growthStart).map((r) => [r.id, r.lp!]));
     const n = gEnd - growthStart;
     const filledStart = new Set(focusLp.filter((r) => r.year === growthStart && r.filled).map((r) => r.id));
-    return focusLp.filter((r) => r.year === gEnd && start.has(r.id)).map((r) => ({ id: r.id, name: r.name + (r.filled || filledStart.has(r.id) ? ' †' : ''), lp_start: start.get(r.id)!, lp_end: r.lp!, cagr: (Math.pow(r.lp! / start.get(r.id)!, 1 / n) - 1) * 100 }))
+    const backStart = new Set(focusLp.filter((r) => r.year === growthStart && r.backcast).map((r) => r.id));
+    return focusLp.filter((r) => r.year === gEnd && start.has(r.id)).map((r) => ({ id: r.id, name: r.name + (r.filled || filledStart.has(r.id) ? ' †' : backStart.has(r.id) ? ' ‡' : ''), lp_start: start.get(r.id)!, lp_end: r.lp!, cagr: (Math.pow(r.lp! / start.get(r.id)!, 1 / n) - 1) * 100 }))
       .sort((a, b) => b.cagr - a.cagr);
   });
   // FUA dollars are current prices: the same window as the change in relative
@@ -244,7 +250,7 @@
     const shade = (i: number) => [o.tokens['fg-3'], o.tokens['fg-2'], o.tokens.fg, o.tokens['fg-2'], o.tokens['fg-3']][i];
     const marks: any[] = [...covidRect(xCommon, o.tokens)];
     PCT.forEach((p, i) => marks.push(Plot.line(pctRows, { x: 'year', y: p.k, stroke: shade(i), strokeDasharray: p.dash || undefined, strokeWidth: p.w })));
-    if (brk != null && pctRows.some((r) => r.year < brk) && pctRows.some((r) => r.year >= brk)) marks.push(breakRule(brk, o.tokens));
+    if (brkOwn != null && pctRows.some((r) => r.year < brkOwn) && pctRows.some((r) => r.year >= brkOwn)) marks.push(breakRule(brkOwn, o.tokens));
     marks.push(Plot.tip(pctRows, Plot.pointerX({ x: 'year', y: 'p50', title: (d: any) => `${d.year} · ${d.n} ${unitsWord}\n90th ${fmtUsd(d.p90)}\n75th ${fmtUsd(d.p75)}\nMedian ${fmtUsd(d.p50)}\n25th ${fmtUsd(d.p25)}\n10th ${fmtUsd(d.p10)}` })));
     return Plot.plot({ width: o.width, height: 300, marginLeft: MARGIN.left, marginRight: MARGIN.right, style: plotStyle(o.tokens),
       x: yearAxis(xCommon, yearTicks(xCommon[0], xCommon[1], 5)), y: { label: 'Labour productivity (USD PPP per worker)', grid: true, tickFormat: (d: number) => '$' + fmtShort(d) }, marks });
@@ -281,7 +287,7 @@
   {#if missing}
     <div class="card prose"><p>{t('level.missing', { level: levelName, country: name })}</p></div>
   {:else}
-  <ChartCard title={t(fua ? 'productivity.ranks.title' : 'productivity.reg.ranks.title', { level: levelName, year })} note={ranked.some((r) => r.filled) ? t('ukfill.note') : ''}>
+  <ChartCard title={t(fua ? 'productivity.ranks.title' : 'productivity.reg.ranks.title', { level: levelName, year })} note={[ranked.some((r) => r.filled) ? t('ukfill.note') : '', ranked.some((r) => r.backcast) ? t('ukback.note') : ''].filter(Boolean).join(' ')}>
     {#snippet intro()}
       <p><Text k={fua ? 'productivity.ranks.intro' : 'productivity.reg.ranks.intro'} vars={{ level: levelName, country: name, year, ref_clause: year === refYear ? t('productivity.ref_clause') : '' }} /></p>
     {/snippet}
@@ -304,7 +310,7 @@
         {/if}
       </div>
       <RankTable rows={rankedRows} columns={rankCols} swatch={rankSwatch} csvName={`${iso3}_productivity_ranks${csvLv}_${year}`} />
-      <p class="muted small">{t('productivity.ranks.modes', { n: md.nSample, k: md.nCountries, units: unitsWord, year, first: CH0, last: CH1 })}{chgMethod === 'relpos' ? ' ' + t('productivity.ranks.relpos') : chgMethod === 'growth' && fua ? ' ' + t('productivity.ranks.nominal') : ''}{brk != null ? ' ' + t('map.change.ukbreak') : ''}</p>
+      <p class="muted small">{t('productivity.ranks.modes', { n: md.nSample, k: md.nCountries, units: unitsWord, year, first: CH0, last: CH1 })}{chgMethod === 'relpos' ? ' ' + t('productivity.ranks.relpos') : chgMethod === 'growth' && fua ? ' ' + t('productivity.ranks.nominal') : ''}{brkOwn != null ? ' ' + t('map.change.ukbreak') : ''}</p>
     {:else if !loading}
       <p class="muted">{t('productivity.ranks.none', { country: name, year })}</p>
     {/if}
@@ -327,7 +333,7 @@
   </ChartCard>
 
   {#if !missing}
-  <ChartCard title={t(fua ? 'productivity.growth.title' : 'productivity.reg.growth.title', { level: levelName, start: growthStart ?? CH0, year: gEnd })} note={growth.some((r) => r.name.endsWith(' †')) ? t('ukfill.note') : ''}>
+  <ChartCard title={t(fua ? 'productivity.growth.title' : 'productivity.reg.growth.title', { level: levelName, start: growthStart ?? CH0, year: gEnd })} note={[growth.some((r) => r.name.endsWith(' †')) ? t('ukfill.note') : '', growth.some((r) => r.name.endsWith(' ‡')) ? t('ukback.note') : ''].filter(Boolean).join(' ')}>
     {#snippet intro()}
       <p><Text k={fua ? 'productivity.growth.intro' : 'productivity.reg.growth.intro'} vars={{ level: levelName, start: growthStart ?? CH0, year: gEnd }} />{#if gEnd === refYear}{' '}<Text k="productivity.growth.ends" vars={{ ref_year: refYear }} />{/if}{#if growthStart != null && growthStart > CH0}{' '}<Text k="productivity.growth.begins" vars={{ start: growthStart, country: name }} />{/if}</p>
     {/snippet}
@@ -338,7 +344,7 @@
     {/if}
   </ChartCard>
 
-  <ChartCard title={t(fua ? 'productivity.spread.title' : 'productivity.reg.spread.title', { level: levelName, country: name })} columns={pctCols} rows={pctRows} csvName={`${iso3}_productivity_percentiles${csvLv}`} note={t('productivity.spread.note') + (brk ? ' ' + t('break.gbr') : '') + (anyFilled ? ' ' + t('ukfill.note') : '')}>
+  <ChartCard title={t(fua ? 'productivity.spread.title' : 'productivity.reg.spread.title', { level: levelName, country: name })} columns={pctCols} rows={pctRows} csvName={`${iso3}_productivity_percentiles${csvLv}`} note={t('productivity.spread.note') + (brkOwn ? ' ' + t('break.gbr') : '') + (anyFilled ? ' ' + t('ukfill.note') : '') + (anyBackcast ? ' ' + t('ukback.note') : '')}>
     {#snippet intro()}
       <p><Text k={fua ? 'productivity.spread.intro' : 'productivity.reg.spread.intro'} vars={{ level: levelName, possessive: poss(name) }} />{#if pctRows.length >= 2}{' '}<Text k="productivity.spread.covers" vars={{ n: pctRows.length, country: name, first: pctRows[0].year, last: pctRows[pctRows.length - 1].year }} />
         {:else}{' '}<Text k="productivity.spread.few" vars={{ how_many: t(pctRows.length ? 'productivity.spread.single' : 'productivity.spread.none'), country: name }} />{/if}</p>

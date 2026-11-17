@@ -71,9 +71,14 @@
   });
   // years that include UK regions filled from ONS and BRES are marked †
   // a known break in the country's series at this level (UK TL3 and TL2b, 2014-2015)
+  // the cross-country charts show the OECD's series; the country table, for
+  // the UK at TL3 and TL2b, its consistent series (no break)
   const brk = $derived(seriesBreak(iso3, level));
+  const brkOwn = $derived(seriesBreak(iso3, level, true));
   const filledYears = $derived(new Set(regs.filter((r) => r.filled && r.lp_lpr != null).map((r) => r.year)));
-  const table = $derived(years.map((y) => ({ label: (y === latestYear ? t('overview.table.latest', { year: y }) : String(y)) + (filledYears.has(y) ? ' †' : ''), ...stats(y) })));
+  // years whose UK values are the consistent back-cast series are marked ‡
+  const backYears = $derived(new Set(regs.filter((r) => r.backcast && r.lp_lpr != null).map((r) => r.year)));
+  const table = $derived(years.map((y) => ({ label: (y === latestYear ? t('overview.table.latest', { year: y }) : String(y)) + (filledYears.has(y) ? ' †' : backYears.has(y) ? ' ‡' : ''), ...stats(y) })));
   const measures = [
     { key: 'n', label: t('overview.reg.measure.n'), f: fmtInt },
     { key: 'med', label: t('overview.reg.measure.median'), f: fmtUsd },
@@ -111,7 +116,7 @@
     <div class="card prose"><p>{t('level.missing', { level: levelName, country: name })}</p></div>
   {:else}
 
-    <ChartCard title={t('overview.reg.table.title', { level: levelName, country: name })} columns={tableCols} rows={table} note={[brk ? t('break.gbr') : '', filledYears.size ? t('ukfill.note') : ''].filter(Boolean).join(' ')} csvName={`${iso3}_${level}_overview`}>
+    <ChartCard title={t('overview.reg.table.title', { level: levelName, country: name })} columns={tableCols} rows={table} note={[brkOwn ? t('break.gbr') : '', filledYears.size ? t('ukfill.note') : '', backYears.size ? t('ukback.note') : ''].filter(Boolean).join(' ')} csvName={`${iso3}_${level}_overview`}>
       {#snippet intro()}<p><Text k="overview.reg.table.intro" vars={{ level: levelName, country: name }} /></p>{/snippet}
       {#if !table.length && !loading}
         <p class="muted">{t('overview.reg.table.none', { level: levelName, country: name })}</p>

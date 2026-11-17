@@ -32,13 +32,13 @@ suppressPackageStartupMessages({
   library(haven)
   library(arrow)
   library(sf)
-  library(rmapshaper)
   library(jsonlite)
   library(geojsonsf)
 })
 
 args     <- commandArgs(trailingOnly = TRUE)
-datapack <- if (length(args)) args[1] else
+pos      <- args[!startsWith(args, "--")]
+datapack <- if (length(pos)) pos[1] else
   "/Users/zack/My Drive/Fiscal Observatory/devo_data_pack"
 db       <- file.path(datapack, "_data/db")
 if (!dir.exists(db)) stop("no common database at ", db)
@@ -144,7 +144,21 @@ write_parquet(src, file.path(out, "sources.parquet"), compression = "zstd")
 # ── Countries table ───────────────────────────────────────────────────────────
 write_parquet(countries, file.path(out, "countries.parquet"))
 
-# ── Boundaries ────────────────────────────────────────────────────────────────
+# ── Boundaries (FUA polygons and subnational outlines) ───────────────────────
+# Simplifying them needs rmapshaper. Without it (or with --reuse-boundaries)
+# the files already in public/data/geo are kept and their manifest entries
+# (bboxes, files, FUAs without a boundary) carried over: they change only
+# when the OECD boundary files do.
+reuse_geo <- "--reuse-boundaries" %in% args || !requireNamespace("rmapshaper", quietly = TRUE)
+if (reuse_geo) {
+  old <- jsonlite::read_json(file.path(out, "manifest.json"))
+  if (is.null(old$bboxes)) stop("no earlier manifest to reuse the boundaries from; install rmapshaper")
+  bboxes <- lapply(old$bboxes, unlist)
+  admin_files <- unlist(old$files$admin)
+  no_geo <- unlist(old$no_geo) %||% character(0)
+  message("boundaries: reusing the files in ", file.path(out, "geo"), " (rmapshaper ", if (requireNamespace("rmapshaper", quietly = TRUE)) "available" else "not installed", ")")
+} else {
+suppressPackageStartupMessages(library(rmapshaper))
 # Read straight from the OECD geopackage so Japan and Korea are included (the
 # datapack's fua_boundaries.rds was built before those countries were added).
 gpkg <- file.path(datapack, "_data/oecd_boundaries/fua_boundaries.gpkg")
@@ -221,6 +235,8 @@ for (iso in admin_countries) {
 
 # FUAs without a boundary (if any) are listed so the map can note them
 no_geo <- setdiff(fua$fua_id, b$fua_id)
+}
+
 
 
 # ── National, TL2 and TL3 (devo_data_pack analysis panels) ───────────────────
@@ -347,16 +363,32 @@ for (lv in c("tl2", "tl2b", "tl3")) for (iso in countries$iso3) {
   cat(sprintf("%s  %5d rows  %3d regions  %4.0f KB\n", reg_files[[lv]][[iso]], nrow(d), n_distinct(d$reg_id), file.info(f)$size / 1024))
 }
 
-# ── UK gap-filled TL3 and TL2b (common database table uk_gapfill) ─────────────
-# The OECD publishes no employment (so no productivity) for the 23 UK TL3
-# units whose boundaries changed in ITL 2025, nor for their TL2b parents.
-# uk_gapfill fills them for 2015-2023 from ONS GVA and BRES employment; every
-# other value equals the OECD's, and its frontier gap is recomputed within the
-# UK. These files serve the UK's own views and maps, with filled rows marked;
-# the cross-country views keep the OECD-published tl3 and tl2b tables.
+# ── UK TL3 and TL2b for the UK's own views (common database) ─────────────────
+# uk_gapfill: every OECD column, with the 23 TL3 units whose boundaries
+#   changed in ITL 2025 (blank in the OECD) filled for 2015-2023 from ONS GVA
+#   and BRES employment (and their TL2b parents).
+# uk_consistent (analysis plan §18): employment and productivity comparable
+#   across the OECD's 2014/2015 change of UK employment source; from 2015 the
+#   same values as uk_gapfill, for 2004-2014 back-cast from each unit's ONS
+#   GVA per filled job, anchored to its 2015-2019 OECD level.
+# Here: uk_gapfill's columns, with employment and productivity from
+# uk_consistent for 2004-2023 (GDP per worker and the frontier gap recomputed
+# from them) and left out before 2004, where no consistent series exists.
+# Rows are flagged `filled` (2015-2023 fill) or `backcast` (2004-2014). The
+# cross-country views keep the OECD-published tl3 and tl2b tables.
+ukc <- from_db("uk_consistent") |>
+  transmute(level = tolower(tl), reg_id, year = as.integer(year), emp_c = emp, lp_c = lp_lpr, uk_series)
 ukf <- from_db("uk_gapfill") |>
-  mutate(year = as.integer(year), level = tolower(tl), filled = uk_fill == "filled",
-         lp_gap_frontier_pct = 100 * (exp(ln_lp_gap_frontier) - 1)) |>
+  mutate(year = as.integer(year), level = tolower(tl)) |>
+  left_join(ukc, by = c("level", "reg_id", "year")) |>
+  mutate(emp = emp_c, lp_lpr = lp_c,
+         lp_gdp_q = ifelse(!is.na(emp) & emp > 0 & !is.na(gdp_q_usdppp), gdp_q_usdppp / emp, NA_real_),
+         filled = uk_series %in% "filled", backcast = uk_series %in% "backcast") |>
+  group_by(level, year) |>
+  mutate(ln_lp_gap_frontier = if (any(!is.na(lp_lpr))) log(lp_lpr) - log(max(lp_lpr, na.rm = TRUE)) else NA_real_) |>
+  ungroup() |>
+  mutate(lp_gap_frontier_pct = 100 * (exp(ln_lp_gap_frontier) - 1)) |>
+  select(-emp_c, -lp_c, -uk_series) |>
   left_join(geo_index |> transmute(level, reg_id = id, geo_name = name), by = c("level", "reg_id")) |>
   mutate(reg_name = coalesce(reg_name, geo_name)) |> select(-geo_name)
 for (v in setdiff(reg_ids, names(ukf))) ukf[[v]] <- NA_real_
@@ -370,11 +402,11 @@ for (lv in c("tl3", "tl2b")) {
     miss <- setdiff(d$reg_id[d$year == y], gi$id[gi$from <= y & gi$to >= y])
     if (length(miss)) stop(sprintf("UK gap-fill %s %d: data without a polygon: %s", lv, y, paste(miss, collapse = " ")))
   }
-  d <- d |> transmute(reg_id, reg_name, year, !!!rlang::syms(reg_ids), filled) |> arrange(reg_id, year)
+  d <- d |> transmute(reg_id, reg_name, year, !!!rlang::syms(reg_ids), filled, backcast) |> arrange(reg_id, year)
   dir <- file.path(out, "ukfill", lv); dir.create(dir, recursive = TRUE, showWarnings = FALSE)
   f <- file.path(dir, "part.parquet"); write_parquet(d, f, compression = "zstd")
   uk_files[[lv]] <- sub(paste0("^", out, "/"), "", f)
-  cat(sprintf("%s  %5d rows  %3d regions  %d filled region-years\n", uk_files[[lv]], nrow(d), n_distinct(d$reg_id), sum(d$filled)))
+  cat(sprintf("%s  %5d rows  %3d regions  %d filled, %d back-cast region-years\n", uk_files[[lv]], nrow(d), n_distinct(d$reg_id), sum(d$filled), sum(d$backcast)))
 }
 
 natp <- from_db("national") |>

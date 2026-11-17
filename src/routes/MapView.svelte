@@ -100,14 +100,15 @@
   const changeMethod = $derived<ChangeMethod>(fuaUsd && chgPref === 'relpos' ? 'relpos' : positiveVar ? 'growth' : 'diff');
   const countryOfUnit = $derived(new Map(pool.map((r) => [r.id, r.cntry_iso3])));
   // a known series break inside the window leaves the unit out (UK TL3, TL2b)
-  const breaksWindow = (c: string | undefined) => { const b = c ? seriesBreak(c, level) : null; return b != null && b > CH0 && b <= CH1; };
+  // the map's UK rows are its own consistent series at TL3 and TL2b (no break); TL2 still breaks
+  const breaksWindow = (c: string | undefined) => { const b = c ? seriesBreak(c, level, true) : null; return b != null && b > CH0 && b <= CH1; };
   const chg = $derived(changes(pool, CH0, CH1, changeMethod, (id) => !breaksWindow(countryOfUnit.get(id))));
   const chgRank = $derived(rankAll([...chg].map(([id, c]) => ({ id, v: c.change })), (x) => x.v, (x) => x.id));
   // for the units left out: the change since the break
   const chgSinceBreak = $derived.by(() => {
     const ids = new Set([...countryOfUnit].filter(([, c]) => breaksWindow(c)).map(([id]) => id));
     if (!ids.size) return new Map<string, Change>();
-    const b = seriesBreak('GBR', level) ?? CH0;
+    const b = seriesBreak('GBR', level, true) ?? CH0;
     return changes(pool.filter((r) => ids.has(r.id)), b, CH1, changeMethod === 'relpos' ? 'growth' : changeMethod);
   });
   // the change since a break is growth (or a difference), never relative position
@@ -237,7 +238,7 @@
     const sr = sRank.get(id), cr = cRank.get(id);
     const rankLine = mode === 'srank' && sr ? `<br>${esc(t('map.tip.srank', { rank: rankText(sr) }))}`
       : mode === 'crank' && cr ? `<br>${esc(t('map.tip.crank', { rank: rankText(cr), country: countryName(r.cntry_iso3) }))}` : '';
-    return { html: `${head}<br>${esc(t('map.tip.value', { variable: v?.short ?? '', year: y }))} <b>${esc(fmtBy(fmt, r.value))}</b>${rankLine}${relative && relOf(id, y) != null ? ` <span class="tipdef">(${esc(t('map.rel.tip', { value: relFmt(relOf(id, y)!) }))})</span>` : ''}<br><span class="tipdef">${esc(t('map.tip.rank', { rank: rk.get(id), n: rk.size }))}${r.pop != null ? ` · ${esc(t('map.tip.pop', { pop: fmtInt(r.pop) }))}` : ''}</span>${r.filled ? `<br><span class="tipdef">${esc(t('map.filled.tip'))}</span>` : ''}` };
+    return { html: `${head}<br>${esc(t('map.tip.value', { variable: v?.short ?? '', year: y }))} <b>${esc(fmtBy(fmt, r.value))}</b>${rankLine}${relative && relOf(id, y) != null ? ` <span class="tipdef">(${esc(t('map.rel.tip', { value: relFmt(relOf(id, y)!) }))})</span>` : ''}<br><span class="tipdef">${esc(t('map.tip.rank', { rank: rk.get(id), n: rk.size }))}${r.pop != null ? ` · ${esc(t('map.tip.pop', { pop: fmtInt(r.pop) }))}` : ''}</span>${r.filled ? `<br><span class="tipdef">${esc(t('map.filled.tip'))}</span>` : r.backcast ? `<br><span class="tipdef">${esc(t('map.backcast.tip'))}</span>` : ''}` };
   }; });
 
   function setYear(y: number) { go(['map', iso3, String(y)], route.query); }
@@ -263,7 +264,7 @@
     if (rows.length < 2) return null;
     const ys = rows.map((r) => r.year); const lo = Math.min(...ys), hi = Math.max(...ys);
     const cur = rows.filter((r) => r.year === year);
-    const brk = seriesBreak(selIso, level);
+    const brk = seriesBreak(selIso, level, true);
     const brkMarks = brk != null && lo < brk && hi >= brk ? [breakRule(brk, o.tokens)] : [];
     return Plot.plot({ width: o.width, height: 170, marginLeft: 52, marginRight: 16, style: plotStyle(o.tokens),
       x: yearAxis([lo, hi], yearTicks(lo, hi, hi - lo > 20 ? 10 : 5)), y: { label: v.short, grid: true, tickFormat: (d: number) => fmtShortBy(fmt, d) },
@@ -273,7 +274,7 @@
   });
   // whether the selected unit's series spans a known break (the dashed line is drawn)
   const seriesCrossesBreak = $derived.by(() => {
-    const b = seriesBreak(selIso, level), v = variable;
+    const b = seriesBreak(selIso, level, true), v = variable;
     if (b == null || !v) return false;
     const ys = series.filter((r) => r[v.id] != null && r.year >= FIRST_YEAR).map((r) => r.year);
     return ys.some((y) => y < b) && ys.some((y) => y >= b);
@@ -282,11 +283,11 @@
 
   // ---- the table: the scope's units with their value, ranks and change,
   // sorted by the measure the map is coloured by
-  interface TRow { id: string; cntry_iso3: string; name: string; value: number | null; pop: number | null; filled: boolean; s?: Rank; c?: Rank; ch?: Change; g?: Rank }
+  interface TRow { id: string; cntry_iso3: string; name: string; value: number | null; pop: number | null; filled: boolean; backcast: boolean; s?: Rank; c?: Rank; ch?: Change; g?: Rank }
   const tableRows = $derived.by<TRow[]>(() => {
     const ids = new Set<string>([...inYear.keys(), ...(mode === 'change' ? [...chg.keys()].filter((id) => scopeAll || countryOfUnit.get(id) === iso3) : [])]);
     const rows = [...ids].map((id) => { const r = inYear.get(id); const any = r ?? values.find((x) => x.id === id);
-      return { id, cntry_iso3: any?.cntry_iso3 ?? '', name: unitName(id, any), value: r?.value ?? null, pop: r?.pop ?? null, filled: !!r?.filled, s: sRank.get(id), c: cRank.get(id), ch: chg.get(id), g: chgRank.get(id) }; });
+      return { id, cntry_iso3: any?.cntry_iso3 ?? '', name: unitName(id, any), value: r?.value ?? null, pop: r?.pop ?? null, filled: !!r?.filled, backcast: !!r?.backcast, s: sRank.get(id), c: cRank.get(id), ch: chg.get(id), g: chgRank.get(id) }; });
     // rank in country: by country, then rank; otherwise highest first
     if (mode === 'crank') return rows.sort((a, b) => a.cntry_iso3.localeCompare(b.cntry_iso3) || (a.c?.rank ?? 1e9) - (b.c?.rank ?? 1e9));
     const key = (r: TRow) => (mode === 'change' ? r.ch?.change : r.value) ?? -Infinity;
@@ -328,7 +329,8 @@
       { key: 'crank', label: 'Rank within country', value: (r: TRow) => r.c?.rank ?? '' }, { key: 'cn', label: 'Units in country', value: (r: TRow) => r.c?.n ?? '' },
       { key: 'v0', label: `${variable?.short ?? 'Value'}, ${CH0}`, value: (r: TRow) => r.ch?.v0 ?? '' }, { key: 'v1', label: `${variable?.short ?? 'Value'}, ${CH1}`, value: (r: TRow) => r.ch?.v1 ?? '' },
       { key: 'change', label: changeTitle, value: (r: TRow) => (r.ch ? Math.round(r.ch.change * 1000) / 1000 : '') },
-      { key: 'filled', label: 'Estimated (filled from ONS and BRES)', value: (r: TRow) => (r.filled ? 'yes' : '') }], tableRows);
+      { key: 'filled', label: 'Estimated (filled from ONS and BRES)', value: (r: TRow) => (r.filled ? 'yes' : '') },
+      { key: 'backcast', label: 'Back-cast (UK consistent series, 2004-2014)', value: (r: TRow) => (r.backcast ? 'yes' : '') }], tableRows);
   }
   // the legend's title and note, by mode
   const unitsWord = $derived(t('geo.units.' + level));
@@ -408,7 +410,7 @@
             <tbody>
               {#each shownRows as r (r.id)}
                 <tr class:sel={r.id === selected} onclick={() => select(r.id)}>
-                  <td><span class="sw" style:background={fillFor(r.id)}></span>{r.name}{r.filled ? ' †' : ''}</td>
+                  <td><span class="sw" style:background={fillFor(r.id)}></span>{r.name}{r.filled ? ' †' : r.backcast ? ' ‡' : ''}</td>
                   {#if scopeAll || national}<td>{countryName(r.cntry_iso3)}</td>{/if}
                   <td class="num">{fmtBy(fmt, r.value)}</td>
                   <td class="num">{rankText(r.s)}</td>
@@ -419,6 +421,7 @@
             </tbody>
           </table>
           {#if tableRows.some((r) => r.filled)}<p class="muted small">{t('ukfill.note')}</p>{/if}
+          {#if tableRows.some((r) => r.backcast)}<p class="muted small">{t('ukback.note')}</p>{/if}
         </div>
       {/if}
     </div>
@@ -432,6 +435,7 @@
         <div class="muted small">{t('map.insp.sub', { variable_label: variable?.label ?? '', year })}{#if rankIn.get(selected)} · {t('map.insp.rank', { rank: rankIn.get(selected), n: rankIn.size })}{/if}</div>
         <PlotChart make={seriesMake} height={170} label={`${selName}: ${variable?.short} over time`} />
         {#if series.some((r) => r.filled && variable && r[variable.id] != null)}<div class="muted small">{t('map.filled.insp')}</div>{/if}
+        {#if series.some((r) => r.backcast && variable && r[variable.id] != null)}<div class="muted small">{t('map.backcast.insp')}</div>{/if}
         {#if seriesCrossesBreak}<div class="muted small">{t('map.break.insp')}</div>{/if}
         <table class="data ranks">
           <tbody>
