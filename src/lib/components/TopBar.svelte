@@ -101,7 +101,8 @@
       </select>
       <span class="muted">{t('range.to')}</span>
       <select aria-label={t('range.until')} value={range[1]} onchange={pickTo}>
-        {#each rangeAll as y (y)}<option value={y} disabled={!rangeAvail.has(y) || y <= range[0]}>{y}</option>{/each}
+        <!-- only years after the start; those without data greyed out -->
+        {#each rangeAll.filter((y) => y > range[0]) as y (y)}<option value={y} disabled={!rangeAvail.has(y)}>{y}</option>{/each}
       </select>
     </div>
   {/if}
