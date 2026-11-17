@@ -1,7 +1,7 @@
 <script lang="ts">
   // The Growth view: growth of GDP per capita split into the growth of GDP
   // per person employed and of persons employed per head, for the country in
-  // view year by year and for every country over 2000 to the reference year.
+  // view year by year and for every country over the change range in the top bar.
   // National series, whatever the geography. Route: #/growth/<ISO3>
   import * as Plot from '@observablehq/plot';
   import { routeCountry } from '../lib/routeState';
@@ -18,6 +18,7 @@
   import Spinner from '../lib/components/Spinner.svelte';
   import Text from '../lib/components/Text.svelte';
   import { t } from '../lib/text/t';
+  import { changeRange } from '../lib/changeRange';
 
   const iso3 = $derived(routeCountry());
   const name = $derived(countryName(iso3));
@@ -62,8 +63,9 @@
   const decompCols = [{ key: 'cntry', label: 'Country', value: (r: any) => countryName(r.cntry_iso3) }, { key: 'year', label: 'Year', num: true },
     { key: 'g_pc', label: 'GDP per capita growth', num: true, render: (r: any) => pctPts(r.g_pc) }, { key: 'g_pw', label: 'from GDP per person employed', num: true, render: (r: any) => pctPts(r.g_pw) }, { key: 'g_emp', label: 'from persons employed per head', num: true, render: (r: any) => pctPts(r.g_emp) }];
 
-  // the same decomposition as each country's mean over 2000 to the reference year
-  const PERIOD = $derived([2000, refYear] as const);
+  // the same decomposition as each country's mean growth over the range set
+  // under "Change over time" in the top bar (the years after the start, to the end)
+  const PERIOD = $derived(changeRange('growth', 'national'));
   const decompAvg = $derived(countries.map((c) => {
     const rs = decomp.filter((r) => r.cntry_iso3 === c.iso3 && r.year > PERIOD[0] && r.year <= PERIOD[1]);
     if (!rs.length) return null;

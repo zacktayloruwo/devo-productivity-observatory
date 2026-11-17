@@ -1,6 +1,6 @@
 // The "Change over time" range in the top bar (?from=&to=): the start and
 // end years of every change the views compute (the map's change mode, the
-// Productivity change column and growth table). It defaults to 2004 (the
+// Productivity change column and growth table, the Growth view's averages). It defaults to 2004 (the
 // first year of full FUA coverage) to 2019 (the last before the pandemic),
 // or the nearest years with data for the indicator in view.
 import { route, setQuery } from './router.svelte';
@@ -8,7 +8,7 @@ import { levelInfo, manifest, type Level } from './db/manifest.svelte';
 import { FIRST_YEAR } from './charts/plot';
 
 export const DEFAULT_FROM = 2004, DEFAULT_TO = 2019;
-export const RANGE_VIEWS = ['map', 'productivity'];
+export const RANGE_VIEWS = ['map', 'productivity', 'growth'];
 
 // the indicator whose years the range is drawn from in a view
 export function rangeVariable(view: string, level: Level): string | null {
@@ -17,12 +17,15 @@ export function rangeVariable(view: string, level: Level): string | null {
     return (vars.some((v) => v.id === route.query.var) ? route.query.var : vars[0]?.id) ?? null;
   }
   if (view === 'productivity') return level === 'fua' ? 'labprod_usdppp' : level === 'national' ? 'gdp_pw' : 'lp_lpr';
+  if (view === 'growth') return 'growth_gdp_pc';
   return null;
 }
 // years with data for that indicator (any country)
 export function rangeYears(view: string, level: Level): number[] {
-  const v = rangeVariable(view, level);
-  return v ? (levelInfo(level).var_years?.[v] ?? []).filter((y) => y >= FIRST_YEAR) : [];
+  // the Growth view is national series whatever the geography in the top bar
+  const lv: Level = view === 'growth' ? 'national' : level;
+  const v = rangeVariable(view, lv);
+  return v ? (levelInfo(lv).var_years?.[v] ?? []).filter((y) => y >= FIRST_YEAR) : [];
 }
 // every year the pulldowns list: from the first year the views show to the latest in the data
 export function allYears(): number[] {
