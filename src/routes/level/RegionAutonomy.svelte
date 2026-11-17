@@ -60,9 +60,9 @@
   // titles and passages are filled here so text_compile.mjs sees every key
   const INDICES = $derived<{ key: Key; title: string; intro: string; note: string; label: string; digits: number }[]>([
     { key: 'lai_total_reg', title: t('autonomy.reg.lai.title', { level: levelName }), intro: t('autonomy.reg.lai.intro', { level: levelName }), note: t('autonomy.reg.lai.note'), label: 'LAI, region-specific (0–1)', digits: 2 },
-    { key: 'rai_total_reg', title: t('autonomy.reg.rai.title', { level: levelName }), intro: t('autonomy.reg.rai.intro', { level: levelName }), note: t('autonomy.reg.rai.note'), label: 'RAI, region-specific (points)', digits: 1 },
+    { key: 'rai_total_reg', title: t('autonomy.reg.rai.title', { level: levelName }), intro: t('autonomy.reg.rai.intro', { level: levelName }), note: t('autonomy.reg.rai.note') + ' ' + t('autonomy.reg.rai.range', { per: 30 }), label: 'RAI, region-specific (points)', digits: 1 },
     { key: 'lai_fiscal_reg', title: t('autonomy.reg.lai_fiscal.title', { level: levelName }), intro: t('autonomy.reg.lai_fiscal.intro', { level: levelName }), note: t('autonomy.reg.lai.note'), label: 'LAI fiscal, region-specific (0–1)', digits: 2 },
-    { key: 'rai_fiscalautonomy_reg', title: t('autonomy.reg.rai_fiscal.title', { level: levelName }), intro: t('autonomy.reg.rai_fiscal.intro', { level: levelName }), note: t('autonomy.reg.rai.note'), label: 'RAI fiscal autonomy, region-specific (points)', digits: 1 }
+    { key: 'rai_fiscalautonomy_reg', title: t('autonomy.reg.rai_fiscal.title', { level: levelName }), intro: t('autonomy.reg.rai_fiscal.intro', { level: levelName }), note: t('autonomy.reg.rai.note') + ' ' + t('autonomy.reg.rai.range', { per: 4 }), label: 'RAI fiscal autonomy, region-specific (points)', digits: 1 }
   ]);
 
   // per index and year: the selected region's value and the median, minimum
@@ -83,6 +83,17 @@
     { key: 'min', label: 'Lowest', num: true, render: (r: any) => fmtNum(r.min, ix.digits) }, { key: 'max', label: 'Highest', num: true, render: (r: any) => fmtNum(r.max, ix.digits) },
     { key: 'n', label: 'Regions', num: true }];
 
+  // the axis covers the full range of possible points: LAI 0-1; RAI per tier
+  // of regional government 30 points in total (self-rule 18, shared rule 12)
+  // and 4 for fiscal autonomy, times the tiers governing the country's
+  // regions (two where scores pass one tier's maximum)
+  const RAI_TIER_MAX: Partial<Record<Key, number>> = { rai_total_reg: 30, rai_fiscalautonomy_reg: 4 };
+  function domainOf(ix: Index, data: RegionRow[]): [number, number] | undefined {
+    if (ix.key.startsWith('lai')) return [0, 1];
+    const per = RAI_TIER_MAX[ix.key]; if (!per) return undefined;
+    const hi = Math.max(0, ...data.map((r) => r[ix.key] ?? 0));
+    return [0, per * Math.max(1, Math.ceil(hi / per - 1e-9))];
+  }
   function make(ix: Index) {
     return (o: { width: number; tokens: any }) => {
       const data = rows.filter((r) => r[ix.key] != null);
@@ -92,7 +103,7 @@
       const sel = data.filter((r) => r.reg_id === selected);
       const med = summaries[ix.key];
       return Plot.plot({ width: o.width, height: 280, marginLeft: MARGIN.left, marginRight: MARGIN.right, style: plotStyle(o.tokens),
-        x: yearAxis([lo, hi], yearTicks(lo, hi, 5)), y: { label: ix.label, grid: true, tickFormat: (v: number) => fmtNum(v, ix.digits === 2 ? 1 : 0), domain: ix.key.startsWith('lai') ? [0, 1] : undefined },
+        x: yearAxis([lo, hi], yearTicks(lo, hi, 5)), y: { label: ix.label, grid: true, tickFormat: (v: number) => fmtNum(v, ix.digits === 2 || !Number.isInteger(v) ? 1 : 0), domain: domainOf(ix, data) },
         marks: [
           Plot.line(data, { x: 'year', y: ix.key, z: 'reg_id', stroke: o.tokens['fg-3'], strokeWidth: 0.8, strokeOpacity: 0.45, curve: 'step-after' }),
           Plot.line(med, { x: 'year', y: 'median', stroke: o.tokens.fg, strokeDasharray: '5 4', strokeWidth: 1.4, curve: 'step-after' }),

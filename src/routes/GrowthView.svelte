@@ -35,13 +35,19 @@
   });
   const latestOf = (rows: NationalRow[], key: string) => { const r = rows.filter((x) => x[key] != null); return r.length ? r[r.length - 1] : null; };
 
+  // the range set under "Change over time" in the top bar: the year-by-year
+  // chart shows the years after its start to its end (each year's growth is
+  // from the year before), and the averages below are taken over the same years
+  const PERIOD = $derived(changeRange('growth', 'national'));
+  const inPeriod = (y: number) => y > PERIOD[0] && y <= PERIOD[1];
+
   // ---- 2. growth decomposition: growth of GDP per capita (log points) =
   // growth of GDP per person employed + growth of persons employed per head
   const PARTS = [{ k: 'g_pw', label: 'GDP per person employed' }, { k: 'g_emp', label: 'Persons employed per head' }] as const;
   const PART_FILL = ['#4e79a7', '#f28e2b'];
   const decomp = $derived(fromFirstYear(nat).filter((r) => r.growth_gdp_pc != null && r.growth_gdp_pw != null)
     .map((r) => ({ cntry_iso3: r.cntry_iso3, year: r.year, g_pc: r.growth_gdp_pc!, g_pw: r.growth_gdp_pw!, g_emp: r.growth_gdp_pc! - r.growth_gdp_pw! })));
-  const focusDecomp = $derived(decomp.filter((r) => r.cntry_iso3 === iso3));
+  const focusDecomp = $derived(decomp.filter((r) => r.cntry_iso3 === iso3 && inPeriod(r.year)));
   const decompLong = $derived(focusDecomp.flatMap((r) => PARTS.map((p) => ({ year: r.year, part: p.label, v: (r as any)[p.k] as number }))));
   const pctPts = (v: number | null) => (v == null ? '—' : (v > 0 ? '+' : '') + fmtNum(v, 2));
   const decompMake = $derived((o: { width: number; tokens: any }) => {
@@ -49,7 +55,7 @@
     const ys = focusDecomp.map((r) => r.year);
     const lo = Math.min(...ys), hi = Math.max(...ys);
     return Plot.plot({ width: o.width, height: 300, marginLeft: MARGIN.left, marginRight: MARGIN.right, style: plotStyle(o.tokens),
-      x: { ...yearAxis([lo - 0.5, hi + 0.5], yearTicks(lo, hi, hi - lo > 40 ? 10 : 5)), type: 'linear' }, y: { label: 'Annual growth (log points × 100)', grid: true },
+      x: { ...yearAxis([lo - 0.5, hi + 0.5], yearTicks(lo, hi, hi - lo > 40 ? 10 : hi - lo > 15 ? 5 : hi - lo > 7 ? 2 : 1)), type: 'linear' }, y: { label: 'Annual growth (log points × 100)', grid: true },
       color: { domain: PARTS.map((p) => p.label), range: PART_FILL },
       marks: [
         ...covidRect(ys, o.tokens),
@@ -65,9 +71,9 @@
 
   // the same decomposition as each country's mean growth over the range set
   // under "Change over time" in the top bar (the years after the start, to the end)
-  const PERIOD = $derived(changeRange('growth', 'national'));
+
   const decompAvg = $derived(countries.map((c) => {
-    const rs = decomp.filter((r) => r.cntry_iso3 === c.iso3 && r.year > PERIOD[0] && r.year <= PERIOD[1]);
+    const rs = decomp.filter((r) => r.cntry_iso3 === c.iso3 && inPeriod(r.year));
     if (!rs.length) return null;
     return { cntry_iso3: c.iso3, display: c.display, n: rs.length, g_pc: mean(rs.map((r) => r.g_pc)), g_pw: mean(rs.map((r) => r.g_pw)), g_emp: mean(rs.map((r) => r.g_emp)) };
   }).filter((r): r is NonNullable<typeof r> => !!r).sort((a, b) => a.g_pc - b.g_pc));
@@ -94,13 +100,13 @@
     {#if error}<div class="err">{error}</div>{/if}
   </header>
 
-  <ChartCard title={t('productivity.nat.decomp.title', { country: name })} columns={decompCols} rows={focusDecomp} csvName={`${iso3}_growth_decomposition`} note={t('productivity.nat.decomp.note')}>
+  <ChartCard title={t('productivity.nat.decomp.title', { country: name, first: PERIOD[0], last: PERIOD[1] })} columns={decompCols} rows={focusDecomp} csvName={`${iso3}_growth_decomposition_${PERIOD[0]}_${PERIOD[1]}`} note={t('productivity.nat.decomp.note')}>
     {#snippet intro()}<p><Text k="productivity.nat.decomp.intro" vars={{ possessive: poss(name) }} /></p>{/snippet}
     {#if focusDecomp.length}
-      <PlotChart make={decompMake} height={300} label={t('productivity.nat.decomp.title', { country: name })} />
+      <PlotChart make={decompMake} height={300} label={t('productivity.nat.decomp.title', { country: name, first: PERIOD[0], last: PERIOD[1] })} />
       <div class="pleg">{#each PARTS as p, i (p.k)}<span class="it"><span class="sw" style:background={PART_FILL[i]}></span>{p.label}</span>{/each}<span class="it"><svg width="22" height="10"><line x1="1" y1="5" x2="21" y2="5" stroke="currentColor" stroke-width="1.6" /></svg>{t('productivity.nat.decomp.total')}</span></div>
     {:else if !loading}
-      <p class="muted">{t('productivity.nat.decomp.none', { country: name })}</p>
+      <p class="muted">{t('productivity.nat.decomp.none', { country: name, first: PERIOD[0], last: PERIOD[1] })}</p>
     {/if}
   </ChartCard>
 

@@ -276,11 +276,11 @@
   "productivity.nat.lp.measure": "Productivity measure",
   "productivity.nat.lp.pw": "Per person employed",
   "productivity.nat.lp.ph": "Per hour worked",
-  "productivity.nat.decomp.title": "Growth of GDP per capita and its sources, {country}",
+  "productivity.nat.decomp.title": "Growth of GDP per capita and its sources, {country}, {first}–{last}",
   "productivity.nat.decomp.intro": "Each year's growth of {possessive} GDP per capita (the black line) split into the growth of GDP per person employed (labour productivity) and the growth of persons employed per head of population. In log points the two parts add up exactly to the total.",
   "productivity.nat.decomp.note": "Annual log differences × 100 of the OECD Productivity Database series; the employment part is the GDP per capita growth less the GDP per worker growth.",
   "productivity.nat.decomp.total": "GDP per capita",
-  "productivity.nat.decomp.none": "No growth series is available for {country}.",
+  "productivity.nat.decomp.none": "No growth series is available for {country} over {first}–{last}.",
   "productivity.nat.avg.title": "Sources of growth in GDP per capita, {first}–{last}, by country",
   "productivity.nat.avg.intro": "The same decomposition as the mean annual growth over {first}–{last}, countries ordered by GDP per capita growth (the dot); {country} is drawn at full strength.",
   "productivity.nat.avg.total": "GDP per capita growth, the sum of the two",
@@ -434,5 +434,6 @@
   "map.qy.all.tip": "Classes from every year's values: a colour means the same level in every year",
   "map.qy.year": "This year",
   "map.qy.year.tip": "Classes from the year shown only: each year uses its full range of colours",
-  "map.legend.note_year": "Quantile classes from {year} only, {scope}. {variable_label}."
+  "map.legend.note_year": "Quantile classes from {year} only, {scope}. {variable_label}.",
+  "autonomy.reg.rai.range": "The axis runs from zero to the most a region can score: {per} points for each tier of regional government governing it (twice that where two tiers do)."
 }
