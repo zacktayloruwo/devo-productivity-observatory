@@ -103,6 +103,14 @@
     {#if popTotal}<p><Text k="sources.combine.pop" vars={{ total: fmtInt(popTotal), country: name, observed: fmtInt(popSrc.get('observed') ?? 0), interpolated: fmtInt(popSrc.get('interpolated') ?? 0), carried: fmtInt(popSrc.get('carried') ?? 0) }} /></p>{/if}
   </div>
 
+  {#if iso3 === 'GBR'}
+    <!-- the UK's regional data: grid, blanks and how they are filled, checks, the 2014/15 break -->
+    <div class="card prose">
+      <h3>{t('sources.uk.title')}</h3>
+      {#each [1, 2, 3, 4, 5, 6, 7, 8, 9] as i (i)}<p><Text k={'sources.uk.' + i} /></p>{/each}
+    </div>
+  {/if}
+
   <div class="card prose cites">
     <h3>{t('sources.cites.title')}</h3>
     {#each flows as f (f.flow)}
