@@ -50,12 +50,17 @@
   const INSET_W = 190, INSET_H = 140;
   // the insets stack in the bottom-right corner; a wide map puts them in a row
   const insetCols = $derived(Math.max(1, Math.min(split.insets.length, Math.floor((width - 320) / (INSET_W + 10)))));
+  // panels in the top corners sit side by side in a row; the main map is
+  // fitted below them
+  const cornerOf = (i: { corner?: string }) => i.corner ?? 'br';
+  const hasTop = $derived(split.insets.some((x) => cornerOf(x.inset) !== 'br'));
+  const topPad = $derived(hasTop ? INSET_H + 28 : 24);
 
   // the main projection fitted to the mainland features
   const projection = $derived.by<GeoProjection | null>(() => {
     if (!split.main.length || width <= 0 || height <= 0) return null;
     const p = layout.make();
-    p.fitExtent([[24, 24], [width - 24, height - 24]], { type: 'FeatureCollection', features: split.main } as any);
+    p.fitExtent([[24, topPad], [width - 24, height - 24]], { type: 'FeatureCollection', features: split.main } as any);
     return p;
   });
   const path = $derived(projection ? geoPath(projection) : null);
@@ -88,6 +93,8 @@
   // a new feature set resets the view
   $effect(() => { void features; void layout; if (svgEl && zb) select(svgEl).call(zb.transform, zoomIdentity); });
   export function reset() { if (svgEl && zb) select(svgEl).call(zb.transform, zoomIdentity); }
+  // the + and − buttons: zoom about the centre of the map
+  function zoomBy(k: number) { if (svgEl && zb) select(svgEl).call(zb.scaleBy, k); }
 
   let box: ReturnType<typeof floatingTip> | null = null;
   function over(e: MouseEvent, id: string) {
@@ -126,26 +133,34 @@
       {#if borderPath}<path class="adm" d={borderPath} stroke={tokens.fg} stroke-width={1.1 * sw} />{/if}
     </g>
   </svg>
-  {#if insetPanels.length}
-    <div class="insets" style:grid-template-columns={`repeat(${insetCols}, ${INSET_W}px)`}>
-      {#each insetPanels as p (p.inset.id)}
-        <div class="inset" style:width={INSET_W + 'px'}>
-          <svg width={INSET_W} height={INSET_H} role="img" aria-label={p.inset.label}>
-            <rect width={INSET_W} height={INSET_H} fill={tokens.water} />
-            {#if p.land}<path d={p.land} fill={tokens.land} stroke={tokens.line} stroke-width="0.5" />{/if}
-            {#each p.paths as f (f.id)}
-              <path d={f.d} fill={fillFor(f.id)} stroke={strokeOf(f.id)} stroke-width={widthOf(f.id)}
-                onmousemove={(e) => over(e, f.id)} onmouseleave={out} onclick={() => onselect?.(f.id)} onkeydown={(e) => { if (e.key === 'Enter') onselect?.(f.id); }} role="button" tabindex="-1" aria-label={f.name} />
-            {/each}
-            {#each p.paths as f (f.id)}{#if marked.has(f.id)}<path class="hatch" d={f.d} fill={`url(#${hatchId})`} />{/if}{/each}
-            {#if p.admin}<path class="adm" d={p.admin} stroke={tokens['fg-2']} stroke-width="0.8" />{/if}
-            {#if p.borders}<path class="adm" d={p.borders} stroke={tokens.fg} stroke-width="1.1" />{/if}
-          </svg>
-          <div class="lab">{p.inset.label}</div>
-        </div>
-      {/each}
+  {#snippet panel(p: (typeof insetPanels)[number])}
+    <div class="inset" style:width={INSET_W + 'px'}>
+      <svg width={INSET_W} height={INSET_H} role="img" aria-label={p.inset.label}>
+        <rect width={INSET_W} height={INSET_H} fill={tokens.water} />
+        {#if p.land}<path d={p.land} fill={tokens.land} stroke={tokens.line} stroke-width="0.5" />{/if}
+        {#each p.paths as f (f.id)}
+          <path d={f.d} fill={fillFor(f.id)} stroke={strokeOf(f.id)} stroke-width={widthOf(f.id)}
+            onmousemove={(e) => over(e, f.id)} onmouseleave={out} onclick={() => onselect?.(f.id)} onkeydown={(e) => { if (e.key === 'Enter') onselect?.(f.id); }} role="button" tabindex="-1" aria-label={f.name} />
+        {/each}
+        {#each p.paths as f (f.id)}{#if marked.has(f.id)}<path class="hatch" d={f.d} fill={`url(#${hatchId})`} />{/if}{/each}
+        {#if p.admin}<path class="adm" d={p.admin} stroke={tokens['fg-2']} stroke-width="0.8" />{/if}
+        {#if p.borders}<path class="adm" d={p.borders} stroke={tokens.fg} stroke-width="1.1" />{/if}
+      </svg>
+      <div class="lab">{p.inset.label}</div>
     </div>
+  {/snippet}
+  {#each ['tl', 'tr'] as c (c)}
+    {@const ps = insetPanels.filter((p) => cornerOf(p.inset) === c)}
+    {#if ps.length}<div class={`insets ${c}`} style:grid-template-columns={`repeat(${ps.length}, ${INSET_W}px)`}>{#each ps as p (p.inset.id)}{@render panel(p)}{/each}</div>{/if}
+  {/each}
+  {#if insetPanels.some((p) => cornerOf(p.inset) === 'br')}
+    {@const ps = insetPanels.filter((p) => cornerOf(p.inset) === 'br')}
+    <div class="insets br" style:grid-template-columns={`repeat(${Math.min(insetCols, ps.length)}, ${INSET_W}px)`}>{#each ps as p (p.inset.id)}{@render panel(p)}{/each}</div>
   {/if}
+  <div class="zoom" role="group" aria-label={t('map.zoom.label')}>
+    <button type="button" title={t('map.zoom.in')} aria-label={t('map.zoom.in')} onclick={() => zoomBy(1.6)}>+</button>
+    <button type="button" title={t('map.zoom.out')} aria-label={t('map.zoom.out')} onclick={() => zoomBy(1 / 1.6)}>−</button>
+  </div>
   <button type="button" class="fit" title={t('map.fit')} aria-label={t('map.fit')} onclick={reset}>
     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></svg>
   </button>
@@ -161,7 +176,14 @@
   .adm { fill: none; pointer-events: none; stroke-linejoin: round; }
   .hatch { pointer-events: none; stroke: none; }
   .fit { position: absolute; top: 12px; right: 12px; width: 32px; height: 32px; padding: 0; display: inline-flex; align-items: center; justify-content: center; min-height: 0; }
-  .insets { position: absolute; right: 16px; bottom: 16px; display: grid; gap: 10px; z-index: 2; }
+  .insets { position: absolute; display: grid; gap: 10px; z-index: 2; }
+  .insets.br { right: 16px; bottom: 16px; }
+  .insets.tl { left: 16px; top: 16px; }
+  .insets.tr { right: 56px; top: 16px; }
+  .zoom { position: absolute; top: 52px; right: 12px; display: flex; flex-direction: column; z-index: 2; }
+  .zoom button { width: 32px; height: 32px; padding: 0; min-height: 0; font-size: 18px; line-height: 1; }
+  .zoom button:first-child { border-bottom-left-radius: 0; border-bottom-right-radius: 0; }
+  .zoom button:last-child { border-top-left-radius: 0; border-top-right-radius: 0; border-top: 0; }
   .inset { position: relative; border: 1px solid var(--line); border-radius: 6px; overflow: hidden; background: var(--panel); box-shadow: 0 2px 10px rgba(0,0,0,.12); }
   .inset .lab { position: absolute; left: 0; bottom: 0; padding: 2px 6px; font-size: 10px; font-weight: 600; letter-spacing: .03em; text-transform: uppercase; color: var(--fg-2); background: color-mix(in srgb, var(--panel) 80%, transparent); border-top-right-radius: 6px; }
 </style>

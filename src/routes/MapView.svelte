@@ -24,7 +24,7 @@
   import { seriesBreak, breakRule } from '../lib/charts/breaks';
   import { downloadCsv } from '../lib/util/csv';
   import { rankAll, rankWithin, classOfRank, changes, ordinal, SCHEME_CUTS, SCHEME_COLOURS, type ClassScheme, type ChangeMethod, type Rank, type Change } from '../lib/util/ranks';
-  import { quantileSorted } from '../lib/util/stats';
+  import { changeRange } from '../lib/changeRange';
   import { t } from '../lib/text/t';
   import type { MultiLineString } from 'geojson';
   import MapCanvas from '../lib/components/MapCanvas.svelte';
@@ -84,16 +84,18 @@
   function setScheme(c: ClassScheme) { setQuery({ cls: c === 'bands' ? undefined : c }); }
   function setView(v: 'map' | 'table') { setQuery({ view: v === 'map' ? undefined : v }); }
 
-  // ---- change over the fixed window: 2004 is the first year of full FUA
-  // coverage, 2019 the last before the pandemic
-  const CH0 = 2004, CH1 = 2019;
-  // FUA dollar values are current prices: their change is nominal growth, or
-  // the change in relative position (the user's choice); regional and
-  // national productivity are at constant prices (real growth)
+  // ---- change over the range set under "Change over time" in the top bar
+  // (2004 to 2019 by default, moved to the nearest years with data)
+  const range = $derived(changeRange('map', level));
+  const CH0 = $derived(range[0]), CH1 = $derived(range[1]);
+  // FUA dollar values are current prices: their change is nominal growth (the
+  // default, so the sign follows the values), or the change in relative
+  // position against the average FUA (?chg=relpos); regional and national
+  // productivity are at constant prices (real growth)
   const usdVar = $derived(variable?.fmt === 'usd' || variable?.fmt === 'usd2');
   const fuaUsd = $derived(level === 'fua' && usdVar);
-  const chgPref = $derived(route.query.chg === 'nominal' ? 'nominal' : 'relpos');
-  function setChg(c: 'nominal' | 'relpos') { setQuery({ chg: c === 'relpos' ? undefined : c }); }
+  const chgPref = $derived(route.query.chg === 'relpos' ? 'relpos' : 'nominal');
+  function setChg(c: 'nominal' | 'relpos') { setQuery({ chg: c === 'nominal' ? undefined : c }); }
   const positiveVar = $derived(variable?.fmt === 'usd' || variable?.fmt === 'usd2' || variable?.fmt === 'num');
   const changeMethod = $derived<ChangeMethod>(fuaUsd && chgPref === 'relpos' ? 'relpos' : positiveVar ? 'growth' : 'diff');
   const countryOfUnit = $derived(new Map(pool.map((r) => [r.id, r.cntry_iso3])));
@@ -155,8 +157,8 @@
   const sRank = $derived(rankAll(poolYear, (r) => r.value, (r) => r.id));
   const cRank = $derived(rankWithin(poolYear, (r) => r.value, (r) => r.id, (r) => r.cntry_iso3));
   const nCountriesYear = $derived(new Set(poolYear.filter((r) => r.value != null).map((r) => r.cntry_iso3)).size);
-  const pctDesc = (r: Rank) => r.p >= 0.5 ? t('map.pct.top', { pct: Math.max(1, Math.round((1 - r.p) * 100)) }) : t('map.pct.bottom', { pct: Math.max(1, Math.round(r.p * 100)) });
-  const rankText = (r: Rank | undefined) => r ? `${ordinal(r.rank)} of ${r.n}` : '—';
+  // ranks read "38 out of 415"
+  const rankText = (r: Rank | undefined) => r ? t('map.rank.of', { rank: r.rank, n: r.n }) : '—';
   const featureIds = $derived(new Set(features.map((f) => f.properties.id)));
   const nMapped = $derived(mode === 'change' ? [...chg.keys()].filter((id) => featureIds.has(id)).length : [...inYear.keys()].filter((id) => featureIds.has(id)).length);
   const nNoGeo = $derived([...inYear.keys()].filter((id) => !featureIds.has(id)).length);
@@ -185,27 +187,32 @@
   const relT = $derived(relative ? relativeBreaks(relValues.values()) : []);
 
   // ---- classes: quantiles on viridis, or symmetric classes on red-white-blue
-  const bounds = $derived(quantileBounds(values.map((r) => r.value), 6));
-  const rankMode = $derived(mode === 'srank' || mode === 'crank' || mode === 'change');
-  const colours = $derived(rankMode ? SCHEME_COLOURS[scheme] : relative ? RDBU7 : classColours(VIRIDIS, Math.max(0, bounds.length - 1), 0));
-  // change classes: the change at the class cuts, for the legend
-  const chgCuts = $derived.by(() => { const xs = [...chg.values()].map((c) => c.change).sort((a, b) => a - b); return xs.length ? SCHEME_CUTS[scheme].map((p) => quantileSorted(xs, p)) : []; });
+  // Values: quantile classes pooled over every year of the scope (a colour
+  // keeps its meaning as the year changes), or within the year shown (?qy=year)
+  const qWithinYear = $derived(route.query.qy === 'year');
+  function setQy(within: boolean) { setQuery({ qy: within ? 'year' : undefined }); }
+  const bounds = $derived(quantileBounds((qWithinYear ? values.filter((r) => r.year === year) : values).map((r) => r.value), 6));
+  const rankMode = $derived(mode === 'srank' || mode === 'crank');
+  // change: red below zero, white about zero, blue above, with symmetric
+  // breaks at the quartiles of the size of the change
+  const chgT = $derived(mode === 'change' ? relativeBreaks([...chg.values()].map((c) => c.change)) : []);
+  const colours = $derived(rankMode ? SCHEME_COLOURS[scheme] : relative || mode === 'change' ? RDBU7 : classColours(VIRIDIS, Math.max(0, bounds.length - 1), 0));
   const fmt = $derived<Fmt>(variable?.fmt ?? 'num');
   const relFmt = (x: number) => relPct ? `${x > 0 ? '+' : x < 0 ? '−' : ''}${fmtNum(Math.abs(x), Math.abs(x) < 10 ? 1 : 0)}%` : `${x > 0 ? '+' : x < 0 ? '−' : ''}${fmtShortBy(fmt, Math.abs(x))}`;
   const rankLabels = $derived(SCHEME_CUTS[scheme].length === 6 ? [0, 1, 2, 3, 4, 5, 6].map((i) => t('map.band.' + i)) : [0, 1, 2, 3, 4].map((i) => t('map.quint.' + i)));
   const changeLabels = $derived.by(() => {
-    const c = chgCuts; if (!c.length) return [];
+    const c = chgT; if (c.length !== 3) return [];
     const f = (x: number) => fmtChange(x).replace(' a year', '');
-    return [`${f(c[0])} or less`, ...c.slice(0, -1).map((x, i) => `${f(x)} to ${f(c[i + 1])}`), `${f(c[c.length - 1])} or more`];
+    return [`${f(-c[2])} or less`, `${f(-c[2])} to ${f(-c[1])}`, `${f(-c[1])} to ${f(-c[0])}`, `${f(-c[0])} to ${f(c[0])}`, `${f(c[0])} to ${f(c[1])}`, `${f(c[1])} to ${f(c[2])}`, `${f(c[2])} or more`];
   });
   const labels = $derived(mode === 'change' ? changeLabels : rankMode ? rankLabels : relative
     ? (relT.length === 3 ? [`${relFmt(-relT[2])} or lower`, `${relFmt(-relT[2])} to ${relFmt(-relT[1])}`, `${relFmt(-relT[1])} to ${relFmt(-relT[0])}`, `${relFmt(-relT[0])} to ${relFmt(relT[0])}`, `${relFmt(relT[0])} to ${relFmt(relT[1])}`, `${relFmt(relT[1])} to ${relFmt(relT[2])}`, `${relFmt(relT[2])} or higher`] : [])
     : classLabels(bounds, (x) => fmtShortBy(fmt, x)));
   const fillFor = $derived.by(() => {
     const b = bounds, cs = colours, m = inYear, neutral = tokens.neutral, rel = relative, rt = relT, y = year;
-    const md = mode, sr = sRank, cr = cRank, gr = chgRank, sc = scheme;
+    const md = mode, sr = sRank, cr = cRank, gr = chg, sc = scheme, ct = chgT;
     return (id: string) => {
-      const k = md === 'srank' ? classOfRank(sr.get(id), sc) : md === 'crank' ? classOfRank(cr.get(id), sc) : md === 'change' ? classOfRank(gr.get(id), sc)
+      const k = md === 'srank' ? classOfRank(sr.get(id), sc) : md === 'crank' ? classOfRank(cr.get(id), sc) : md === 'change' ? classOfRel(gr.get(id)?.change, ct)
         : rel ? classOfRel(relOf(id, y), rt) : classOf(m.get(id)?.value, b);
       return k < 0 ? neutral : cs[k];
     };
@@ -228,13 +235,14 @@
     }
     if (!r || r.value == null) return { html: `${head}<br><span class="tipdef">${esc(t('map.tip.nodata', { year: y }))}</span>` };
     const sr = sRank.get(id), cr = cRank.get(id);
-    const rankLine = mode === 'srank' && sr ? `<br>${esc(t('map.tip.srank', { rank: rankText(sr), where: pctDesc(sr) }))}`
+    const rankLine = mode === 'srank' && sr ? `<br>${esc(t('map.tip.srank', { rank: rankText(sr) }))}`
       : mode === 'crank' && cr ? `<br>${esc(t('map.tip.crank', { rank: rankText(cr), country: countryName(r.cntry_iso3) }))}` : '';
     return { html: `${head}<br>${esc(t('map.tip.value', { variable: v?.short ?? '', year: y }))} <b>${esc(fmtBy(fmt, r.value))}</b>${rankLine}${relative && relOf(id, y) != null ? ` <span class="tipdef">(${esc(t('map.rel.tip', { value: relFmt(relOf(id, y)!) }))})</span>` : ''}<br><span class="tipdef">${esc(t('map.tip.rank', { rank: rk.get(id), n: rk.size }))}${r.pop != null ? ` · ${esc(t('map.tip.pop', { pop: fmtInt(r.pop) }))}` : ''}</span>${r.filled ? `<br><span class="tipdef">${esc(t('map.filled.tip'))}</span>` : ''}` };
   }; });
 
   function setYear(y: number) { go(['map', iso3, String(y)], route.query); }
-  function setVar(e: Event) { setQuery({ var: (e.target as HTMLSelectElement).value, sel: undefined }); }
+  // the selected unit (and its side panel) stays when the indicator changes
+  function setVar(e: Event) { setQuery({ var: (e.target as HTMLSelectElement).value }); }
   function select(id: string | null) { setQuery({ sel: id ?? undefined }); }
 
   // ---- the inspector: the selected unit across years
@@ -315,9 +323,9 @@
       { key: 'cntry', label: 'Country', value: (r: TRow) => countryName(r.cntry_iso3) },
       { key: 'id', label: `${levelName} code` }, { key: 'name', label: levelName },
       { key: 'year', label: 'Year', value: () => year }, { key: 'value', label: variable?.label ?? 'Value' }, { key: 'pop', label: 'Population' },
-      { key: 'srank', label: 'Rank in sample', value: (r: TRow) => r.s?.rank ?? '' }, { key: 'sn', label: 'Units in sample', value: (r: TRow) => r.s?.n ?? '' },
-      { key: 'spct', label: 'Percentile in sample (0 lowest, 100 highest)', value: (r: TRow) => (r.s ? Math.round(r.s.p * 1000) / 10 : '') },
-      { key: 'crank', label: 'Rank in country', value: (r: TRow) => r.c?.rank ?? '' }, { key: 'cn', label: 'Units in country', value: (r: TRow) => r.c?.n ?? '' },
+      { key: 'srank', label: 'Rank across all countries', value: (r: TRow) => r.s?.rank ?? '' }, { key: 'sn', label: 'Units across all countries', value: (r: TRow) => r.s?.n ?? '' },
+      { key: 'spct', label: 'Percentile across all countries (0 lowest, 100 highest)', value: (r: TRow) => (r.s ? Math.round(r.s.p * 1000) / 10 : '') },
+      { key: 'crank', label: 'Rank within country', value: (r: TRow) => r.c?.rank ?? '' }, { key: 'cn', label: 'Units in country', value: (r: TRow) => r.c?.n ?? '' },
       { key: 'v0', label: `${variable?.short ?? 'Value'}, ${CH0}`, value: (r: TRow) => r.ch?.v0 ?? '' }, { key: 'v1', label: `${variable?.short ?? 'Value'}, ${CH1}`, value: (r: TRow) => r.ch?.v1 ?? '' },
       { key: 'change', label: changeTitle, value: (r: TRow) => (r.ch ? Math.round(r.ch.change * 1000) / 1000 : '') },
       { key: 'filled', label: 'Estimated (filled from ONS and BRES)', value: (r: TRow) => (r.filled ? 'yes' : '') }], tableRows);
@@ -336,8 +344,8 @@
     : mode === 'crank' ? t('map.crank.note', { unit: unitWord, units: unitsWord, year })
     : mode === 'change' ? t('map.change.note.' + changeMethod, { unit: unitWord, units: unitsWord, n: chg.size, first: CH0, last: CH1, basis }) + (ukLeftOut ? ' ' + t('map.change.ukbreak') : '')
     : relative ? t(relPct ? 'map.rel.note_pct' : 'map.rel.note_diff', { units: unitsWord, variable_label: variable?.label ?? '' })
-    : t('map.legend.note', { n_years: years.length, scope: scopeAll ? t('map.legend.scope_all') : name, variable_label: variable?.label ?? '' }) + ((level === 'tl2' || level === 'tl2b' || level === 'tl3') && variable?.id.startsWith('lai_') ? ' ' + t('map.legend.regions_note') : ''));
-  const showLegend = $derived(mode === 'change' ? chgCuts.length > 0 : rankMode ? sRank.size > 0 : relative ? relT.length === 3 : bounds.length >= 2);
+    : (qWithinYear ? t('map.legend.note_year', { year, scope: scopeAll ? t('map.legend.scope_all') : name, variable_label: variable?.label ?? '' }) : t('map.legend.note', { n_years: years.length, scope: scopeAll ? t('map.legend.scope_all') : name, variable_label: variable?.label ?? '' })) + ((level === 'tl2' || level === 'tl2b' || level === 'tl3') && variable?.id.startsWith('lai_') ? ' ' + t('map.legend.regions_note') : ''));
+  const showLegend = $derived(mode === 'change' ? chgT.length === 3 : rankMode ? sRank.size > 0 : relative ? relT.length === 3 : bounds.length >= 2);
   let mapRef: MapCanvas | undefined = $state();
 </script>
 
@@ -347,7 +355,7 @@
       <select value={variable?.id} onchange={setVar}>{#each grouped as g (g.g)}<optgroup label={t('map.group.' + g.g)}>{#each g.items as v (v.id)}<option value={v.id}>{v.label}</option>{/each}</optgroup>{/each}</select>
     </label>
     <label class="ctl"><span class="muted">{t('map.mode.label')}</span>
-      <select value={mode} onchange={setMode}>{#each MODES as m (m)}<option value={m} disabled={modeOff(m)}>{t('map.mode.' + m)}</option>{/each}</select>
+      <select value={mode} onchange={setMode}>{#each MODES as m (m)}<option value={m} disabled={modeOff(m)}>{t('map.mode.' + m, { first: CH0, last: CH1 })}</option>{/each}</select>
     </label>
     {#if rankMode}
       <div class="seg" role="group" aria-label={t('map.cls.label')}>
@@ -357,8 +365,8 @@
     {/if}
     {#if mode === 'change' && fuaUsd}
       <div class="seg" role="group" aria-label={t('map.chg.label')}>
-        <button type="button" aria-pressed={chgPref === 'relpos'} title={t('map.chg.relpos.tip')} onclick={() => setChg('relpos')}>{t('map.chg.relpos')}</button>
         <button type="button" aria-pressed={chgPref === 'nominal'} title={t('map.chg.nominal.tip')} onclick={() => setChg('nominal')}>{t('map.chg.nominal')}</button>
+        <button type="button" aria-pressed={chgPref === 'relpos'} title={t('map.chg.relpos.tip')} onclick={() => setChg('relpos')}>{t('map.chg.relpos')}</button>
       </div>
     {/if}
     <div class="seg" role="group" aria-label={t('map.view.label')}>
@@ -375,7 +383,16 @@
     <div class="map">
       <MapCanvas bind:this={mapRef} {features} layout={layoutFor(scopeAll ? null : iso3)} land={land.countries} borders={scopeAll ? null : outline} {admin} {mesh} {marked} {fillFor} {tipFor} {selected} onselect={select} />
       {#if showLegend}
-        <Legend title={legendTitle} {labels} {colours} highFirst={rankMode} neutral={tokens.neutral} hatched={marked.size && mode !== 'change' ? t('map.filled.legend') : ''} note={legendNote} />
+        <Legend title={legendTitle} {labels} {colours} highFirst neutral={tokens.neutral} hatched={marked.size && mode !== 'change' ? t('map.filled.legend') : ''} note={legendNote}>
+          {#snippet controls()}
+            {#if mode === 'values'}
+              <div class="seg mini" role="group" aria-label={t('map.qy.label')}>
+                <button type="button" aria-pressed={!qWithinYear} title={t('map.qy.all.tip')} onclick={() => setQy(false)}>{t('map.qy.all')}</button>
+                <button type="button" aria-pressed={qWithinYear} title={t('map.qy.year.tip')} onclick={() => setQy(true)}>{t('map.qy.year')}</button>
+              </div>
+            {/if}
+          {/snippet}
+        </Legend>
       {/if}
       {#if tableView}
         <div class="tbl">
@@ -394,7 +411,7 @@
                   <td><span class="sw" style:background={fillFor(r.id)}></span>{r.name}{r.filled ? ' †' : ''}</td>
                   {#if scopeAll || national}<td>{countryName(r.cntry_iso3)}</td>{/if}
                   <td class="num">{fmtBy(fmt, r.value)}</td>
-                  <td class="num">{r.s ? `${rankText(r.s)} · ${pctDesc(r.s)}` : '—'}</td>
+                  <td class="num">{rankText(r.s)}</td>
                   {#if !national}<td class="num">{rankText(r.c)}</td>{/if}
                   <td class="num">{r.ch ? fmtChange(r.ch.change) : '—'}</td>
                 </tr>
@@ -418,7 +435,7 @@
         {#if seriesCrossesBreak}<div class="muted small">{t('map.break.insp')}</div>{/if}
         <table class="data ranks">
           <tbody>
-            {#if sRank.get(selected)}<tr><td>{t('map.col.srank')}, {year}</td><td class="num">{rankText(sRank.get(selected))} · {pctDesc(sRank.get(selected)!)}</td></tr>{/if}
+            {#if sRank.get(selected)}<tr><td>{t('map.col.srank')}, {year}</td><td class="num">{rankText(sRank.get(selected))}</td></tr>{/if}
             {#if !national && cRank.get(selected)}<tr><td>{t('map.col.crank')}, {year}</td><td class="num">{rankText(cRank.get(selected))}</td></tr>{/if}
             {#if chg.get(selected)}<tr><td>{changeTitle}</td><td class="num">{fmtChange(chg.get(selected)?.change)}</td></tr>{/if}
           </tbody>
@@ -428,6 +445,9 @@
             <tbody>{#each selOthers as o (o.v.id)}<tr><td>{o.v.short}</td><td class="num">{fmtBy(o.v.fmt, o.val)}</td></tr>{/each}</tbody>
           </table>
           <div class="muted small">{t('map.insp.others', { year })}</div>
+        {/if}
+        {#if variable?.id === 'lp_gap_frontier_pct' || selOthers.some((o) => o.v.id === 'lp_gap_frontier_pct')}
+          <p class="muted small gapnote">{t('map.gap.explain')}</p>
         {/if}
       </aside>
     {/if}
@@ -456,6 +476,8 @@
   .tbl tr.sel td { background: var(--panel-2); font-weight: 600; }
   .tbl .sw { display: inline-block; width: 10px; height: 10px; border-radius: 2px; margin-right: 8px; vertical-align: -1px; border: 1px solid var(--line); }
   .ranks { margin: 8px 0; }
+  .gapnote { margin: 8px 0 0; line-height: 1.45; }
+  .seg.mini button { min-height: 22px; padding: 1px 8px; font-size: 11px; }
   .fixed { padding: 10px 4px; text-align: center; }
   .pad-box { margin: 12px 20px 0; }
   .body { flex: 1; display: flex; min-height: 0; }

@@ -9,6 +9,7 @@
   // swatch: an optional colour square before the first column (the colour mode)
   let { rows, columns, k = 10, csvName = '', swatch }: Props = $props();
   import { downloadCsv } from '../util/csv';
+  import { t } from '../text/t';
   let all = $state(false);
 
   // sorting: null keeps the given order; missing values sort last
@@ -75,7 +76,7 @@
       <tbody>
         {#each parts as p, i (i)}
           {#if p.kind === 'sep'}
-            <tr class="sep"><td colspan={columns.length + 1}>…</td></tr>
+            <tr class="sep"><td colspan={columns.length + 1}><button type="button" class="more" title={t('table.expand')} aria-label={t('table.expand')} onclick={() => (all = true)}>…</button></td></tr>
           {:else}
             <tr><td class="num">{p.rank}</td>{#each columns as c, ci (c.key)}<td class:num={c.num}>{#if ci === 0 && swatch && swatch(p.row)}<span class="nw"><span class="swc" style:background={swatch(p.row)}></span>{c.render(p.row)}</span>{:else}{c.render(p.row)}{/if}</td>{/each}</tr>
           {/if}
@@ -93,6 +94,8 @@
   .lnk:hover { text-decoration: underline; background: transparent; }
   .wrap { overflow: auto; }
   .nw { white-space: nowrap; }
+  .more { border: 0; background: none; padding: 0 12px; min-height: 0; font: inherit; color: var(--accent); cursor: pointer; letter-spacing: .1em; }
+  .more:hover { background: none; text-decoration: underline; }
   .sort { border: 0; background: none; padding: 0; min-height: 0; font: inherit; font-weight: 600; color: inherit; cursor: pointer; text-align: inherit; }
   .sort:hover { color: var(--accent); background: none; }
   .swc { display: inline-block; width: 10px; height: 10px; border-radius: 2px; margin-right: 8px; vertical-align: -1px; border: 1px solid var(--line); }

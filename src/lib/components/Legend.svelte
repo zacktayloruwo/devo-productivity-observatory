@@ -1,9 +1,11 @@
 <script lang="ts">
   import { t } from '../text/t';
+  import type { Snippet } from 'svelte';
   // The map legend: quantile classes with their ranges, and the no-data fill.
-  interface Props { title: string; labels: string[]; colours: string[]; note?: string; neutral: string; hatched?: string; highFirst?: boolean }
+  interface Props { title: string; labels: string[]; colours: string[]; note?: string; neutral: string; hatched?: string; highFirst?: boolean; controls?: Snippet }
   // highFirst: the classes listed high to low (top to bottom), as for ranks
-  let { title, labels, colours, note = '', neutral, hatched = '', highFirst = false }: Props = $props();
+  // controls: optional small switches under the title (e.g. how the classes are computed)
+  let { title, labels, colours, note = '', neutral, hatched = '', highFirst = false, controls }: Props = $props();
   const order = $derived(highFirst ? labels.map((_, i) => labels.length - 1 - i) : labels.map((_, i) => i));
   const KEY = 'devo-obs.legend.collapsed';
   let collapsed = $state((() => { try { return localStorage.getItem(KEY) === '1'; } catch { return false; } })());
@@ -16,6 +18,7 @@
     <svg class="chev" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><path d="M6 9l6 6 6-6"></path></svg>
   </button>
   {#if !collapsed}
+    {#if controls}<div class="ctls">{@render controls()}</div>{/if}
     {#each order as i (i)}
       <div class="row"><span class="sw" style:background={colours[i]}></span><span class="num">{labels[i]}</span></div>
     {/each}
@@ -37,4 +40,5 @@
   .sw.neutral { border: 1.5px dashed var(--neutral-line); }
   .note { font-size: 11px; color: var(--fg-3); line-height: 1.4; }
   .sw.hatched { background: repeating-linear-gradient(45deg, var(--fg-2) 0 1.5px, transparent 1.5px 4px); border: 1px solid var(--line); }
+  .ctls { display: flex; flex-wrap: wrap; gap: 6px; }
 </style>

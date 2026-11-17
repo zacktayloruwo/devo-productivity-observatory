@@ -17,6 +17,8 @@ export interface Inset {
   // whether a feature (by its centroid) belongs to this inset
   test: (lon: number, lat: number) => boolean;
   make: () => GeoProjection;
+  // where the panel sits (bottom right unless given)
+  corner?: 'tl' | 'tr' | 'br';
 }
 export interface Layout { make: () => GeoProjection; insets: Inset[] }
 
@@ -30,10 +32,11 @@ const LAYOUTS: Record<string, Layout> = {
   ] },
   CAN: { make: conic(-91.87, 49, 77), insets: [] },
   FRA: { make: conic(3, 44, 49), insets: [
-    { id: 'ANT', label: 'Antilles', test: inBox(-63, 13, -59, 18.5), make: conic(-61, 14, 16) },
-    { id: 'GUF', label: 'Guyane', test: inBox(-55, 1.5, -50, 6.5), make: () => geoMercator().rotate([52.5, 0]) },
-    { id: 'REU', label: 'La Réunion', test: inBox(54.5, -21.8, 56.2, -20.5), make: () => geoMercator().rotate([-55.5, 0]) },
-    { id: 'MYT', label: 'Mayotte', test: inBox(44.5, -13.5, 45.8, -12.3), make: () => geoMercator().rotate([-45.2, 0]) }
+    // two panels top left, two top right
+    { id: 'ANT', label: 'Antilles', test: inBox(-63, 13, -59, 18.5), make: conic(-61, 14, 16), corner: 'tl' },
+    { id: 'GUF', label: 'Guyane', test: inBox(-55, 1.5, -50, 6.5), make: () => geoMercator().rotate([52.5, 0]), corner: 'tl' },
+    { id: 'REU', label: 'La Réunion', test: inBox(54.5, -21.8, 56.2, -20.5), make: () => geoMercator().rotate([-55.5, 0]), corner: 'tr' },
+    { id: 'MYT', label: 'Mayotte', test: inBox(44.5, -13.5, 45.8, -12.3), make: () => geoMercator().rotate([-45.2, 0]), corner: 'tr' }
   ] },
   DEU: { make: conic(10.5, 48.67, 52.67), insets: [] },
   ITA: { make: conic(12.5, 38, 46), insets: [] },

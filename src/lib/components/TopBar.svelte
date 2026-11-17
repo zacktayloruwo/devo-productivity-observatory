@@ -7,6 +7,7 @@
   import ThemeToggle from './ThemeToggle.svelte';
   import Spinner from './Spinner.svelte';
   import { t, has } from '../text/t';
+  import { changeRange, rangeYears, allYears, setRange, RANGE_VIEWS } from '../changeRange';
 
   const view = $derived(routeView());
   const country = $derived(routeCountry());
@@ -39,6 +40,15 @@
     if (c && lv === 'tl2b' && lacks(lv)) return t('geo.tip.tl2b.none', { country: countryName(c) });
     return t('geo.tip.' + lv);
   }
+
+  // Change over time: the start and end of every change the view computes;
+  // years without data for the indicator in view are greyed out
+  const showRange = $derived(RANGE_VIEWS.includes(view) && !!manifest.value);
+  const range = $derived(changeRange(view, geo));
+  const rangeAvail = $derived(new Set(rangeYears(view, geo)));
+  const rangeAll = $derived(manifest.value ? allYears() : []);
+  const pickFrom = (e: Event) => setRange(Number((e.target as HTMLSelectElement).value), null);
+  const pickTo = (e: Event) => setRange(null, Number((e.target as HTMLSelectElement).value));
 
   // One selector for where the map looks: a country, or every country at
   // once (the map's former Scope toggle). The country stays in the path, so
@@ -83,6 +93,18 @@
       {/each}
     </div>
   </div>
+  {#if showRange}
+    <div class="rng" role="group" aria-label={t('range.label')}>
+      <span class="muted">{t('range.label')}</span>
+      <select aria-label={t('range.from')} value={range[0]} onchange={pickFrom}>
+        {#each rangeAll as y (y)}<option value={y} disabled={!rangeAvail.has(y) || y >= range[1]}>{y}</option>{/each}
+      </select>
+      <span class="muted">{t('range.to')}</span>
+      <select aria-label={t('range.until')} value={range[1]} onchange={pickTo}>
+        {#each rangeAll as y (y)}<option value={y} disabled={!rangeAvail.has(y) || y <= range[0]}>{y}</option>{/each}
+      </select>
+    </div>
+  {/if}
   <div class="spacer"></div>
   <span class="spslot" aria-hidden={!(dbStatus.pending > 0 || dbStatus.booting)}>{#if dbStatus.pending > 0 || dbStatus.booting}<Spinner size={18} label={dbStatus.booting ? 'Starting the query engine' : 'Loading'} />{/if}</span>
   <ThemeToggle />
@@ -101,4 +123,6 @@
   @media (max-width: 900px) { .geo > .muted { display: none; } }
   .spslot { flex: none; width: 18px; height: 18px; display: inline-flex; align-items: center; justify-content: center; }
   @media (max-width: 900px) { .brand { font-size: 17px; } .cty span { display: none; } }
+  .rng { display: flex; align-items: center; gap: 6px; }
+  .rng select { min-height: 30px; padding: 2px 6px; }
 </style>
