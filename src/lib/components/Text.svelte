@@ -11,6 +11,10 @@
   let { k, vars = {} }: Props = $props();
   const nodes = $derived(parse(raw(k, vars)));
   const country = $derived(routeCountry());
+  // a link whose label is a URL: break opportunities after its separators,
+  // so long addresses wrap inside a column instead of running across it
+  const isUrl = (s: string) => /^https?:\/\//.test(s);
+  const urlParts = (s: string) => s.split(/(?<=[\/.?&=,_\-:@])/);
 </script>
 
 {#each nodes as n, i (i)}
@@ -19,5 +23,6 @@
   {:else if n.kind === 'em'}<i>{n.text}</i>
   {:else if n.kind === 'code'}<span class="mono">{n.text}</span>
   {:else if n.kind === 'link' && n.view}<a href={href([n.view, country], { geo: route.query.geo })}>{n.label}</a>
+  {:else if n.kind === 'link' && isUrl(n.label)}<a class="url" href={n.href} target="_blank" rel="noopener">{#each urlParts(n.label) as part, j (j)}{part}<wbr />{/each}</a>
   {:else if n.kind === 'link'}<a href={n.href} target="_blank" rel="noopener">{n.label}</a>{/if}
 {/each}

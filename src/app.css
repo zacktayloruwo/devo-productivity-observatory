@@ -89,6 +89,8 @@ p { margin: 0 0 10px; }
    column-count); a heading inside spans every column. */
 .prose { column-count: 1; column-gap: 32px; line-height: 1.55; }
 .prose p { margin: 0 0 10px; orphans: 3; widows: 3; }
+/* long links (citation URLs) wrap inside their column */
+.prose a { overflow-wrap: anywhere; }
 .prose h3, .prose h2 { column-span: all; margin-bottom: 6px; }
 
 /* Page body shared by the chart views */
