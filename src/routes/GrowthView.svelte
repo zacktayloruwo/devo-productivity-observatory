@@ -43,7 +43,7 @@
 
   // ---- 2. growth decomposition: growth of GDP per capita (log points) =
   // growth of GDP per person employed + growth of persons employed per head
-  const PARTS = [{ k: 'g_pw', label: 'GDP per person employed' }, { k: 'g_emp', label: 'Persons employed per head' }] as const;
+  const PARTS = [{ k: 'g_pw', label: 'GDP per person employed (labour productivity)' }, { k: 'g_emp', label: 'Persons employed per head (employment growth)' }] as const;
   const PART_FILL = ['#4e79a7', '#f28e2b'];
   const decomp = $derived(fromFirstYear(nat).filter((r) => r.growth_gdp_pc != null && r.growth_gdp_pw != null)
     .map((r) => ({ cntry_iso3: r.cntry_iso3, year: r.year, g_pc: r.growth_gdp_pc!, g_pw: r.growth_gdp_pw!, g_emp: r.growth_gdp_pc! - r.growth_gdp_pw! })));
