@@ -330,7 +330,7 @@
       { key: 'v0', label: `${variable?.short ?? 'Value'}, ${CH0}`, value: (r: TRow) => r.ch?.v0 ?? '' }, { key: 'v1', label: `${variable?.short ?? 'Value'}, ${CH1}`, value: (r: TRow) => r.ch?.v1 ?? '' },
       { key: 'change', label: changeTitle, value: (r: TRow) => (r.ch ? Math.round(r.ch.change * 1000) / 1000 : '') },
       { key: 'filled', label: 'Estimated (filled from ONS and BRES)', value: (r: TRow) => (r.filled ? 'yes' : '') },
-      { key: 'backcast', label: 'Back-cast (UK consistent series, 2004-2014)', value: (r: TRow) => (r.backcast ? 'yes' : '') }], tableRows);
+      { key: 'backcast', label: 'Back-cast (UK comparable series, before 2015)', value: (r: TRow) => (r.backcast ? 'yes' : '') }], tableRows);
   }
   // the legend's title and note, by mode
   const unitsWord = $derived(t('geo.units.' + level));

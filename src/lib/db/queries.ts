@@ -2,7 +2,7 @@
 // manifest before they reach SQL; numeric parameters go through prepared
 // statements.
 import { query, lit } from './db';
-import { manifest, levelInfo, type Level } from './manifest.svelte';
+import { manifest, levelInfo, isRegionLevel, type Level } from './manifest.svelte';
 
 export interface FuaRow {
   cntry_iso3: string; fua_id: string; fua_name: string; year: number;
@@ -40,16 +40,16 @@ export async function fuaCountry(iso3: string): Promise<FuaRow[]> {
 export type UnitLevel = 'fua' | 'tl2' | 'tl2b' | 'tl3';
 export interface UnitRow { cntry_iso3: string; id: string; name: string; year: number; pop: number | null; lp: number | null; filled?: boolean; backcast?: boolean }
 const UNIT_LP: Record<UnitLevel, string> = { fua: 'labprod_usdppp', tl2: 'lp_lpr', tl2b: 'lp_lpr', tl3: 'lp_lpr' };
-// The UK's own views read its own TL3 and TL2b (data/ukfill): the OECD's 23
-// blank units filled from ONS and BRES for 2015-2023 (rows marked `filled`),
-// and employment and productivity comparable across the 2014/2015 change of
-// OECD source, back-cast for 2004-2014 (rows marked `backcast`); the UK's
-// own views and every cross-country view read them (UK TL3 and TL2b)
+// Every view of the UK's regions reads its own TL3, TL2b and TL2 (data/ukfill):
+// the OECD's 23 blank TL3 units filled from ONS and BRES for 2015-2023 (rows
+// marked `filled`), and employment and productivity comparable across the
+// 2014/2015 change of OECD source, back-cast before 2015 (rows marked
+// `backcast`: 2004-2014 for TL3 and TL2b, 2002-2014 for TL2)
 interface Src { table: string; filled: string }
 // the selected columns that flag estimated values
 const flags = (T: Src) => `${T.filled} AS filled, ${T.filled === 'false' ? 'false' : T.filled.replace('filled', 'backcast')} AS backcast`;
 function regTable(level: Level, iso3: string | null): Src {
-  const uk = (level === 'tl3' || level === 'tl2b') && !!manifest.value?.files.ukfill?.[level];
+  const uk = isRegionLevel(level) && !!manifest.value?.files.ukfill?.[level];
   if (uk && iso3 === 'GBR') return { table: `${level}_uk`, filled: 'filled' };
   return { table: LEVEL_SQL[level].table, filled: 'false' };
 }
@@ -57,7 +57,7 @@ function regTable(level: Level, iso3: string | null): Src {
 // rows come from its filled and comparable table (the map's ranks and the
 // cross-country charts, so the UK line has no 2014/2015 break)
 function mapTable(level: Level): Src {
-  const uk = (level === 'tl3' || level === 'tl2b') && !!manifest.value?.files.ukfill?.[level];
+  const uk = isRegionLevel(level) && !!manifest.value?.files.ukfill?.[level];
   if (!uk) return { table: LEVEL_SQL[level].table, filled: 'false' };
   return { table: `(SELECT * FROM ${level} WHERE cntry_iso3 <> 'GBR' UNION ALL BY NAME SELECT * FROM ${level}_uk)`, filled: 'coalesce(filled, false)' };
 }

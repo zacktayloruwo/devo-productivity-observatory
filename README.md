@@ -54,17 +54,16 @@ Every chart has a table twin and a CSV download. Light and dark themes.
   table; its polygons are TL3 dissolved by the code's first four characters,
   in the same topology, and its names come from Eurostat GISCO NUTS 2024 and
   the ONS ITL 2 (January 2025) names and codes.
-- **UK regional data.** The UK's own views and maps at TL3 and TL2b read
-  `data/ukfill/`, built from two common-database tables: `uk_gapfill`, which
-  fills the 23 TL3 regions the OECD leaves blank (boundaries changed in ITL
-  2025) for 2015–2023 from ONS GVA and BRES employment (marked †, hatched on
-  the map), and `uk_consistent`, which makes employment and productivity
-  comparable across the OECD's 2014/2015 change of UK employment source,
-  back-cast for 2004–2014 from ONS GVA per filled job (marked ‡). The UK's own
-  views and the cross-country charts both use them, so the UK line has no
-  break at TL3 and TL2b; UK TL2 also breaks in 2015 (in level) and has no comparable series
-  yet, so it carries the dashed line and is left out of change across it. The
-  UK Sources page documents all of this.
+- **UK regional data.** Every view of the UK's regions (TL3, TL2b and TL2,
+  its own views and the cross-country charts) reads `data/ukfill/`, built
+  from two common-database tables: `uk_gapfill`, which fills the 23 TL3
+  regions the OECD leaves blank (boundaries changed in ITL 2025) for
+  2015–2023 from ONS GVA and BRES employment (marked †, hatched on the map),
+  and `uk_consistent`, which makes employment and productivity comparable
+  across the OECD's 2014/2015 change of UK employment source, back-cast from
+  ONS GVA per filled job for 2004–2014 at TL3 and TL2b and 2002–2014 at TL2
+  (marked ‡). So no UK series breaks in 2015. The UK Sources page documents
+  all of this.
 - **FUA boundaries** are one simplified GeoJSON per country (`data/geo/<ISO3>.geojson`),
   fetched only when the map is opened for that country. Each country is drawn
   on its own projection (Lambert conformal conic with the country's customary

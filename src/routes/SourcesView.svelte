@@ -107,7 +107,7 @@
     <!-- the UK's regional data: grid, blanks and how they are filled, checks, the 2014/15 break -->
     <div class="card prose">
       <h3>{t('sources.uk.title')}</h3>
-      {#each [1, 2, 3, 4, 5, 6, 7, 10, 8, 9] as i (i)}<p><Text k={'sources.uk.' + i} /></p>{/each}
+      {#each [1, 2, 3, 4, 5, 6, 7, 10, 11, 8, 9] as i (i)}<p><Text k={'sources.uk.' + i} /></p>{/each}
     </div>
   {/if}
 

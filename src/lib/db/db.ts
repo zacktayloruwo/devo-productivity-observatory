@@ -59,7 +59,7 @@ async function startEngine(): Promise<void> {
 }
 
 // ---- tables
-const TABLES = ['national', 'tl2', 'fua', 'tl3', 'tl2b', 'tl3_uk', 'tl2b_uk', 'nat', 'lai', 'rai', 'sources', 'countries'] as const;
+const TABLES = ['national', 'tl2', 'fua', 'tl3', 'tl2b', 'tl3_uk', 'tl2b_uk', 'tl2_uk', 'nat', 'lai', 'rai', 'sources', 'countries'] as const;
 type TableName = (typeof TABLES)[number];
 interface Part { file: string; iso3?: string }
 
@@ -70,8 +70,8 @@ function tableParts(name: TableName): Part[] {
   const seg = (o: Record<string, string> | undefined) => Object.entries(o ?? {}).filter(([iso]) => /^[A-Z]{3}$/.test(iso)).map(([iso3, file]) => ({ file, iso3 }));
   switch (name) {
     case 'fua': case 'tl2': case 'tl2b': case 'tl3': return seg(f[name]);
-    // the UK's gap-filled TL3 and TL2b (its own views and the cross-country ones)
-    case 'tl3_uk': case 'tl2b_uk': { const file = f.ukfill?.[name.replace('_uk', '')]; return file ? [{ file, iso3: 'GBR' }] : []; }
+    // the UK's filled and comparable TL3, TL2b and TL2 (every view of the UK)
+    case 'tl3_uk': case 'tl2b_uk': case 'tl2_uk': { const file = f.ukfill?.[name.replace('_uk', '')]; return file ? [{ file, iso3: 'GBR' }] : []; }
     default: return f[name] ? [{ file: f[name] }] : [];
   }
 }

@@ -374,12 +374,16 @@ for (lv in c("tl2", "tl2b", "tl3")) for (iso in countries$iso3) {
 # Here: uk_gapfill's columns, with employment and productivity from
 # uk_consistent for 2004-2023 (GDP per worker and the frontier gap recomputed
 # from them) and left out before 2004, where no consistent series exists.
-# Rows are flagged `filled` (2015-2023 fill) or `backcast` (2004-2014). The
-# cross-country views keep the OECD-published tl3 and tl2b tables.
+# Rows are flagged `filled` (2015-2023 fill) or `backcast` (2004-2014).
+# UK TL2 (plan §19): the OECD's tl2 columns, with employment and productivity
+# from uk_consistent's TL2 rows (2002-2014 back-cast from ONS filled jobs
+# anchored to each region's 2015-2019 OECD level; from 2015 equal to tl2).
+# Every UK view, the cross-country charts included, reads these tables.
 ukc <- from_db("uk_consistent") |>
   transmute(level = tolower(tl), reg_id, year = as.integer(year), emp_c = emp, lp_c = lp_lpr, uk_series)
 ukf <- from_db("uk_gapfill") |>
   mutate(year = as.integer(year), level = tolower(tl)) |>
+  bind_rows(regp |> filter(iso3 == "GBR", level == "tl2") |> select(-has_core, -has_any, -lp_gap_frontier_pct)) |>
   left_join(ukc, by = c("level", "reg_id", "year")) |>
   mutate(emp = emp_c, lp_lpr = lp_c,
          lp_gdp_q = ifelse(!is.na(emp) & emp > 0 & !is.na(gdp_q_usdppp), gdp_q_usdppp / emp, NA_real_),
@@ -395,7 +399,7 @@ for (v in setdiff(reg_ids, names(ukf))) ukf[[v]] <- NA_real_
 ukf <- ukf[rowSums(!is.na(ukf[reg_ids])) > 0, ]
 if (any(is.na(ukf$reg_name))) stop("UK gap-filled regions without a name: ", paste(unique(ukf$reg_id[is.na(ukf$reg_name)]), collapse = " "))
 uk_files <- list()
-for (lv in c("tl3", "tl2b")) {
+for (lv in c("tl3", "tl2b", "tl2")) {
   d <- ukf |> filter(level == lv)
   gi <- geo_index |> filter(iso3 == "GBR", level == lv)
   for (y in unique(d$year)) {

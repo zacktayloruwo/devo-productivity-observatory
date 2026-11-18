@@ -1375,7 +1375,8 @@
     "national": "national.parquet",
     "ukfill": {
       "tl3": "ukfill/tl3/part.parquet",
-      "tl2b": "ukfill/tl2b/part.parquet"
+      "tl2b": "ukfill/tl2b/part.parquet",
+      "tl2": "ukfill/tl2/part.parquet"
     },
     "regions": {
       "CAN": "geo/regions/CAN.topo.json",
