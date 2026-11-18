@@ -70,7 +70,7 @@ function tableParts(name: TableName): Part[] {
   const seg = (o: Record<string, string> | undefined) => Object.entries(o ?? {}).filter(([iso]) => /^[A-Z]{3}$/.test(iso)).map(([iso3, file]) => ({ file, iso3 }));
   switch (name) {
     case 'fua': case 'tl2': case 'tl2b': case 'tl3': return seg(f[name]);
-    // the UK's gap-filled TL3 and TL2b (its own views; cross-country views keep tl3/tl2b)
+    // the UK's gap-filled TL3 and TL2b (its own views and the cross-country ones)
     case 'tl3_uk': case 'tl2b_uk': { const file = f.ukfill?.[name.replace('_uk', '')]; return file ? [{ file, iso3: 'GBR' }] : []; }
     default: return f[name] ? [{ file: f[name] }] : [];
   }

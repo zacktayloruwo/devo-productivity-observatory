@@ -43,8 +43,8 @@ const UNIT_LP: Record<UnitLevel, string> = { fua: 'labprod_usdppp', tl2: 'lp_lpr
 // The UK's own views read its own TL3 and TL2b (data/ukfill): the OECD's 23
 // blank units filled from ONS and BRES for 2015-2023 (rows marked `filled`),
 // and employment and productivity comparable across the 2014/2015 change of
-// OECD source, back-cast for 2004-2014 (rows marked `backcast`); every
-// cross-country view keeps the OECD-published tables
+// OECD source, back-cast for 2004-2014 (rows marked `backcast`); the UK's
+// own views and every cross-country view read them (UK TL3 and TL2b)
 interface Src { table: string; filled: string }
 // the selected columns that flag estimated values
 const flags = (T: Src) => `${T.filled} AS filled, ${T.filled === 'false' ? 'false' : T.filled.replace('filled', 'backcast')} AS backcast`;
@@ -53,9 +53,9 @@ function regTable(level: Level, iso3: string | null): Src {
   if (uk && iso3 === 'GBR') return { table: `${level}_uk`, filled: 'filled' };
   return { table: LEVEL_SQL[level].table, filled: 'false' };
 }
-// The map's every-country table: the OECD's for every country but the UK,
-// whose rows come from its gap-filled table (the user's choice for the map's
-// cross-country ranks; the other cross-country views keep the OECD's)
+// The every-country table: the OECD's for every country but the UK, whose
+// rows come from its filled and comparable table (the map's ranks and the
+// cross-country charts, so the UK line has no 2014/2015 break)
 function mapTable(level: Level): Src {
   const uk = (level === 'tl3' || level === 'tl2b') && !!manifest.value?.files.ukfill?.[level];
   if (!uk) return { table: LEVEL_SQL[level].table, filled: 'false' };
@@ -102,7 +102,7 @@ export async function productivityByCountryYear(level: UnitLevel): Promise<Count
   const cov = lv === 'fua' ? 'any_value(labprod_cov)' : `100 * stddev_samp(${lp}) / avg(${lp})`;
   return (await query(`
     SELECT cntry_iso3, year, avg(${lp}) AS mean_lp, ${cov} AS cov, count(*)::BIGINT AS n
-    FROM ${LEVEL_SQL[lv].table} WHERE ${lp} IS NOT NULL GROUP BY cntry_iso3, year ORDER BY cntry_iso3, year`)) as CountryYear[];
+    FROM ${mapTable(lv).table} WHERE ${lp} IS NOT NULL GROUP BY cntry_iso3, year ORDER BY cntry_iso3, year`)) as CountryYear[];
 }
 
 // years for which any country has labour productivity (the snapshot year picker)
@@ -133,7 +133,7 @@ export async function regionsByCountryYear(level: 'tl2' | 'tl2b' | 'tl3'): Promi
   return (await query(`
     SELECT cntry_iso3, year, count(*)::BIGINT AS n, quantile_cont(lp_lpr, 0.1) AS p10, quantile_cont(lp_lpr, 0.5) AS p50,
       quantile_cont(lp_lpr, 0.9) AS p90, quantile_cont(lp_gap_frontier_pct, 0.5) AS gap_med
-    FROM ${lv} WHERE lp_lpr IS NOT NULL GROUP BY cntry_iso3, year ORDER BY cntry_iso3, year`)) as RegionCountryYear[];
+    FROM ${mapTable(lv).table} WHERE lp_lpr IS NOT NULL GROUP BY cntry_iso3, year ORDER BY cntry_iso3, year`)) as RegionCountryYear[];
 }
 
 // ---- the national table (national.parquet): productivity, growth,

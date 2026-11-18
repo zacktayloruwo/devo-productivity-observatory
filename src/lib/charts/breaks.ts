@@ -7,15 +7,13 @@
 //   coefficient of variation of productivity falls from 29% to 20%).
 // - TL2: before 2015 equal to ONS filled jobs, about 9% lower after, so
 //   productivity jumps about 11% in 2015, unevenly by region.
-// The UK's own TL3 and TL2b views use a series made comparable across the
-// break (common database table uk_consistent): `own` = true says the data
-// shown are that series, so there is no break; TL2 has no such series yet.
+// Every UK TL3 and TL2b view, the cross-country charts included, uses a
+// series made comparable across the break (common database table
+// uk_consistent), so only TL2, which has no such series yet, keeps the line.
 import * as Plot from '@observablehq/plot';
 
-export function seriesBreak(iso3: string, level: string | null, own = false): number | null {
-  if (iso3 !== 'GBR') return null;
-  if (level === 'tl2') return 2015;
-  return (level === 'tl3' || level === 'tl2b') && !own ? 2015 : null;
+export function seriesBreak(iso3: string, level: string | null): number | null {
+  return iso3 === 'GBR' && level === 'tl2' ? 2015 : null;
 }
 // the dashed rule, halfway between the two years
 export function breakRule(year: number, tokens: Record<string, string>) {

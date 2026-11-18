@@ -34,11 +34,9 @@
   const FOCAL = '#c0392b';
   const geo = $derived(routeGeo());
   const level = $derived<UnitLevel | null>(geo === 'national' ? null : geo);
-  // a known break in the country's series at this level (UK TL3 and TL2b, 2014-2015)
-  // breaks: the cross-country charts show the OECD's published series; the
-  // country's own charts, for the UK at TL3 and TL2b, its consistent series
-  const brk = $derived(seriesBreak(iso3, level));
-  const brkOwn = $derived(seriesBreak(iso3, level, true));
+  // a known break in the country's series at this level: UK TL2, 2014-2015
+  // (UK TL3 and TL2b use the comparable series in every chart)
+  const brkOwn = $derived(seriesBreak(iso3, level));
   const fua = $derived(geo === 'fua');
   const levelName = $derived(t('geo.' + geo));
   const unit = $derived(fua ? 'FUA' : 'Region');
@@ -258,8 +256,8 @@
   const pctCols = [{ key: 'year', label: 'Year', num: true }, { key: 'n', label: 'N', num: true }, ...PCT.map((p) => ({ key: p.k, label: p.label, num: true, render: (r: any) => fmtUsd(r[p.k]) }))];
 
   const covRows = $derived(byCY.filter((r) => r.cov != null));
-  const covMake = $derived((o: { width: number; tokens: any }) => countryLines<CountryYear>({ rows: covRows, x: (d) => d.year, y: (d) => d.cov, iso: (d) => d.cntry_iso3, countries, colours, focus: iso3, breakAt: brk, tokens: o.tokens, width: o.width, height: 260, yLabel: 'Coefficient of variation (%)', yFormat: (v) => fmtNum(v, 0) + '%', covid: true, title: (d) => `${countryName(d.cntry_iso3)} ${d.year}\nCoefficient of variation ${fmtNum(d.cov, 1)}%` }));
-  const meanMake = $derived((o: { width: number; tokens: any }) => countryLines<CountryYear>({ rows: byCY, x: (d) => d.year, y: (d) => d.mean_lp, iso: (d) => d.cntry_iso3, countries, colours, focus: iso3, breakAt: brk, tokens: o.tokens, width: o.width, height: 320, yLabel: 'Mean labour productivity (USD PPP per worker)', yFormat: (v) => '$' + fmtShort(v), covid: true, title: (d) => `${countryName(d.cntry_iso3)} ${d.year}\nMean ${fmtUsd(d.mean_lp)} over ${d.n} ${unitsWord}` }));
+  const covMake = $derived((o: { width: number; tokens: any }) => countryLines<CountryYear>({ rows: covRows, x: (d) => d.year, y: (d) => d.cov, iso: (d) => d.cntry_iso3, countries, colours, focus: iso3, breakAt: brkOwn, tokens: o.tokens, width: o.width, height: 260, yLabel: 'Coefficient of variation (%)', yFormat: (v) => fmtNum(v, 0) + '%', covid: true, title: (d) => `${countryName(d.cntry_iso3)} ${d.year}\nCoefficient of variation ${fmtNum(d.cov, 1)}%` }));
+  const meanMake = $derived((o: { width: number; tokens: any }) => countryLines<CountryYear>({ rows: byCY, x: (d) => d.year, y: (d) => d.mean_lp, iso: (d) => d.cntry_iso3, countries, colours, focus: iso3, breakAt: brkOwn, tokens: o.tokens, width: o.width, height: 320, yLabel: 'Mean labour productivity (USD PPP per worker)', yFormat: (v) => '$' + fmtShort(v), covid: true, title: (d) => `${countryName(d.cntry_iso3)} ${d.year}\nMean ${fmtUsd(d.mean_lp)} over ${d.n} ${unitsWord}` }));
   const cyCols = [{ key: 'cntry', label: 'Country', value: (r: CountryYear) => countryName(r.cntry_iso3) }, { key: 'year', label: 'Year', num: true }, { key: 'n', label: 'N', num: true }, { key: 'mean_lp', label: 'Mean productivity', num: true, render: (r: CountryYear) => fmtUsd(r.mean_lp) }, { key: 'cov', label: 'Coefficient of variation (%)', num: true, render: (r: CountryYear) => fmtNum(r.cov, 1) }];
   const present = $derived(new Set(byCY.map((r) => r.cntry_iso3)));
   import { t } from '../lib/text/t';
@@ -357,12 +355,12 @@
 
   {/if}
 
-  <ChartCard title={t(fua ? 'productivity.cov.title' : 'productivity.reg.cov.title', { level: levelName })} columns={cyCols} rows={covRows} csvName={`productivity_cov${csvLv}`} note={t(fua ? 'productivity.cov.note' : 'productivity.reg.cov.note', { level: levelName }) + (brk ? ' ' + t('break.gbr') : '')}>
+  <ChartCard title={t(fua ? 'productivity.cov.title' : 'productivity.reg.cov.title', { level: levelName })} columns={cyCols} rows={covRows} csvName={`productivity_cov${csvLv}`} note={t(fua ? 'productivity.cov.note' : 'productivity.reg.cov.note', { level: levelName }) + (brkOwn ? ' ' + t('break.gbr') : '')}>
     <PlotChart make={covMake} height={260} label={t(fua ? 'productivity.cov.title' : 'productivity.reg.cov.title', { level: levelName })} />
     <CountryLegend {countries} {colours} focus={iso3} {present} />
   </ChartCard>
 
-  <ChartCard title={t(fua ? 'productivity.mean.title' : 'productivity.reg.mean.title', { level: levelName })} columns={cyCols} rows={byCY} csvName={`productivity_mean${csvLv}`} note={t(fua ? 'productivity.mean.note' : 'productivity.reg.mean.note', { level: levelName }) + (brk ? ' ' + t('break.gbr') : '')}>
+  <ChartCard title={t(fua ? 'productivity.mean.title' : 'productivity.reg.mean.title', { level: levelName })} columns={cyCols} rows={byCY} csvName={`productivity_mean${csvLv}`} note={t(fua ? 'productivity.mean.note' : 'productivity.reg.mean.note', { level: levelName }) + (brkOwn ? ' ' + t('break.gbr') : '')}>
     <PlotChart make={meanMake} height={320} label={t(fua ? 'productivity.mean.title' : 'productivity.reg.mean.title', { level: levelName })} />
     <CountryLegend {countries} {colours} focus={iso3} {present} />
   </ChartCard>

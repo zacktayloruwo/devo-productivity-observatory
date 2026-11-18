@@ -101,14 +101,14 @@
   const countryOfUnit = $derived(new Map(pool.map((r) => [r.id, r.cntry_iso3])));
   // a known series break inside the window leaves the unit out (UK TL3, TL2b)
   // the map's UK rows are its own consistent series at TL3 and TL2b (no break); TL2 still breaks
-  const breaksWindow = (c: string | undefined) => { const b = c ? seriesBreak(c, level, true) : null; return b != null && b > CH0 && b <= CH1; };
+  const breaksWindow = (c: string | undefined) => { const b = c ? seriesBreak(c, level) : null; return b != null && b > CH0 && b <= CH1; };
   const chg = $derived(changes(pool, CH0, CH1, changeMethod, (id) => !breaksWindow(countryOfUnit.get(id))));
   const chgRank = $derived(rankAll([...chg].map(([id, c]) => ({ id, v: c.change })), (x) => x.v, (x) => x.id));
   // for the units left out: the change since the break
   const chgSinceBreak = $derived.by(() => {
     const ids = new Set([...countryOfUnit].filter(([, c]) => breaksWindow(c)).map(([id]) => id));
     if (!ids.size) return new Map<string, Change>();
-    const b = seriesBreak('GBR', level, true) ?? CH0;
+    const b = seriesBreak('GBR', level) ?? CH0;
     return changes(pool.filter((r) => ids.has(r.id)), b, CH1, changeMethod === 'relpos' ? 'growth' : changeMethod);
   });
   // the change since a break is growth (or a difference), never relative position
@@ -264,7 +264,7 @@
     if (rows.length < 2) return null;
     const ys = rows.map((r) => r.year); const lo = Math.min(...ys), hi = Math.max(...ys);
     const cur = rows.filter((r) => r.year === year);
-    const brk = seriesBreak(selIso, level, true);
+    const brk = seriesBreak(selIso, level);
     const brkMarks = brk != null && lo < brk && hi >= brk ? [breakRule(brk, o.tokens)] : [];
     return Plot.plot({ width: o.width, height: 170, marginLeft: 52, marginRight: 16, style: plotStyle(o.tokens),
       x: yearAxis([lo, hi], yearTicks(lo, hi, hi - lo > 20 ? 10 : 5)), y: { label: v.short, grid: true, tickFormat: (d: number) => fmtShortBy(fmt, d) },
@@ -274,7 +274,7 @@
   });
   // whether the selected unit's series spans a known break (the dashed line is drawn)
   const seriesCrossesBreak = $derived.by(() => {
-    const b = seriesBreak(selIso, level, true), v = variable;
+    const b = seriesBreak(selIso, level), v = variable;
     if (b == null || !v) return false;
     const ys = series.filter((r) => r[v.id] != null && r.year >= FIRST_YEAR).map((r) => r.year);
     return ys.some((y) => y < b) && ys.some((y) => y >= b);

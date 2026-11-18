@@ -60,9 +60,9 @@ Every chart has a table twin and a CSV download. Light and dark themes.
   2025) for 2015–2023 from ONS GVA and BRES employment (marked †, hatched on
   the map), and `uk_consistent`, which makes employment and productivity
   comparable across the OECD's 2014/2015 change of UK employment source,
-  back-cast for 2004–2014 from ONS GVA per filled job (marked ‡). Cross-country
-  views keep the OECD's published tables and mark the break with a dashed
-  line; UK TL2 also breaks in 2015 (in level) and has no comparable series
+  back-cast for 2004–2014 from ONS GVA per filled job (marked ‡). The UK's own
+  views and the cross-country charts both use them, so the UK line has no
+  break at TL3 and TL2b; UK TL2 also breaks in 2015 (in level) and has no comparable series
   yet, so it carries the dashed line and is left out of change across it. The
   UK Sources page documents all of this.
 - **FUA boundaries** are one simplified GeoJSON per country (`data/geo/<ISO3>.geojson`),
